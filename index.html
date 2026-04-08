@@ -816,97 +816,18 @@
         <p>키워드의 경쟁도를 분석하고 S~F 등급으로 블루키워드를 찾아보세요</p>
     </div>
 
-    <!-- Mode Tabs -->
-    <div class="mode-tabs">
-        <button class="mode-tab active" data-mode="manual" onclick="switchMode('manual')">
-            ✏️ 직접 입력
-        </button>
-        <button class="mode-tab" data-mode="api" onclick="switchMode('api')">
-            🔗 API 연동
-        </button>
-    </div>
-
-    <!-- API Config -->
-    <div class="api-config" id="apiConfig">
-        <!-- 검색광고 API -->
-        <h3>🔑 네이버 검색광고 API <span style="font-size:0.75rem;font-weight:400;color:var(--text-muted);">— PC/모바일 검색수 조회</span></h3>
-        <div class="api-fields">
-            <div class="field-group">
-                <label>API KEY</label>
-                <input type="text" id="adApiKey" placeholder="검색광고 API 키">
-            </div>
-            <div class="field-group">
-                <label>SECRET KEY</label>
-                <input type="password" id="adSecretKey" placeholder="검색광고 시크릿 키">
-            </div>
-            <div class="field-group">
-                <label>CUSTOMER ID</label>
-                <input type="text" id="adCustomerId" placeholder="고객 ID (숫자)">
-            </div>
-        </div>
-        <div class="formula-info" style="margin-top: 12px;">
-            📌 <a href="https://searchad.naver.com" target="_blank" style="color: var(--primary);">네이버 검색광고</a> → 도구 → API 사용 관리에서 발급
-        </div>
-
-        <!-- 검색 API -->
-        <h3 style="margin-top: 20px;">🔍 네이버 검색 API <span style="font-size:0.75rem;font-weight:400;color:var(--text-muted);">— 블로그 문서수 조회</span></h3>
-        <div class="api-fields">
-            <div class="field-group">
-                <label>CLIENT ID</label>
-                <input type="text" id="searchClientId" placeholder="검색 API Client ID">
-            </div>
-            <div class="field-group">
-                <label>CLIENT SECRET</label>
-                <input type="password" id="searchClientSecret" placeholder="검색 API Client Secret">
-            </div>
-        </div>
-        <div class="formula-info" style="margin-top: 12px;">
-            📌 <a href="https://developers.naver.com/apps/#/register?api=search" target="_blank" style="color: var(--primary);">네이버 개발자센터</a> → 애플리케이션 등록 → 검색 API 선택 후 발급
-        </div>
-
-        <!-- API 연결 테스트 -->
-        <div style="margin-top: 16px; text-align: center;">
-            <button class="btn btn-primary" onclick="testApiConnection()" id="testApiBtn">
-                🔌 API 연결 테스트
-            </button>
-            <span id="apiTestResult" style="margin-left: 12px; font-size: 0.85rem;"></span>
-        </div>
-    </div>
+    <!-- API 키는 서버 환경변수에 저장됨 -->
 
     <!-- Keyword Input Section -->
     <div class="keyword-section">
         <h3>🔍 키워드 입력</h3>
 
-        <!-- API Mode Keywords -->
-        <div id="apiKeywordInput" style="display: none;">
-            <div class="keyword-input-row">
-                <input type="text" id="keywordInput" placeholder="키워드를 입력하고 Enter 또는 추가 버튼 클릭 (최대 10개)"
-                       onkeydown="if(event.key==='Enter') addKeyword()">
-                <button class="btn btn-primary" onclick="addKeyword()">+ 추가</button>
-            </div>
-            <div class="keyword-tags" id="keywordTags"></div>
+        <div class="keyword-input-row">
+            <input type="text" id="keywordInput" placeholder="키워드를 입력하고 Enter 또는 추가 버튼 클릭 (최대 10개)"
+                   onkeydown="if(event.key==='Enter') addKeyword()">
+            <button class="btn btn-primary" onclick="addKeyword()">+ 추가</button>
         </div>
-
-        <!-- Manual Mode Table -->
-        <div id="manualInput">
-            <div class="manual-table-wrapper">
-                <table class="manual-table">
-                    <thead>
-                        <tr>
-                            <th style="width:25%">키워드</th>
-                            <th style="width:18%">PC 검색수</th>
-                            <th style="width:18%">모바일 검색수</th>
-                            <th style="width:18%">블로그 문서수</th>
-                            <th style="width:18%">월간 총 검색수</th>
-                            <th style="width:3%"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="manualTableBody">
-                    </tbody>
-                </table>
-            </div>
-            <button class="add-row-btn" onclick="addManualRow()">+ 키워드 행 추가</button>
-        </div>
+        <div class="keyword-tags" id="keywordTags"></div>
 
         <!-- Formula Info -->
         <div class="formula-info" id="formulaDesc">
@@ -1036,7 +957,6 @@
 
 <script>
 // ===== State =====
-let currentMode = 'manual';
 let currentFormula = 'weighted';
 let keywords = [];
 let analysisResults = [];
@@ -1060,16 +980,7 @@ function getGrade(ratio) {
     return GRADES[GRADES.length - 1];
 }
 
-// ===== Mode Switching =====
-function switchMode(mode) {
-    currentMode = mode;
-    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
-
-    document.getElementById('apiConfig').classList.toggle('visible', mode === 'api');
-    document.getElementById('apiKeywordInput').style.display = mode === 'api' ? 'block' : 'none';
-    document.getElementById('manualInput').style.display = mode === 'manual' ? 'block' : 'none';
-}
+// Mode: API만 사용
 
 // ===== Formula Switching =====
 function switchFormula(formula) {
@@ -1112,102 +1023,14 @@ function renderKeywordTags() {
     `).join('');
 }
 
-// ===== Manual Input Table =====
-function addManualRow() {
-    const tbody = document.getElementById('manualTableBody');
-    const count = tbody.rows.length;
-    if (count >= 10) {
-        showToast('최대 10개까지 추가 가능합니다.', 'error');
-        return;
-    }
-    manualRowCount++;
-    const row = document.createElement('tr');
-    row.id = `row-${manualRowCount}`;
-    row.innerHTML = `
-        <td><input type="text" class="kw-input" placeholder="키워드 입력" data-field="keyword"></td>
-        <td><input type="number" placeholder="0" data-field="pc" min="0"></td>
-        <td><input type="number" placeholder="0" data-field="mobile" min="0"></td>
-        <td><input type="number" placeholder="0" data-field="blogCount" min="0"></td>
-        <td><input type="number" placeholder="자동 계산" data-field="totalSearch" readonly style="opacity:0.5;cursor:default;"></td>
-        <td><button class="delete-row-btn" onclick="deleteRow('row-${manualRowCount}')" title="삭제">&times;</button></td>
-    `;
-
-    // Auto-calculate total search
-    const inputs = row.querySelectorAll('input[data-field="pc"], input[data-field="mobile"]');
-    inputs.forEach(inp => {
-        inp.addEventListener('input', () => {
-            const pc = parseInt(row.querySelector('[data-field="pc"]').value) || 0;
-            const mobile = parseInt(row.querySelector('[data-field="mobile"]').value) || 0;
-            row.querySelector('[data-field="totalSearch"]').value = pc + mobile;
-        });
-    });
-
-    tbody.appendChild(row);
-}
-
-function deleteRow(rowId) {
-    const row = document.getElementById(rowId);
-    if (row) row.remove();
-}
+// 수동 입력 모드 제거됨
 
 // ===== Analysis =====
 async function analyze() {
-    if (currentMode === 'manual') {
-        analyzeManual();
-    } else {
-        await analyzeAPI();
-    }
-}
-
-function analyzeManual() {
-    const rows = document.querySelectorAll('#manualTableBody tr');
-    if (rows.length === 0) {
-        showToast('키워드를 최소 1개 이상 입력해주세요.', 'error');
-        return;
-    }
-
-    analysisResults = [];
-    let hasError = false;
-
-    rows.forEach(row => {
-        const keyword = row.querySelector('[data-field="keyword"]').value.trim();
-        const pc = parseInt(row.querySelector('[data-field="pc"]').value) || 0;
-        const mobile = parseInt(row.querySelector('[data-field="mobile"]').value) || 0;
-        const blogCount = parseInt(row.querySelector('[data-field="blogCount"]').value) || 0;
-
-        if (!keyword) {
-            hasError = true;
-            return;
-        }
-
-        analysisResults.push({ keyword, pc, mobile, blogCount });
-    });
-
-    if (analysisResults.length === 0) {
-        showToast('키워드명을 입력해주세요.', 'error');
-        return;
-    }
-
-    showResults();
+    await analyzeAPI();
 }
 
 async function analyzeAPI() {
-    const adApiKey = document.getElementById('adApiKey').value.trim();
-    const adSecretKey = document.getElementById('adSecretKey').value.trim();
-    const adCustomerId = document.getElementById('adCustomerId').value.trim();
-    const searchClientId = document.getElementById('searchClientId').value.trim();
-    const searchClientSecret = document.getElementById('searchClientSecret').value.trim();
-
-    if (!adApiKey || !adSecretKey || !adCustomerId) {
-        showToast('검색광고 API 설정을 모두 입력해주세요.', 'error');
-        return;
-    }
-
-    if (!searchClientId || !searchClientSecret) {
-        showToast('검색 API 설정을 모두 입력해주세요.', 'error');
-        return;
-    }
-
     if (keywords.length === 0) {
         showToast('키워드를 최소 1개 이상 추가해주세요.', 'error');
         return;
@@ -1220,14 +1043,7 @@ async function analyzeAPI() {
         const response = await fetch('/api/naver-api', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                adApiKey,
-                adSecretKey,
-                adCustomerId,
-                searchClientId,
-                searchClientSecret,
-                keywords
-            })
+            body: JSON.stringify({ keywords })
         });
 
         if (!response.ok) {
@@ -1238,7 +1054,6 @@ async function analyzeAPI() {
         const data = await response.json();
         analysisResults = data.results;
 
-        // API 오류가 있으면 알림
         if (data.errors && data.errors.length > 0) {
             showToast(`⚠️ 일부 키워드 조회 시 오류 발생 (${data.errors.length}건)`, 'error');
         }
@@ -1249,57 +1064,6 @@ async function analyzeAPI() {
     } finally {
         document.getElementById('loading').classList.remove('visible');
         document.getElementById('analyzeBtn').disabled = false;
-    }
-}
-
-// API 연결 테스트
-async function testApiConnection() {
-    const adApiKey = document.getElementById('adApiKey').value.trim();
-    const adSecretKey = document.getElementById('adSecretKey').value.trim();
-    const adCustomerId = document.getElementById('adCustomerId').value.trim();
-    const searchClientId = document.getElementById('searchClientId').value.trim();
-    const searchClientSecret = document.getElementById('searchClientSecret').value.trim();
-
-    const resultEl = document.getElementById('apiTestResult');
-
-    if (!adApiKey || !adSecretKey || !adCustomerId || !searchClientId || !searchClientSecret) {
-        resultEl.innerHTML = '<span style="color:#ff5252;">❌ 모든 API 키를 입력해주세요.</span>';
-        return;
-    }
-
-    const btn = document.getElementById('testApiBtn');
-    btn.disabled = true;
-    btn.textContent = '⏳ 테스트 중...';
-    resultEl.innerHTML = '';
-
-    try {
-        const response = await fetch('/api/naver-api', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                adApiKey,
-                adSecretKey,
-                adCustomerId,
-                searchClientId,
-                searchClientSecret,
-                keywords: ['블로그']  // 테스트 키워드
-            })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.results && data.results.length > 0) {
-            const test = data.results[0];
-            resultEl.innerHTML = `<span style="color:var(--primary);">✅ 연결 성공! 테스트: "${test.keyword}" PC:${test.pc} / 모바일:${test.mobile} / 문서:${test.blogCount.toLocaleString()}</span>`;
-            showToast('API 연결 테스트 성공!', 'success');
-        } else {
-            resultEl.innerHTML = `<span style="color:#ff5252;">❌ ${data.error || '알 수 없는 오류'}</span>`;
-        }
-    } catch (error) {
-        resultEl.innerHTML = `<span style="color:#ff5252;">❌ 연결 실패: ${error.message}</span>`;
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '🔌 API 연결 테스트';
     }
 }
 
@@ -1436,12 +1200,7 @@ function resetAll() {
     keywords = [];
     document.getElementById('results').classList.remove('visible');
     document.getElementById('keywordTags').innerHTML = '';
-    document.getElementById('keywordInput') && (document.getElementById('keywordInput').value = '');
-
-    // Reset manual table to 3 rows
-    document.getElementById('manualTableBody').innerHTML = '';
-    manualRowCount = 0;
-    for (let i = 0; i < 3; i++) addManualRow();
+    document.getElementById('keywordInput').value = '';
 
     showToast('초기화 완료', 'success');
 }
@@ -1456,31 +1215,7 @@ function showToast(msg, type = 'success') {
 
 // ===== Init =====
 window.addEventListener('DOMContentLoaded', () => {
-    // Load saved API config
-    const saved = localStorage.getItem('naverApiConfig_v2');
-    if (saved) {
-        try {
-            const config = JSON.parse(saved);
-            document.getElementById('adApiKey').value = config.adApiKey || '';
-            document.getElementById('adSecretKey').value = config.adSecretKey || '';
-            document.getElementById('adCustomerId').value = config.adCustomerId || '';
-            document.getElementById('searchClientId').value = config.searchClientId || '';
-            document.getElementById('searchClientSecret').value = config.searchClientSecret || '';
-        } catch(e) {}
-    }
-
-    // Save API config on change
-    const apiFields = ['adApiKey', 'adSecretKey', 'adCustomerId', 'searchClientId', 'searchClientSecret'];
-    apiFields.forEach(id => {
-        document.getElementById(id).addEventListener('change', () => {
-            const config = {};
-            apiFields.forEach(f => config[f] = document.getElementById(f).value);
-            localStorage.setItem('naverApiConfig_v2', JSON.stringify(config));
-        });
-    });
-
-    // Add initial rows
-    for (let i = 0; i < 3; i++) addManualRow();
+    // API 키는 서버 환경변수에 저장됨 - 프론트엔드 설정 불필요
 });
 </script>
 

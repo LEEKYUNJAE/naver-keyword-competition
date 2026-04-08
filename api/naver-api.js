@@ -112,18 +112,21 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const {
-            adApiKey, adSecretKey, adCustomerId,
-            searchClientId, searchClientSecret,
-            keywords
-        } = req.body;
+        const { keywords } = req.body;
+
+        // 환경변수에서 API 키 읽기
+        const adApiKey = process.env.NAVER_AD_API_KEY;
+        const adSecretKey = process.env.NAVER_AD_SECRET_KEY;
+        const adCustomerId = process.env.NAVER_AD_CUSTOMER_ID;
+        const searchClientId = process.env.NAVER_SEARCH_CLIENT_ID;
+        const searchClientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET;
 
         if (!adApiKey || !adSecretKey || !adCustomerId) {
-            return res.status(400).json({ error: '네이버 검색광고 API 인증 정보를 모두 입력해주세요.' });
+            return res.status(500).json({ error: '서버에 검색광고 API 키가 설정되지 않았습니다.' });
         }
 
         if (!searchClientId || !searchClientSecret) {
-            return res.status(400).json({ error: '네이버 검색 API 인증 정보를 모두 입력해주세요.' });
+            return res.status(500).json({ error: '서버에 검색 API 키가 설정되지 않았습니다.' });
         }
 
         if (!keywords || keywords.length === 0) {
