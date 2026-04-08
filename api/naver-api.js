@@ -116,38 +116,33 @@ module.exports = async (req, res) => {
         const errors = [];
         const searchVolumeMap = {};
 
-        // STEP 1: 검색광고 API - PC/모바일 검색수
-        const chunks = [];
-        for (let i = 0; i < keywords.length; i += 5) chunks.push(keywords.slice(i, i + 5));
-
-        for (const chunk of chunks) {
+        // STEP 1: 검색광고 API - PC/모바일 검색수 (키워드별 개별 호출)
+        for (const kw of keywords) {
             try {
-                const kwParam = chunk.map(k => encodeURIComponent(k)).join('%2C');
-                const uri = `/keywordstool?hintKeywords=${kwParam}&showDetail=1`;
+                const uri = `/keywordstool?hintKeywords=${encodeURIComponent(kw)}&showDetail=1`;
                 const data = await callSearchAdAPI(uri, adApiKey, adSecretKey, adCustomerId);
 
-                if (data && data.keywordList) {
-                    for (const kw of chunk) {
-                        // 공백 제거 후 비교 (네이버 API가 띄어쓰기를 무시할 수 있음)
-                        const kwNorm = kw.replace(/\s/g, '').toLowerCase();
-                        const found = data.keywordList.find(
-                            item => item.relKeyword.replace(/\s/g, '').toLowerCase() === kwNorm
-                        );
-                        // 정확히 일치하지 않으면 첫 번째 결과 사용 (입력 키워드와 가장 관련성 높은 키워드)
-                        const match = found || data.keywordList[0];
-                        if (match) {
-                            searchVolumeMap[kw] = {
-                                pc: match.monthlyPcQcCnt === '< 10' ? 5 : (parseInt(match.monthlyPcQcCnt) || 0),
-                                mobile: match.monthlyMobileQcCnt === '< 10' ? 5 : (parseInt(match.monthlyMobileQcCnt) || 0),
-                            };
-                        } else {
-                            searchVolumeMap[kw] = { pc: 0, mobile: 0 };
-                        }
-                    }
+                if (data && data.keywordList && data.keywordList.length > 0) {
+                    // 공백 제거 후 정확한 키워드 매칭
+                    const kwNorm = kw.replace(/\s/g, '').toLowerCase();
+                    const found = data.keywordList.find(
+                        item => item.relKeyword.replace(/\s/g, '').toLowerCase() === kwNorm
+                    );
+                    const match = found || data.keywordList[0];
+
+                    const pcVal = match.monthlyPcQcCnt;
+                    const mbVal = match.monthlyMobileQcCnt;
+                    searchVolumeMap[kw] = {
+                        pc: (pcVal === '< 10' || pcVal === '< 10') ? 5 : (parseInt(pcVal) || 0),
+                        mobile: (mbVal === '< 10' || mbVal === '< 10') ? 5 : (parseInt(mbVal) || 0),
+                    };
+                } else {
+                    searchVolumeMap[kw] = { pc: 0, mobile: 0 };
+                    errors.push(`"${kw}" 검색수 데이터 없음`);
                 }
             } catch (e) {
-                errors.push(e.message);
-                for (const kw of chunk) searchVolumeMap[kw] = { pc: 0, mobile: 0 };
+                errors.push(`검색광고 API (${kw}): ${e.message}`);
+                searchVolumeMap[kw] = { pc: 0, mobile: 0 };
             }
         }
 
