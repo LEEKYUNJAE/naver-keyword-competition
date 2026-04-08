@@ -852,8 +852,8 @@
             <h2>📊 분석 결과</h2>
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <div class="formula-toggle">
-                    <button class="formula-btn active" data-formula="weighted" onclick="switchFormula('weighted')">가중치 적용 (0.3)</button>
-                    <button class="formula-btn" data-formula="basic" onclick="switchFormula('basic')">기본 수식</button>
+                    <button class="formula-btn active" data-formula="weighted" onclick="switchFormula('weighted')">정밀 분석</button>
+                    <button class="formula-btn" data-formula="basic" onclick="switchFormula('basic')">기본 분석</button>
                 </div>
                 <button class="btn-export" onclick="exportCSV()">📥 CSV 다운로드</button>
             </div>
@@ -890,49 +890,42 @@
                 <div class="legend-item">
                     <div class="legend-grade" style="background: linear-gradient(135deg, #ff6fd833, #c471f533); color: #ff6fd8;">S</div>
                     <div class="legend-info">
-                        <div class="legend-range">경쟁도 ≤ 0.05</div>
                         <div class="legend-desc">💎 초희귀 블루키워드</div>
                     </div>
                 </div>
                 <div class="legend-item">
                     <div class="legend-grade" style="background: #00e67622; color: var(--grade-a);">A</div>
                     <div class="legend-info">
-                        <div class="legend-range">0.05 ~ 0.15</div>
                         <div class="legend-desc">🟢 매우 좋음, 적극 공략</div>
                     </div>
                 </div>
                 <div class="legend-item">
                     <div class="legend-grade" style="background: #69f0ae22; color: var(--grade-b);">B</div>
                     <div class="legend-info">
-                        <div class="legend-range">0.15 ~ 0.30</div>
                         <div class="legend-desc">🟢 좋음, 공략 추천</div>
                     </div>
                 </div>
                 <div class="legend-item">
                     <div class="legend-grade" style="background: #ffd74022; color: var(--grade-c);">C</div>
                     <div class="legend-info">
-                        <div class="legend-range">0.30 ~ 0.50</div>
                         <div class="legend-desc">🟡 보통, 글 품질 중요</div>
                     </div>
                 </div>
                 <div class="legend-item">
                     <div class="legend-grade" style="background: #ff910022; color: var(--grade-d);">D</div>
                     <div class="legend-info">
-                        <div class="legend-range">0.50 ~ 1.00</div>
                         <div class="legend-desc">🟠 경쟁 치열, 주의</div>
                     </div>
                 </div>
                 <div class="legend-item">
                     <div class="legend-grade" style="background: #ff525222; color: var(--grade-e);">E</div>
                     <div class="legend-info">
-                        <div class="legend-range">1.00 ~ 2.00</div>
                         <div class="legend-desc">🔴 상위노출 어려움</div>
                     </div>
                 </div>
                 <div class="legend-item">
                     <div class="legend-grade" style="background: #d5000022; color: var(--grade-f);">F</div>
                     <div class="legend-info">
-                        <div class="legend-range">2.00 초과</div>
                         <div class="legend-desc">⛔ 진입 비추천</div>
                     </div>
                 </div>
@@ -1127,7 +1120,7 @@ function renderCards() {
             </div>
             <div class="card-competition">
                 <div class="competition-row">
-                    <span class="comp-label">유효 검색수 ${currentFormula === 'weighted' ? '(가중치)' : '(기본)'}</span>
+                    <span class="comp-label">유효 검색수</span>
                     <span class="comp-value">${item.effectiveSearch.toLocaleString()}</span>
                 </div>
                 <div class="competition-row">

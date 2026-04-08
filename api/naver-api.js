@@ -9,7 +9,7 @@ function callSearchAdAPI(path, apiKey, secretKey, customerId) {
         const signature = generateSignature(timestamp, method, path, secretKey);
 
         const options = {
-            hostname: 'api.naver.com',
+            hostname: 'api.searchad.naver.com',
             path: path,
             method: method,
             headers: {
