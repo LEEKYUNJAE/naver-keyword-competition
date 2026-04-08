@@ -594,8 +594,12 @@ async function analyze() {
         const data = await res.json();
         analysisResults = data.results;
         if (data.errors && data.errors.length > 0) {
-            console.log('API Errors:', data.errors, data.debug);
-            showToast(`⚠️ ${data.errors[0]}`, 'error');
+            console.log('API Errors:', data.errors);
+            // 에러 상세 표시
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'background:#fde8e8;border:1px solid #e74c3c;border-radius:10px;padding:16px;margin-bottom:16px;font-size:0.85rem;color:#c0392b;';
+            errDiv.innerHTML = '<strong>⚠️ API 오류:</strong><br>' + data.errors.map(e => '• ' + e).join('<br>');
+            document.getElementById('resultCards').before(errDiv);
         }
         document.getElementById('results').classList.add('visible');
         renderResults();
