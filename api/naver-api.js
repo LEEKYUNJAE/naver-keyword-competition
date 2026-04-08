@@ -149,9 +149,19 @@ module.exports = async (req, res) => {
 
         for (const chunk of chunks) {
             try {
-                const keywordParam = chunk.map(k => encodeURIComponent(k)).join(',');
+                const keywordParam = chunk.map(k => encodeURIComponent(k)).join('%2C');
                 const apiPath = `/keywordstool?hintKeywords=${keywordParam}&showDetail=1`;
-                const response = await callSearchAdAPI(apiPath, adApiKey, adSecretKey, adCustomerId);
+
+                let response;
+                try {
+                    response = await callSearchAdAPI(apiPath, adApiKey, adSecretKey, adCustomerId);
+                } catch (adError) {
+                    errors.push(`검색광고 API: ${adError.message}`);
+                    for (const kw of chunk) {
+                        searchVolumeMap[kw] = { pc: 0, mobile: 0, compIdx: '-' };
+                    }
+                    continue;
+                }
 
                 if (response && response.keywordList) {
                     for (const kw of chunk) {
@@ -212,6 +222,7 @@ module.exports = async (req, res) => {
         return res.status(200).json({
             results,
             errors: errors.length > 0 ? errors : undefined,
+            debug: errors.length > 0 ? { adApiKey: adApiKey ? '설정됨' : '미설정', adCustomerId: adCustomerId || '미설정', searchClientId: searchClientId ? '설정됨' : '미설정' } : undefined,
             timestamp: new Date().toISOString()
         });
 

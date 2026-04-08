@@ -495,7 +495,7 @@
             <div class="legend-grid">
                 <div class="legend-item">
                     <div class="legend-badge" style="background:linear-gradient(135deg,#ff6fd833,#c471f533);color:#c471f5;">S</div>
-                    <div class="legend-desc">💎 초희귀 블루키워드</div>
+                    <div class="legend-desc">💎 황금키워드</div>
                 </div>
                 <div class="legend-item">
                     <div class="legend-badge" style="background:#e8f8ef;color:#03C75A;">A</div>
@@ -536,7 +536,7 @@ let keywords = [];
 let analysisResults = [];
 
 const GRADES = [
-    { grade: 'S', max: 0.05, emoji: '💎', desc: '초희귀 블루키워드', color: '#c471f5' },
+    { grade: 'S', max: 0.05, emoji: '💎', desc: '황금키워드', color: '#c471f5' },
     { grade: 'A', max: 0.15, emoji: '🟢', desc: '매우 좋음', color: '#03C75A' },
     { grade: 'B', max: 0.30, emoji: '🟢', desc: '좋음, 공략 추천', color: '#2ecc71' },
     { grade: 'C', max: 0.50, emoji: '🟡', desc: '보통, 글 품질 중요', color: '#f39c12' },
@@ -590,7 +590,10 @@ async function analyze() {
         if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'API 호출 실패'); }
         const data = await res.json();
         analysisResults = data.results;
-        if (data.errors && data.errors.length > 0) showToast(`⚠️ 일부 키워드 오류 (${data.errors.length}건)`, 'error');
+        if (data.errors && data.errors.length > 0) {
+            console.log('API Errors:', data.errors, data.debug);
+            showToast(`⚠️ ${data.errors[0]}`, 'error');
+        }
         document.getElementById('results').classList.add('visible');
         renderResults();
         document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
