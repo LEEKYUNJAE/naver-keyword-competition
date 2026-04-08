@@ -104,7 +104,7 @@
 
         .btn-add {
             padding: 14px 24px;
-            background: var(--naver);
+            background: linear-gradient(135deg, #1a3a8a, #2e6ccf);
             color: #fff;
             border: none;
             border-radius: 12px;
@@ -113,9 +113,9 @@
             font-family: inherit;
             cursor: pointer;
             white-space: nowrap;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
-        .btn-add:hover { background: var(--naver-dark); }
+        .btn-add:hover { background: linear-gradient(135deg, #15307a, #2660c0); }
 
         /* Tags */
         .keyword-tags {
@@ -154,7 +154,7 @@
         }
         .btn-analyze {
             padding: 16px 48px;
-            background: var(--naver);
+            background: linear-gradient(135deg, #1a3a8a, #2e6ccf);
             color: #fff;
             border: none;
             border-radius: 12px;
@@ -163,9 +163,9 @@
             font-family: inherit;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 12px rgba(3,199,90,0.25);
+            box-shadow: 0 4px 12px rgba(26,58,138,0.3);
         }
-        .btn-analyze:hover { background: var(--naver-dark); transform: translateY(-1px); }
+        .btn-analyze:hover { background: linear-gradient(135deg, #15307a, #2660c0); transform: translateY(-1px); }
         .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .btn-reset {
@@ -227,7 +227,7 @@
             border-radius: 8px;
             transition: all 0.2s;
         }
-        .toggle-btn.active { background: var(--naver); color: #fff; }
+        .toggle-btn.active { background: linear-gradient(135deg, #1a3a8a, #2e6ccf); color: #fff; }
         .btn-csv {
             padding: 8px 16px;
             background: var(--white);
@@ -266,10 +266,11 @@
         .r-card-keyword { font-size: 1.05rem; font-weight: 700; color: var(--text); flex: 1; }
         .r-grade-wrap { text-align: center; margin-left: 12px; }
         .r-grade {
-            width: 48px; height: 48px;
-            border-radius: 12px;
+            width: 50px; height: 50px;
+            border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem; font-weight: 900;
+            font-size: 1.3rem; font-weight: 900;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
         .r-grade-label { font-size: 0.65rem; font-weight: 700; margin-top: 4px; }
 
@@ -420,7 +421,7 @@
 <!-- Header -->
 <div class="header">
     <div class="header-inner">
-        <img src="logo.png" alt="KEYPLAT" style="width:44px;height:44px;border-radius:10px;">
+        <img src="logo.png" alt="KEYPLAT" style="width:38px;height:38px;border-radius:8px;box-shadow:0 2px 8px rgba(26,58,138,0.15);">
         <div>
             <h1>네이버 블로그 키워드 경쟁도 분석기</h1>
             <p>키워드를 입력하면 경쟁도를 자동 분석하고 S~F 등급을 매겨드립니다</p>
