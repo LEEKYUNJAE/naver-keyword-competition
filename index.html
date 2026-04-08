@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>네이버 블로그 키워드 경쟁도 분석기</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #03C75A;
+            --primary-dark: #02a84d;
+            --bg: #0f1117;
+            --bg-card: #1a1d27;
+            --bg-input: #252836;
+            --text: #e4e4e7;
+            --text-muted: #9ca3af;
+            --border: #2d3140;
+            --grade-s: #ff6fd8;
+            --grade-a: #00e676;
+            --grade-b: #69f0ae;
+            --grade-c: #ffd740;
+            --grade-d: #ff9100;
+            --grade-e: #ff5252;
+            --grade-f: #d50000;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 20px 30px;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), #00e676);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Mode Tabs */
+        .mode-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin: 30px auto 25px;
+            max-width: 500px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .mode-tab.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .mode-tab:hover:not(.active) {
+            color: var(--text);
+            background: var(--bg-input);
+        }
+
+        /* API Config Section */
+        .api-config {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            display: none;
+        }
+
+        .api-config.visible { display: block; }
+
+        .api-config h3 {
+            font-size: 1rem;
+            margin-bottom: 16px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .field-group label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .field-group input, .field-group select {
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .field-group input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Keyword Input Section */
+        .keyword-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .keyword-section h3 {
+            font-size: 1rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* API Mode - Keyword Tags */
+        .keyword-input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .keyword-input-row input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .keyword-input-row input:focus {
+            border-color: var(--primary);
+        }
+
+        .keyword-input-row input::placeholder {
+            color: #555;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-input);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+        }
+
+        .btn-danger {
+            background: #ff52521a;
+            color: #ff5252;
+            border: 1px solid #ff525233;
+        }
+
+        .btn-danger:hover {
+            background: #ff52523a;
+        }
+
+        .keyword-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 20px;
+        }
+
+        .keyword-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--primary)1a;
+            border: 1px solid var(--primary)44;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--primary);
+        }
+
+        .keyword-tag .remove {
+            cursor: pointer;
+            font-size: 1.1rem;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .keyword-tag .remove:hover {
+            opacity: 1;
+        }
+
+        /* Manual Input Table */
+        .manual-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .manual-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .manual-table thead th {
+            padding: 12px 16px;
+            background: var(--bg-input);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .manual-table thead th:first-child { border-radius: 10px 0 0 0; }
+        .manual-table thead th:last-child { border-radius: 0 10px 0 0; }
+
+        .manual-table tbody td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .manual-table tbody input {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.9rem;
+            text-align: center;
+            outline: none;
+        }
+
+        .manual-table tbody input:focus {
+            border-color: var(--primary);
+        }
+
+        .manual-table tbody input.kw-input {
+            text-align: left;
+        }
+
+        .add-row-btn {
+            margin-top: 12px;
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-input);
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .add-row-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Action Buttons */
+        .action-bar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 24px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn-analyze {
+            padding: 14px 40px;
+            font-size: 1.05rem;
+            background: linear-gradient(135deg, var(--primary), #00e676);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(3, 199, 90, 0.3);
+        }
+
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(3, 199, 90, 0.4);
+        }
+
+        .btn-analyze:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading */
+        .loading-overlay {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-overlay.visible { display: block; }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Results */
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-section.visible { display: block; }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .results-header h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+
+        .formula-toggle {
+            display: flex;
+            gap: 0;
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 3px;
+            border: 1px solid var(--border);
+        }
+
+        .formula-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .formula-btn.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        /* Result Cards */
+        .result-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .result-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .result-card.grade-S::before { background: linear-gradient(90deg, #ff6fd8, #c471f5); }
+        .result-card.grade-A::before { background: var(--grade-a); }
+        .result-card.grade-B::before { background: var(--grade-b); }
+        .result-card.grade-C::before { background: var(--grade-c); }
+        .result-card.grade-D::before { background: var(--grade-d); }
+        .result-card.grade-E::before { background: var(--grade-e); }
+        .result-card.grade-F::before { background: var(--grade-f); }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .card-keyword {
+            font-size: 1.15rem;
+            font-weight: 700;
+            flex: 1;
+            word-break: keep-all;
+        }
+
+        .grade-badge {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 900;
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+
+        .grade-S .grade-badge { background: linear-gradient(135deg, #ff6fd8, #c471f5); color: #fff; animation: shimmer 2s ease-in-out infinite alternate; }
+        .grade-A .grade-badge { background: #00e67622; color: var(--grade-a); border: 2px solid var(--grade-a); }
+        .grade-B .grade-badge { background: #69f0ae22; color: var(--grade-b); border: 2px solid var(--grade-b); }
+        .grade-C .grade-badge { background: #ffd74022; color: var(--grade-c); border: 2px solid var(--grade-c); }
+        .grade-D .grade-badge { background: #ff910022; color: var(--grade-d); border: 2px solid var(--grade-d); }
+        .grade-E .grade-badge { background: #ff525222; color: var(--grade-e); border: 2px solid var(--grade-e); }
+        .grade-F .grade-badge { background: #d5000022; color: var(--grade-f); border: 2px solid var(--grade-f); }
+
+        @keyframes shimmer {
+            0% { box-shadow: 0 0 10px rgba(255,111,216,0.3); }
+            100% { box-shadow: 0 0 20px rgba(196,113,245,0.5); }
+        }
+
+        .card-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .stat-item {
+            background: var(--bg-input);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .card-competition {
+            background: var(--bg-input);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .competition-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .competition-row:last-child { margin-bottom: 0; }
+
+        .comp-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .comp-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .grade-desc {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .grade-S .grade-desc { background: linear-gradient(135deg, #ff6fd822, #c471f522); color: #ff6fd8; }
+        .grade-A .grade-desc { background: #00e67615; color: var(--grade-a); }
+        .grade-B .grade-desc { background: #69f0ae15; color: var(--grade-b); }
+        .grade-C .grade-desc { background: #ffd74015; color: var(--grade-c); }
+        .grade-D .grade-desc { background: #ff910015; color: var(--grade-d); }
+        .grade-E .grade-desc { background: #ff525215; color: var(--grade-e); }
+        .grade-F .grade-desc { background: #d5000015; color: var(--grade-f); }
+
+        /* Summary Table */
+        .summary-section {
+            margin-top: 24px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .summary-section h3 {
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.9rem;
+        }
+
+        .summary-table thead th {
+            padding: 12px 14px;
+            background: var(--bg-input);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .summary-table thead th:first-child { border-radius: 10px 0 0 0; text-align: left; }
+        .summary-table thead th:last-child { border-radius: 0 10px 0 0; }
+
+        .summary-table tbody td {
+            padding: 12px 14px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-table tbody td:first-child {
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .summary-table tbody tr:hover {
+            background: var(--bg-input);
+        }
+
+        .grade-pill {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 0.8rem;
+        }
+
+        .pill-S { background: linear-gradient(135deg, #ff6fd833, #c471f533); color: #ff6fd8; }
+        .pill-A { background: #00e67622; color: var(--grade-a); }
+        .pill-B { background: #69f0ae22; color: var(--grade-b); }
+        .pill-C { background: #ffd74022; color: var(--grade-c); }
+        .pill-D { background: #ff910022; color: var(--grade-d); }
+        .pill-E { background: #ff525222; color: var(--grade-e); }
+        .pill-F { background: #d5000022; color: var(--grade-f); }
+
+        /* Grade Legend */
+        .grade-legend {
+            margin-top: 24px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .grade-legend h3 { margin-bottom: 16px; font-size: 1.1rem; }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border-radius: 10px;
+        }
+
+        .legend-grade {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .legend-info { flex: 1; }
+        .legend-range { font-size: 0.75rem; color: var(--text-muted); }
+        .legend-desc { font-size: 0.8rem; font-weight: 600; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Formula Info */
+        .formula-info {
+            background: var(--bg-input);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.8;
+        }
+
+        .formula-info code {
+            background: var(--bg-card);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--primary);
+            font-size: 0.85rem;
+        }
+
+        /* Delete row button */
+        .delete-row-btn {
+            background: none;
+            border: none;
+            color: #ff5252;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .delete-row-btn:hover {
+            background: #ff52521a;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 1000;
+            transition: transform 0.4s;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .toast.visible {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.error { border-color: #ff5252; }
+        .toast.success { border-color: var(--primary); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 12px; }
+            .header h1 { font-size: 1.5rem; }
+            .result-cards { grid-template-columns: 1fr; }
+            .api-fields { grid-template-columns: 1fr; }
+            .formula-toggle { flex-wrap: wrap; }
+            .keyword-input-row { flex-direction: column; }
+            .summary-table { font-size: 0.8rem; }
+            .legend-grid { grid-template-columns: 1fr; }
+        }
+
+        /* CSV Export Button */
+        .btn-export {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-export:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1>네이버 블로그 키워드 경쟁도 분석기</h1>
+        <p>키워드의 경쟁도를 분석하고 S~F 등급으로 블루키워드를 찾아보세요</p>
+    </div>
+
+    <!-- Mode Tabs -->
+    <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="manual" onclick="switchMode('manual')">
+            ✏️ 직접 입력
+        </button>
+        <button class="mode-tab" data-mode="api" onclick="switchMode('api')">
+            🔗 API 연동
+        </button>
+    </div>
+
+    <!-- API Config -->
+    <div class="api-config" id="apiConfig">
+        <!-- 검색광고 API -->
+        <h3>🔑 네이버 검색광고 API <span style="font-size:0.75rem;font-weight:400;color:var(--text-muted);">— PC/모바일 검색수 조회</span></h3>
+        <div class="api-fields">
+            <div class="field-group">
+                <label>API KEY</label>
+                <input type="text" id="adApiKey" placeholder="검색광고 API 키">
+            </div>
+            <div class="field-group">
+                <label>SECRET KEY</label>
+                <input type="password" id="adSecretKey" placeholder="검색광고 시크릿 키">
+            </div>
+            <div class="field-group">
+                <label>CUSTOMER ID</label>
+                <input type="text" id="adCustomerId" placeholder="고객 ID (숫자)">
+            </div>
+        </div>
+        <div class="formula-info" style="margin-top: 12px;">
+            📌 <a href="https://searchad.naver.com" target="_blank" style="color: var(--primary);">네이버 검색광고</a> → 도구 → API 사용 관리에서 발급
+        </div>
+
+        <!-- 검색 API -->
+        <h3 style="margin-top: 20px;">🔍 네이버 검색 API <span style="font-size:0.75rem;font-weight:400;color:var(--text-muted);">— 블로그 문서수 조회</span></h3>
+        <div class="api-fields">
+            <div class="field-group">
+                <label>CLIENT ID</label>
+                <input type="text" id="searchClientId" placeholder="검색 API Client ID">
+            </div>
+            <div class="field-group">
+                <label>CLIENT SECRET</label>
+                <input type="password" id="searchClientSecret" placeholder="검색 API Client Secret">
+            </div>
+        </div>
+        <div class="formula-info" style="margin-top: 12px;">
+            📌 <a href="https://developers.naver.com/apps/#/register?api=search" target="_blank" style="color: var(--primary);">네이버 개발자센터</a> → 애플리케이션 등록 → 검색 API 선택 후 발급
+        </div>
+
+        <!-- API 연결 테스트 -->
+        <div style="margin-top: 16px; text-align: center;">
+            <button class="btn btn-primary" onclick="testApiConnection()" id="testApiBtn">
+                🔌 API 연결 테스트
+            </button>
+            <span id="apiTestResult" style="margin-left: 12px; font-size: 0.85rem;"></span>
+        </div>
+    </div>
+
+    <!-- Keyword Input Section -->
+    <div class="keyword-section">
+        <h3>🔍 키워드 입력</h3>
+
+        <!-- API Mode Keywords -->
+        <div id="apiKeywordInput" style="display: none;">
+            <div class="keyword-input-row">
+                <input type="text" id="keywordInput" placeholder="키워드를 입력하고 Enter 또는 추가 버튼 클릭 (최대 10개)"
+                       onkeydown="if(event.key==='Enter') addKeyword()">
+                <button class="btn btn-primary" onclick="addKeyword()">+ 추가</button>
+            </div>
+            <div class="keyword-tags" id="keywordTags"></div>
+        </div>
+
+        <!-- Manual Mode Table -->
+        <div id="manualInput">
+            <div class="manual-table-wrapper">
+                <table class="manual-table">
+                    <thead>
+                        <tr>
+                            <th style="width:25%">키워드</th>
+                            <th style="width:18%">PC 검색수</th>
+                            <th style="width:18%">모바일 검색수</th>
+                            <th style="width:18%">블로그 문서수</th>
+                            <th style="width:18%">월간 총 검색수</th>
+                            <th style="width:3%"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="manualTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <button class="add-row-btn" onclick="addManualRow()">+ 키워드 행 추가</button>
+        </div>
+
+        <!-- Formula Info -->
+        <div class="formula-info" id="formulaDesc">
+            <strong>📐 경쟁도 계산 수식</strong><br>
+            <strong>기본:</strong> <code>블로그 문서수 ÷ (PC검색수 + 모바일검색수)</code><br>
+            <strong>가중치(0.3):</strong> <code>블로그 문서수 ÷ (PC검색수 + 모바일검색수 × 0.3)</code>
+            <span style="color: var(--text-muted);"> — 모바일 유입률 보정, 더 보수적 판단</span>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">
+            🚀 경쟁도 분석 시작
+        </button>
+        <button class="btn btn-secondary" onclick="resetAll()">🔄 초기화</button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+        <p>키워드 경쟁도를 분석하고 있습니다...</p>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section" id="results">
+        <div class="results-header">
+            <h2>📊 분석 결과</h2>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div class="formula-toggle">
+                    <button class="formula-btn active" data-formula="weighted" onclick="switchFormula('weighted')">가중치 적용 (0.3)</button>
+                    <button class="formula-btn" data-formula="basic" onclick="switchFormula('basic')">기본 수식</button>
+                </div>
+                <button class="btn-export" onclick="exportCSV()">📥 CSV 다운로드</button>
+            </div>
+        </div>
+
+        <!-- Result Cards -->
+        <div class="result-cards" id="resultCards"></div>
+
+        <!-- Summary Table -->
+        <div class="summary-section">
+            <h3>📋 비교 요약표</h3>
+            <div class="manual-table-wrapper">
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>키워드</th>
+                            <th>PC 검색수</th>
+                            <th>모바일 검색수</th>
+                            <th>블로그 문서수</th>
+                            <th>유효 검색수</th>
+                            <th>경쟁도</th>
+                            <th>등급</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Grade Legend -->
+        <div class="grade-legend">
+            <h3>📖 등급 기준표</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <div class="legend-grade" style="background: linear-gradient(135deg, #ff6fd833, #c471f533); color: #ff6fd8;">S</div>
+                    <div class="legend-info">
+                        <div class="legend-range">경쟁도 ≤ 0.05</div>
+                        <div class="legend-desc">💎 초희귀 블루키워드</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-grade" style="background: #00e67622; color: var(--grade-a);">A</div>
+                    <div class="legend-info">
+                        <div class="legend-range">0.05 ~ 0.15</div>
+                        <div class="legend-desc">🟢 매우 좋음, 적극 공략</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-grade" style="background: #69f0ae22; color: var(--grade-b);">B</div>
+                    <div class="legend-info">
+                        <div class="legend-range">0.15 ~ 0.30</div>
+                        <div class="legend-desc">🟢 좋음, 공략 추천</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-grade" style="background: #ffd74022; color: var(--grade-c);">C</div>
+                    <div class="legend-info">
+                        <div class="legend-range">0.30 ~ 0.50</div>
+                        <div class="legend-desc">🟡 보통, 글 품질 중요</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-grade" style="background: #ff910022; color: var(--grade-d);">D</div>
+                    <div class="legend-info">
+                        <div class="legend-range">0.50 ~ 1.00</div>
+                        <div class="legend-desc">🟠 경쟁 치열, 주의</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-grade" style="background: #ff525222; color: var(--grade-e);">E</div>
+                    <div class="legend-info">
+                        <div class="legend-range">1.00 ~ 2.00</div>
+                        <div class="legend-desc">🔴 상위노출 어려움</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-grade" style="background: #d5000022; color: var(--grade-f);">F</div>
+                    <div class="legend-info">
+                        <div class="legend-range">2.00 초과</div>
+                        <div class="legend-desc">⛔ 진입 비추천</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Made by <strong>다퍼주는남자</strong> | 네이버 블로그 키워드 경쟁도 분석기 v1.0</p>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== State =====
+let currentMode = 'manual';
+let currentFormula = 'weighted';
+let keywords = [];
+let analysisResults = [];
+let manualRowCount = 0;
+
+// ===== Grade System =====
+const GRADES = [
+    { grade: 'S', max: 0.05, emoji: '💎', desc: '초희귀 블루키워드', color: '#ff6fd8' },
+    { grade: 'A', max: 0.15, emoji: '🟢', desc: '매우 좋음, 적극 공략', color: '#00e676' },
+    { grade: 'B', max: 0.30, emoji: '🟢', desc: '좋음, 공략 추천', color: '#69f0ae' },
+    { grade: 'C', max: 0.50, emoji: '🟡', desc: '보통, 글 품질 중요', color: '#ffd740' },
+    { grade: 'D', max: 1.00, emoji: '🟠', desc: '경쟁 치열, 주의', color: '#ff9100' },
+    { grade: 'E', max: 2.00, emoji: '🔴', desc: '상위노출 어려움', color: '#ff5252' },
+    { grade: 'F', max: Infinity, emoji: '⛔', desc: '진입 비추천', color: '#d50000' },
+];
+
+function getGrade(ratio) {
+    for (const g of GRADES) {
+        if (ratio <= g.max) return g;
+    }
+    return GRADES[GRADES.length - 1];
+}
+
+// ===== Mode Switching =====
+function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+
+    document.getElementById('apiConfig').classList.toggle('visible', mode === 'api');
+    document.getElementById('apiKeywordInput').style.display = mode === 'api' ? 'block' : 'none';
+    document.getElementById('manualInput').style.display = mode === 'manual' ? 'block' : 'none';
+}
+
+// ===== Formula Switching =====
+function switchFormula(formula) {
+    currentFormula = formula;
+    document.querySelectorAll('.formula-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-formula="${formula}"]`).classList.add('active');
+    renderResults();
+}
+
+// ===== Keyword Tags (API Mode) =====
+function addKeyword() {
+    const input = document.getElementById('keywordInput');
+    const kw = input.value.trim();
+    if (!kw) return;
+    if (keywords.includes(kw)) {
+        showToast('이미 추가된 키워드입니다.', 'error');
+        return;
+    }
+    if (keywords.length >= 10) {
+        showToast('최대 10개까지 추가 가능합니다.', 'error');
+        return;
+    }
+    keywords.push(kw);
+    input.value = '';
+    renderKeywordTags();
+}
+
+function removeKeyword(kw) {
+    keywords = keywords.filter(k => k !== kw);
+    renderKeywordTags();
+}
+
+function renderKeywordTags() {
+    const container = document.getElementById('keywordTags');
+    container.innerHTML = keywords.map(kw => `
+        <div class="keyword-tag">
+            ${kw}
+            <span class="remove" onclick="removeKeyword('${kw}')">&times;</span>
+        </div>
+    `).join('');
+}
+
+// ===== Manual Input Table =====
+function addManualRow() {
+    const tbody = document.getElementById('manualTableBody');
+    const count = tbody.rows.length;
+    if (count >= 10) {
+        showToast('최대 10개까지 추가 가능합니다.', 'error');
+        return;
+    }
+    manualRowCount++;
+    const row = document.createElement('tr');
+    row.id = `row-${manualRowCount}`;
+    row.innerHTML = `
+        <td><input type="text" class="kw-input" placeholder="키워드 입력" data-field="keyword"></td>
+        <td><input type="number" placeholder="0" data-field="pc" min="0"></td>
+        <td><input type="number" placeholder="0" data-field="mobile" min="0"></td>
+        <td><input type="number" placeholder="0" data-field="blogCount" min="0"></td>
+        <td><input type="number" placeholder="자동 계산" data-field="totalSearch" readonly style="opacity:0.5;cursor:default;"></td>
+        <td><button class="delete-row-btn" onclick="deleteRow('row-${manualRowCount}')" title="삭제">&times;</button></td>
+    `;
+
+    // Auto-calculate total search
+    const inputs = row.querySelectorAll('input[data-field="pc"], input[data-field="mobile"]');
+    inputs.forEach(inp => {
+        inp.addEventListener('input', () => {
+            const pc = parseInt(row.querySelector('[data-field="pc"]').value) || 0;
+            const mobile = parseInt(row.querySelector('[data-field="mobile"]').value) || 0;
+            row.querySelector('[data-field="totalSearch"]').value = pc + mobile;
+        });
+    });
+
+    tbody.appendChild(row);
+}
+
+function deleteRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) row.remove();
+}
+
+// ===== Analysis =====
+async function analyze() {
+    if (currentMode === 'manual') {
+        analyzeManual();
+    } else {
+        await analyzeAPI();
+    }
+}
+
+function analyzeManual() {
+    const rows = document.querySelectorAll('#manualTableBody tr');
+    if (rows.length === 0) {
+        showToast('키워드를 최소 1개 이상 입력해주세요.', 'error');
+        return;
+    }
+
+    analysisResults = [];
+    let hasError = false;
+
+    rows.forEach(row => {
+        const keyword = row.querySelector('[data-field="keyword"]').value.trim();
+        const pc = parseInt(row.querySelector('[data-field="pc"]').value) || 0;
+        const mobile = parseInt(row.querySelector('[data-field="mobile"]').value) || 0;
+        const blogCount = parseInt(row.querySelector('[data-field="blogCount"]').value) || 0;
+
+        if (!keyword) {
+            hasError = true;
+            return;
+        }
+
+        analysisResults.push({ keyword, pc, mobile, blogCount });
+    });
+
+    if (analysisResults.length === 0) {
+        showToast('키워드명을 입력해주세요.', 'error');
+        return;
+    }
+
+    showResults();
+}
+
+async function analyzeAPI() {
+    const adApiKey = document.getElementById('adApiKey').value.trim();
+    const adSecretKey = document.getElementById('adSecretKey').value.trim();
+    const adCustomerId = document.getElementById('adCustomerId').value.trim();
+    const searchClientId = document.getElementById('searchClientId').value.trim();
+    const searchClientSecret = document.getElementById('searchClientSecret').value.trim();
+
+    if (!adApiKey || !adSecretKey || !adCustomerId) {
+        showToast('검색광고 API 설정을 모두 입력해주세요.', 'error');
+        return;
+    }
+
+    if (!searchClientId || !searchClientSecret) {
+        showToast('검색 API 설정을 모두 입력해주세요.', 'error');
+        return;
+    }
+
+    if (keywords.length === 0) {
+        showToast('키워드를 최소 1개 이상 추가해주세요.', 'error');
+        return;
+    }
+
+    document.getElementById('loading').classList.add('visible');
+    document.getElementById('analyzeBtn').disabled = true;
+
+    try {
+        const response = await fetch('/.netlify/functions/naver-api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adApiKey,
+                adSecretKey,
+                adCustomerId,
+                searchClientId,
+                searchClientSecret,
+                keywords
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'API 호출에 실패했습니다.');
+        }
+
+        const data = await response.json();
+        analysisResults = data.results;
+
+        // API 오류가 있으면 알림
+        if (data.errors && data.errors.length > 0) {
+            showToast(`⚠️ 일부 키워드 조회 시 오류 발생 (${data.errors.length}건)`, 'error');
+        }
+
+        showResults();
+    } catch (error) {
+        showToast(error.message, 'error');
+    } finally {
+        document.getElementById('loading').classList.remove('visible');
+        document.getElementById('analyzeBtn').disabled = false;
+    }
+}
+
+// API 연결 테스트
+async function testApiConnection() {
+    const adApiKey = document.getElementById('adApiKey').value.trim();
+    const adSecretKey = document.getElementById('adSecretKey').value.trim();
+    const adCustomerId = document.getElementById('adCustomerId').value.trim();
+    const searchClientId = document.getElementById('searchClientId').value.trim();
+    const searchClientSecret = document.getElementById('searchClientSecret').value.trim();
+
+    const resultEl = document.getElementById('apiTestResult');
+
+    if (!adApiKey || !adSecretKey || !adCustomerId || !searchClientId || !searchClientSecret) {
+        resultEl.innerHTML = '<span style="color:#ff5252;">❌ 모든 API 키를 입력해주세요.</span>';
+        return;
+    }
+
+    const btn = document.getElementById('testApiBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ 테스트 중...';
+    resultEl.innerHTML = '';
+
+    try {
+        const response = await fetch('/.netlify/functions/naver-api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adApiKey,
+                adSecretKey,
+                adCustomerId,
+                searchClientId,
+                searchClientSecret,
+                keywords: ['블로그']  // 테스트 키워드
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.results && data.results.length > 0) {
+            const test = data.results[0];
+            resultEl.innerHTML = `<span style="color:var(--primary);">✅ 연결 성공! 테스트: "${test.keyword}" PC:${test.pc} / 모바일:${test.mobile} / 문서:${test.blogCount.toLocaleString()}</span>`;
+            showToast('API 연결 테스트 성공!', 'success');
+        } else {
+            resultEl.innerHTML = `<span style="color:#ff5252;">❌ ${data.error || '알 수 없는 오류'}</span>`;
+        }
+    } catch (error) {
+        resultEl.innerHTML = `<span style="color:#ff5252;">❌ 연결 실패: ${error.message}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔌 API 연결 테스트';
+    }
+}
+
+function showResults() {
+    document.getElementById('results').classList.add('visible');
+    renderResults();
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderResults() {
+    renderCards();
+    renderSummary();
+}
+
+function calcCompetition(item, formula) {
+    const { pc, mobile, blogCount } = item;
+    let effectiveSearch;
+    if (formula === 'weighted') {
+        effectiveSearch = pc + (mobile * 0.3);
+    } else {
+        effectiveSearch = pc + mobile;
+    }
+    if (effectiveSearch === 0) return { ratio: Infinity, effectiveSearch: 0 };
+    return {
+        ratio: blogCount / effectiveSearch,
+        effectiveSearch: Math.round(effectiveSearch)
+    };
+}
+
+function renderCards() {
+    const container = document.getElementById('resultCards');
+
+    // Sort by competition ratio (ascending = best first)
+    const sorted = [...analysisResults].map(item => {
+        const comp = calcCompetition(item, currentFormula);
+        const grade = getGrade(comp.ratio);
+        return { ...item, ...comp, ...grade };
+    }).sort((a, b) => a.ratio - b.ratio);
+
+    container.innerHTML = sorted.map(item => {
+        const ratioText = item.ratio === Infinity ? '∞' : item.ratio.toFixed(4);
+        const totalSearch = item.pc + item.mobile;
+
+        return `
+        <div class="result-card grade-${item.grade}">
+            <div class="card-top">
+                <div class="card-keyword">${item.keyword}</div>
+                <div class="grade-badge">${item.grade}</div>
+            </div>
+            <div class="card-stats">
+                <div class="stat-item">
+                    <div class="stat-label">PC 검색수</div>
+                    <div class="stat-value">${item.pc.toLocaleString()}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">모바일 검색수</div>
+                    <div class="stat-value">${item.mobile.toLocaleString()}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">월간 총 검색수</div>
+                    <div class="stat-value">${totalSearch.toLocaleString()}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">블로그 문서수</div>
+                    <div class="stat-value">${item.blogCount.toLocaleString()}</div>
+                </div>
+            </div>
+            <div class="card-competition">
+                <div class="competition-row">
+                    <span class="comp-label">유효 검색수 ${currentFormula === 'weighted' ? '(가중치)' : '(기본)'}</span>
+                    <span class="comp-value">${item.effectiveSearch.toLocaleString()}</span>
+                </div>
+                <div class="competition-row">
+                    <span class="comp-label">경쟁도</span>
+                    <span class="comp-value" style="color: ${item.color}">${ratioText}</span>
+                </div>
+            </div>
+            <div class="grade-desc">${item.emoji} ${item.desc}</div>
+        </div>`;
+    }).join('');
+}
+
+function renderSummary() {
+    const tbody = document.getElementById('summaryBody');
+
+    const sorted = [...analysisResults].map(item => {
+        const comp = calcCompetition(item, currentFormula);
+        const grade = getGrade(comp.ratio);
+        return { ...item, ...comp, ...grade };
+    }).sort((a, b) => a.ratio - b.ratio);
+
+    tbody.innerHTML = sorted.map((item, i) => {
+        const ratioText = item.ratio === Infinity ? '∞' : item.ratio.toFixed(4);
+        return `
+        <tr>
+            <td>${item.keyword}</td>
+            <td>${item.pc.toLocaleString()}</td>
+            <td>${item.mobile.toLocaleString()}</td>
+            <td>${item.blogCount.toLocaleString()}</td>
+            <td>${item.effectiveSearch.toLocaleString()}</td>
+            <td style="color: ${item.color}; font-weight: 700;">${ratioText}</td>
+            <td><span class="grade-pill pill-${item.grade}">${item.grade}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+// ===== CSV Export =====
+function exportCSV() {
+    if (analysisResults.length === 0) return;
+
+    const BOM = '\uFEFF';
+    let csv = BOM + '키워드,PC검색수,모바일검색수,월간총검색수,블로그문서수,유효검색수,경쟁도,등급\n';
+
+    analysisResults.forEach(item => {
+        const comp = calcCompetition(item, currentFormula);
+        const grade = getGrade(comp.ratio);
+        const ratioText = comp.ratio === Infinity ? '∞' : comp.ratio.toFixed(4);
+        csv += `${item.keyword},${item.pc},${item.mobile},${item.pc + item.mobile},${item.blogCount},${comp.effectiveSearch},${ratioText},${grade.grade}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `키워드경쟁도_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV 파일이 다운로드되었습니다.', 'success');
+}
+
+// ===== Reset =====
+function resetAll() {
+    analysisResults = [];
+    keywords = [];
+    document.getElementById('results').classList.remove('visible');
+    document.getElementById('keywordTags').innerHTML = '';
+    document.getElementById('keywordInput') && (document.getElementById('keywordInput').value = '');
+
+    // Reset manual table to 3 rows
+    document.getElementById('manualTableBody').innerHTML = '';
+    manualRowCount = 0;
+    for (let i = 0; i < 3; i++) addManualRow();
+
+    showToast('초기화 완료', 'success');
+}
+
+// ===== Toast =====
+function showToast(msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = `toast ${type} visible`;
+    setTimeout(() => toast.classList.remove('visible'), 3000);
+}
+
+// ===== Init =====
+window.addEventListener('DOMContentLoaded', () => {
+    // Load saved API config
+    const saved = localStorage.getItem('naverApiConfig_v2');
+    if (saved) {
+        try {
+            const config = JSON.parse(saved);
+            document.getElementById('adApiKey').value = config.adApiKey || '';
+            document.getElementById('adSecretKey').value = config.adSecretKey || '';
+            document.getElementById('adCustomerId').value = config.adCustomerId || '';
+            document.getElementById('searchClientId').value = config.searchClientId || '';
+            document.getElementById('searchClientSecret').value = config.searchClientSecret || '';
+        } catch(e) {}
+    }
+
+    // Save API config on change
+    const apiFields = ['adApiKey', 'adSecretKey', 'adCustomerId', 'searchClientId', 'searchClientSecret'];
+    apiFields.forEach(id => {
+        document.getElementById(id).addEventListener('change', () => {
+            const config = {};
+            apiFields.forEach(f => config[f] = document.getElementById(f).value);
+            localStorage.setItem('naverApiConfig_v2', JSON.stringify(config));
+        });
+    });
+
+    // Add initial rows
+    for (let i = 0; i < 3; i++) addManualRow();
+});
+</script>
+
+</body>
+</html>
