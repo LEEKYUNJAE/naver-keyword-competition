@@ -2,15 +2,18 @@ const crypto = require('crypto');
 const https = require('https');
 
 // ===== 네이버 검색광고 API (PC/모바일 검색수) =====
-function callSearchAdAPI(path, apiKey, secretKey, customerId) {
+function callSearchAdAPI(fullPath, apiKey, secretKey, customerId) {
     return new Promise((resolve, reject) => {
         const timestamp = Date.now().toString();
         const method = 'GET';
-        const signature = generateSignature(timestamp, method, path, secretKey);
+
+        // 서명은 쿼리 파라미터 제외한 경로만 사용
+        const basePath = fullPath.split('?')[0];
+        const signature = generateSignature(timestamp, method, basePath, secretKey);
 
         const options = {
             hostname: 'api.searchad.naver.com',
-            path: path,
+            path: fullPath,
             method: method,
             headers: {
                 'X-Timestamp': timestamp,
@@ -29,7 +32,7 @@ function callSearchAdAPI(path, apiKey, secretKey, customerId) {
                     if (res.statusCode === 200) {
                         resolve(JSON.parse(data));
                     } else {
-                        reject(new Error(`검색광고 API 오류 (${res.statusCode}): ${data}`));
+                        reject(new Error(`검색광고 API 오류 (${res.statusCode}): ${data.substring(0, 200)}`));
                     }
                 } catch (e) {
                     reject(new Error('검색광고 API 응답 파싱 오류'));
@@ -46,7 +49,7 @@ function callSearchAdAPI(path, apiKey, secretKey, customerId) {
     });
 }
 
-// HMAC-SHA256 서명 생성
+// HMAC-SHA256 서명 생성 (경로만, 쿼리 파라미터 제외)
 function generateSignature(timestamp, method, path, secretKey) {
     const message = `${timestamp}.${method}.${path}`;
     const hmac = crypto.createHmac('sha256', secretKey);
