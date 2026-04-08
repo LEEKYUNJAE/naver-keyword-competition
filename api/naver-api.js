@@ -128,13 +128,17 @@ module.exports = async (req, res) => {
 
                 if (data && data.keywordList) {
                     for (const kw of chunk) {
+                        // 공백 제거 후 비교 (네이버 API가 띄어쓰기를 무시할 수 있음)
+                        const kwNorm = kw.replace(/\s/g, '').toLowerCase();
                         const found = data.keywordList.find(
-                            item => item.relKeyword.toLowerCase() === kw.toLowerCase()
+                            item => item.relKeyword.replace(/\s/g, '').toLowerCase() === kwNorm
                         );
-                        if (found) {
+                        // 정확히 일치하지 않으면 첫 번째 결과 사용 (입력 키워드와 가장 관련성 높은 키워드)
+                        const match = found || data.keywordList[0];
+                        if (match) {
                             searchVolumeMap[kw] = {
-                                pc: found.monthlyPcQcCnt === '< 10' ? 5 : (parseInt(found.monthlyPcQcCnt) || 0),
-                                mobile: found.monthlyMobileQcCnt === '< 10' ? 5 : (parseInt(found.monthlyMobileQcCnt) || 0),
+                                pc: match.monthlyPcQcCnt === '< 10' ? 5 : (parseInt(match.monthlyPcQcCnt) || 0),
+                                mobile: match.monthlyMobileQcCnt === '< 10' ? 5 : (parseInt(match.monthlyMobileQcCnt) || 0),
                             };
                         } else {
                             searchVolumeMap[kw] = { pc: 0, mobile: 0 };
