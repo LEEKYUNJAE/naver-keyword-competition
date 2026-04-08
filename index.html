@@ -1098,7 +1098,10 @@ function renderCards() {
         <div class="result-card grade-${item.grade}">
             <div class="card-top">
                 <div class="card-keyword">${item.keyword}</div>
-                <div class="grade-badge">${item.grade}</div>
+                <div style="text-align:center;">
+                    <div class="grade-badge">${item.grade}</div>
+                    <div style="font-size:0.7rem;color:${item.color};font-weight:700;margin-top:4px;">${item.desc.split(',')[0]}</div>
+                </div>
             </div>
             <div class="card-stats">
                 <div class="stat-item">
