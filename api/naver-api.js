@@ -2,25 +2,28 @@ const crypto = require('crypto');
 const https = require('https');
 
 // ===== 네이버 검색광고 API (PC/모바일 검색수) =====
-function callSearchAdAPI(fullPath, apiKey, secretKey, customerId) {
+function callSearchAdAPI(uri, apiKey, secretKey, customerId) {
     return new Promise((resolve, reject) => {
         const timestamp = Date.now().toString();
         const method = 'GET';
+        const basePath = uri.split('?')[0];
 
-        // 서명은 쿼리 파라미터 제외한 경로만 사용
-        const basePath = fullPath.split('?')[0];
-        const signature = generateSignature(timestamp, method, basePath, secretKey);
+        // HMAC-SHA256 서명 생성
+        const hmac = crypto.createHmac('sha256', secretKey);
+        hmac.update(timestamp + '.' + method + '.' + basePath);
+        const signature = hmac.digest('base64');
+
+        const url = `https://api.searchad.naver.com${uri}`;
 
         const options = {
+            method: 'GET',
             hostname: 'api.searchad.naver.com',
-            path: fullPath,
-            method: method,
+            path: uri,
             headers: {
                 'X-Timestamp': timestamp,
                 'X-API-KEY': apiKey,
-                'X-Customer': customerId,
-                'X-Signature': signature,
-                'Content-Type': 'application/json; charset=UTF-8'
+                'X-Customer': String(customerId),
+                'X-Signature': signature
             }
         };
 
@@ -28,33 +31,22 @@ function callSearchAdAPI(fullPath, apiKey, secretKey, customerId) {
             let data = '';
             res.on('data', (chunk) => data += chunk);
             res.on('end', () => {
-                try {
-                    if (res.statusCode === 200) {
+                if (res.statusCode === 200) {
+                    try {
                         resolve(JSON.parse(data));
-                    } else {
-                        reject(new Error(`검색광고 API 오류 (${res.statusCode}): ${data.substring(0, 200)}`));
+                    } catch (e) {
+                        reject(new Error('응답 파싱 오류: ' + data.substring(0, 100)));
                     }
-                } catch (e) {
-                    reject(new Error('검색광고 API 응답 파싱 오류'));
+                } else {
+                    reject(new Error(`SA API ${res.statusCode}: ${data.substring(0, 300)}`));
                 }
             });
         });
 
-        req.on('error', (e) => reject(new Error(`네트워크 오류: ${e.message}`)));
-        req.setTimeout(15000, () => {
-            req.destroy();
-            reject(new Error('검색광고 API 요청 시간 초과'));
-        });
+        req.on('error', (e) => reject(new Error('네트워크: ' + e.message)));
+        req.setTimeout(15000, () => { req.destroy(); reject(new Error('시간 초과')); });
         req.end();
     });
-}
-
-// HMAC-SHA256 서명 생성 (경로만, 쿼리 파라미터 제외)
-function generateSignature(timestamp, method, path, secretKey) {
-    const message = `${timestamp}.${method}.${path}`;
-    const hmac = crypto.createHmac('sha256', secretKey);
-    hmac.update(message);
-    return hmac.digest('base64');
 }
 
 // ===== 네이버 검색 API (블로그 문서수) =====
@@ -77,155 +69,101 @@ function callSearchAPI(keyword, clientId, clientSecret) {
             let data = '';
             res.on('data', (chunk) => data += chunk);
             res.on('end', () => {
-                try {
-                    if (res.statusCode === 200) {
-                        const parsed = JSON.parse(data);
-                        resolve(parsed.total || 0);
-                    } else {
-                        reject(new Error(`검색 API 오류 (${res.statusCode}): ${data}`));
-                    }
-                } catch (e) {
-                    reject(new Error('검색 API 응답 파싱 오류'));
+                if (res.statusCode === 200) {
+                    try {
+                        resolve(JSON.parse(data).total || 0);
+                    } catch (e) { reject(new Error('검색 API 파싱 오류')); }
+                } else {
+                    reject(new Error(`검색 API ${res.statusCode}`));
                 }
             });
         });
 
-        req.on('error', (e) => reject(new Error(`네트워크 오류: ${e.message}`)));
-        req.setTimeout(10000, () => {
-            req.destroy();
-            reject(new Error('검색 API 요청 시간 초과'));
-        });
+        req.on('error', (e) => reject(new Error('네트워크: ' + e.message)));
+        req.setTimeout(10000, () => { req.destroy(); reject(new Error('시간 초과')); });
         req.end();
     });
 }
 
 // ===== Vercel Serverless Function =====
 module.exports = async (req, res) => {
-    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
     try {
         const { keywords } = req.body;
 
-        // 환경변수에서 API 키 읽기
         const adApiKey = process.env.NAVER_AD_API_KEY;
         const adSecretKey = process.env.NAVER_AD_SECRET_KEY;
         const adCustomerId = process.env.NAVER_AD_CUSTOMER_ID;
         const searchClientId = process.env.NAVER_SEARCH_CLIENT_ID;
         const searchClientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET;
 
-        if (!adApiKey || !adSecretKey || !adCustomerId) {
+        if (!adApiKey || !adSecretKey || !adCustomerId)
             return res.status(500).json({ error: '서버에 검색광고 API 키가 설정되지 않았습니다.' });
-        }
-
-        if (!searchClientId || !searchClientSecret) {
+        if (!searchClientId || !searchClientSecret)
             return res.status(500).json({ error: '서버에 검색 API 키가 설정되지 않았습니다.' });
-        }
-
-        if (!keywords || keywords.length === 0) {
-            return res.status(400).json({ error: '키워드를 최소 1개 이상 입력해주세요.' });
-        }
-
-        if (keywords.length > 10) {
-            return res.status(400).json({ error: '키워드는 최대 10개까지 가능합니다.' });
-        }
+        if (!keywords || keywords.length === 0)
+            return res.status(400).json({ error: '키워드를 입력해주세요.' });
+        if (keywords.length > 10)
+            return res.status(400).json({ error: '최대 10개까지 가능합니다.' });
 
         const results = [];
         const errors = [];
-
-        // STEP 1: 검색광고 API로 PC/모바일 검색수 조회
         const searchVolumeMap = {};
+
+        // STEP 1: 검색광고 API - PC/모바일 검색수
         const chunks = [];
-        for (let i = 0; i < keywords.length; i += 5) {
-            chunks.push(keywords.slice(i, i + 5));
-        }
+        for (let i = 0; i < keywords.length; i += 5) chunks.push(keywords.slice(i, i + 5));
 
         for (const chunk of chunks) {
             try {
-                const keywordParam = chunk.map(k => encodeURIComponent(k)).join('%2C');
-                const apiPath = `/keywordstool?hintKeywords=${keywordParam}&showDetail=1`;
+                const kwParam = chunk.map(k => encodeURIComponent(k)).join('%2C');
+                const uri = `/keywordstool?hintKeywords=${kwParam}&showDetail=1`;
+                const data = await callSearchAdAPI(uri, adApiKey, adSecretKey, adCustomerId);
 
-                let response;
-                try {
-                    response = await callSearchAdAPI(apiPath, adApiKey, adSecretKey, adCustomerId);
-                } catch (adError) {
-                    errors.push(`검색광고 API: ${adError.message}`);
+                if (data && data.keywordList) {
                     for (const kw of chunk) {
-                        searchVolumeMap[kw] = { pc: 0, mobile: 0, compIdx: '-' };
-                    }
-                    continue;
-                }
-
-                if (response && response.keywordList) {
-                    for (const kw of chunk) {
-                        const found = response.keywordList.find(
+                        const found = data.keywordList.find(
                             item => item.relKeyword.toLowerCase() === kw.toLowerCase()
                         );
-
                         if (found) {
-                            const pcCount = found.monthlyPcQcCnt;
-                            const mobileCount = found.monthlyMobileQcCnt;
                             searchVolumeMap[kw] = {
-                                pc: pcCount === '< 10' ? 5 : (parseInt(pcCount) || 0),
-                                mobile: mobileCount === '< 10' ? 5 : (parseInt(mobileCount) || 0),
-                                compIdx: found.compIdx || '-'
+                                pc: found.monthlyPcQcCnt === '< 10' ? 5 : (parseInt(found.monthlyPcQcCnt) || 0),
+                                mobile: found.monthlyMobileQcCnt === '< 10' ? 5 : (parseInt(found.monthlyMobileQcCnt) || 0),
                             };
                         } else {
-                            searchVolumeMap[kw] = { pc: 0, mobile: 0, compIdx: '-' };
-                            errors.push(`"${kw}" - 검색광고 API에서 데이터를 찾을 수 없습니다.`);
+                            searchVolumeMap[kw] = { pc: 0, mobile: 0 };
                         }
                     }
                 }
-            } catch (apiError) {
-                for (const kw of chunk) {
-                    searchVolumeMap[kw] = { pc: 0, mobile: 0, compIdx: '-' };
-                }
-                errors.push(`검색광고 API 오류: ${apiError.message}`);
+            } catch (e) {
+                errors.push(e.message);
+                for (const kw of chunk) searchVolumeMap[kw] = { pc: 0, mobile: 0 };
             }
         }
 
-        // STEP 2: 검색 API로 블로그 문서수 조회
+        // STEP 2: 검색 API - 블로그 문서수
         for (const kw of keywords) {
             try {
                 const blogCount = await callSearchAPI(kw, searchClientId, searchClientSecret);
-                const volume = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
-
-                results.push({
-                    keyword: kw,
-                    pc: volume.pc,
-                    mobile: volume.mobile,
-                    blogCount: blogCount,
-                    compIdx: volume.compIdx
-                });
-
-                await new Promise(resolve => setTimeout(resolve, 100));
-            } catch (searchError) {
-                const volume = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
-                results.push({
-                    keyword: kw,
-                    pc: volume.pc,
-                    mobile: volume.mobile,
-                    blogCount: 0,
-                    compIdx: volume.compIdx
-                });
-                errors.push(`"${kw}" 블로그 문서수 조회 실패: ${searchError.message}`);
+                const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0 };
+                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount });
+                await new Promise(r => setTimeout(r, 100));
+            } catch (e) {
+                const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0 };
+                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0 });
+                errors.push(`${kw} 블로그: ${e.message}`);
             }
         }
 
         return res.status(200).json({
             results,
             errors: errors.length > 0 ? errors : undefined,
-            debug: errors.length > 0 ? { adApiKey: adApiKey ? '설정됨' : '미설정', adCustomerId: adCustomerId || '미설정', searchClientId: searchClientId ? '설정됨' : '미설정' } : undefined,
             timestamp: new Date().toISOString()
         });
 
