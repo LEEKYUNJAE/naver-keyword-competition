@@ -121,14 +121,14 @@ function callDataLabAPI(keyword, clientId, clientSecret) {
                         const parsed = JSON.parse(data);
                         if (parsed.results && parsed.results[0] && parsed.results[0].data) {
                             resolve(parsed.results[0].data);
-                        } else { resolve([]); }
-                    } catch (e) { resolve([]); }
-                } else { resolve([]); }
+                        } else { reject(new Error('DataLab 빈 응답: ' + data.substring(0, 200))); }
+                    } catch (e) { reject(new Error('DataLab 파싱오류: ' + data.substring(0, 200))); }
+                } else { reject(new Error(`DataLab ${res.statusCode}: ${data.substring(0, 200)}`)); }
             });
         });
 
-        req.on('error', () => resolve([]));
-        req.setTimeout(10000, () => { req.destroy(); resolve([]); });
+        req.on('error', (e) => reject(new Error('DataLab 네트워크: ' + e.message)));
+        req.setTimeout(10000, () => { req.destroy(); reject(new Error('DataLab 시간초과')); });
         req.write(body);
         req.end();
     });
@@ -170,14 +170,14 @@ function callDataLabDailyAPI(keyword, clientId, clientSecret) {
                         const parsed = JSON.parse(data);
                         if (parsed.results && parsed.results[0] && parsed.results[0].data) {
                             resolve(parsed.results[0].data);
-                        } else { resolve([]); }
-                    } catch (e) { resolve([]); }
-                } else { resolve([]); }
+                        } else { reject(new Error('DataLab일별 빈응답')); }
+                    } catch (e) { reject(new Error('DataLab일별 파싱오류')); }
+                } else { reject(new Error(`DataLab일별 ${res.statusCode}: ${data.substring(0, 200)}`)); }
             });
         });
 
-        req.on('error', () => resolve([]));
-        req.setTimeout(10000, () => { req.destroy(); resolve([]); });
+        req.on('error', (e) => reject(new Error('DataLab일별 네트워크: ' + e.message)));
+        req.setTimeout(10000, () => { req.destroy(); reject(new Error('DataLab일별 시간초과')); });
         req.write(body);
         req.end();
     });
@@ -429,29 +429,29 @@ module.exports = async (req, res) => {
         // STEP 5: DataLab 트렌드 분석
         const trendMap = {};
         for (const kw of keywords) {
+            let monthlyData = [], dailyData = [];
             try {
-                const monthlyData = await callDataLabAPI(kw, searchClientId, searchClientSecret);
-                const dailyData = await callDataLabDailyAPI(kw, searchClientId, searchClientSecret);
-                const analysis = analyzeTrend(monthlyData);
-                const dayOfWeek = analyzeDayOfWeek(dailyData);
-
-                // 월별 비율 계산
-                const monthlyTotal = monthlyData.reduce((s, d) => s + d.ratio, 0);
-                const monthlyPercent = monthlyData.map(d => ({
-                    period: d.period,
-                    ratio: d.ratio,
-                    percent: monthlyTotal > 0 ? Math.round(d.ratio / monthlyTotal * 1000) / 10 : 0
-                }));
-
-                trendMap[kw] = {
-                    monthly: monthlyPercent,
-                    dayOfWeek,
-                    analysis,
-                };
-                await new Promise(r => setTimeout(r, 100));
+                monthlyData = await callDataLabAPI(kw, searchClientId, searchClientSecret);
             } catch (e) {
-                trendMap[kw] = { monthly: [], dayOfWeek: [], analysis: {} };
+                errors.push(`트렌드(월별) ${kw}: ${e.message}`);
             }
+            try {
+                dailyData = await callDataLabDailyAPI(kw, searchClientId, searchClientSecret);
+            } catch (e) {
+                errors.push(`트렌드(일별) ${kw}: ${e.message}`);
+            }
+
+            const analysis = monthlyData.length > 0 ? analyzeTrend(monthlyData) : {};
+            const dayOfWeek = dailyData.length > 0 ? analyzeDayOfWeek(dailyData) : [];
+
+            const monthlyTotal = monthlyData.reduce((s, d) => s + d.ratio, 0);
+            const monthlyPercent = monthlyData.map(d => ({
+                period: d.period,
+                ratio: d.ratio,
+                percent: monthlyTotal > 0 ? Math.round(d.ratio / monthlyTotal * 1000) / 10 : 0
+            }));
+
+            trendMap[kw] = { monthly: monthlyPercent, dayOfWeek, analysis };
         }
 
         return res.status(200).json({
