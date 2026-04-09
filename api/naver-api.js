@@ -125,12 +125,11 @@ module.exports = async (req, res) => {
                 const data = await callSearchAdAPI(uri, adApiKey, adSecretKey, adCustomerId);
 
                 if (data && data.keywordList && data.keywordList.length > 0) {
-                    // 공백 제거 후 정확한 키워드 매칭
+                    // 공백 제거 후 정확한 키워드 매칭 (정확히 일치하는 것만 사용)
                     const kwNorm = kw.replace(/\s/g, '').toLowerCase();
-                    const found = data.keywordList.find(
+                    const match = data.keywordList.find(
                         item => item.relKeyword.replace(/\s/g, '').toLowerCase() === kwNorm
                     );
-                    const match = found || data.keywordList[0];
 
                     const pcVal = match.monthlyPcQcCnt;
                     const mbVal = match.monthlyMobileQcCnt;
