@@ -117,29 +117,35 @@ module.exports = async (req, res) => {
         const searchVolumeMap = {};
 
         // STEP 1: 검색광고 API - PC/모바일 검색수 (키워드별 개별 호출)
+        function parseVolume(val) {
+            if (val === '< 10' || val === '< 10') return 10;
+            return parseInt(val) || 0;
+        }
+
         for (const kw of keywords) {
             try {
-                // 공백 제거 후 API 호출 (네이버 API가 공백 포함 키워드를 거부함)
+                // 공백 제거 버전으로 API 호출 (네이버 API가 공백 포함 키워드를 거부)
                 const cleanKw = kw.replace(/\s/g, '');
                 const uri = `/keywordstool?hintKeywords=${encodeURIComponent(cleanKw)}&showDetail=1`;
                 const data = await callSearchAdAPI(uri, adApiKey, adSecretKey, adCustomerId);
 
                 if (data && data.keywordList && data.keywordList.length > 0) {
-                    // 공백 제거 후 정확한 키워드 매칭 (정확히 일치하는 것만 사용)
-                    const kwNorm = kw.replace(/\s/g, '').toLowerCase();
+                    // 공백 제거 후 정확한 키워드 매칭
+                    const kwNorm = cleanKw.toLowerCase();
                     const match = data.keywordList.find(
                         item => item.relKeyword.replace(/\s/g, '').toLowerCase() === kwNorm
                     );
 
-                    const pcVal = match.monthlyPcQcCnt;
-                    const mbVal = match.monthlyMobileQcCnt;
-                    searchVolumeMap[kw] = {
-                        pc: (pcVal === '< 10' || pcVal === '< 10') ? 5 : (parseInt(pcVal) || 0),
-                        mobile: (mbVal === '< 10' || mbVal === '< 10') ? 5 : (parseInt(mbVal) || 0),
-                    };
+                    if (match) {
+                        searchVolumeMap[kw] = {
+                            pc: parseVolume(match.monthlyPcQcCnt),
+                            mobile: parseVolume(match.monthlyMobileQcCnt),
+                        };
+                    } else {
+                        searchVolumeMap[kw] = { pc: 0, mobile: 0 };
+                    }
                 } else {
                     searchVolumeMap[kw] = { pc: 0, mobile: 0 };
-                    errors.push(`"${kw}" 검색수 데이터 없음`);
                 }
             } catch (e) {
                 errors.push(`검색광고 API (${kw}): ${e.message}`);
