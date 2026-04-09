@@ -119,7 +119,9 @@ module.exports = async (req, res) => {
         // STEP 1: 검색광고 API - PC/모바일 검색수 (키워드별 개별 호출)
         for (const kw of keywords) {
             try {
-                const uri = `/keywordstool?hintKeywords=${encodeURIComponent(kw)}&showDetail=1`;
+                // 공백 제거 후 API 호출 (네이버 API가 공백 포함 키워드를 거부함)
+                const cleanKw = kw.replace(/\s/g, '');
+                const uri = `/keywordstool?hintKeywords=${encodeURIComponent(cleanKw)}&showDetail=1`;
                 const data = await callSearchAdAPI(uri, adApiKey, adSecretKey, adCustomerId);
 
                 if (data && data.keywordList && data.keywordList.length > 0) {
