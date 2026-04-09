@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>네이버 블로그 키워드 경쟁도 분석기</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
@@ -413,6 +414,7 @@
             .legend-grid { grid-template-columns: 1fr 1fr; }
             .kw-input-wrap { flex-direction: column; }
             .header-inner { flex-direction: column; align-items: flex-start; }
+            #trendSection [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
         }
     </style>
 </head>
@@ -492,6 +494,44 @@
             </div>
         </div>
 
+        <!-- Trend Analysis -->
+        <div class="card" style="margin-top: 16px;" id="trendSection">
+            <div class="card-title">📈 트렌드 분석</div>
+            <div id="trendAnalysisContent"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
+                <div style="background:var(--bg);border-radius:12px;padding:16px;">
+                    <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">검색량 트렌드 (12개월)</div>
+                    <canvas id="trendChart" height="200"></canvas>
+                </div>
+                <div style="background:var(--bg);border-radius:12px;padding:16px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div>
+                            <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">월별 검색 비율</div>
+                            <canvas id="monthlyChart" height="180"></canvas>
+                        </div>
+                        <div>
+                            <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">요일별 검색 비율</div>
+                            <canvas id="dayChart" height="180"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Smart Blocks -->
+        <div class="card" style="margin-top: 16px;" id="smartBlockSection">
+            <div class="card-title">⭐ 스마트블록 키워드</div>
+            <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:14px;">현재 네이버 검색에서 노출 중인 인기주제(스마트블록) 키워드</p>
+            <div id="smartBlockContent"></div>
+        </div>
+
+        <!-- Related Keywords -->
+        <div class="card" style="margin-top: 16px;" id="relatedSection">
+            <div class="card-title">🔗 연관 키워드</div>
+            <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:14px;">검색광고 API 기반 연관 키워드 (경쟁도 등급 포함)</p>
+            <div id="relatedContent"></div>
+        </div>
+
         <!-- Legend -->
         <div class="card" style="margin-top: 16px;">
             <div class="card-title">📖 등급 안내</div>
@@ -537,6 +577,9 @@
 let currentFormula = 'weighted';
 let keywords = [];
 let analysisResults = [];
+let relatedData = {};
+let smartBlockData = {};
+let trendData = {};
 
 const GRADES = [
     { grade: 'S', max: 0.05, emoji: '💎', desc: '황금키워드', color: '#c471f5' },
@@ -593,16 +636,15 @@ async function analyze() {
         if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'API 호출 실패'); }
         const data = await res.json();
         analysisResults = data.results;
-        if (data.errors && data.errors.length > 0) {
-            console.log('API Errors:', data.errors);
-            // 에러 상세 표시
-            const errDiv = document.createElement('div');
-            errDiv.style.cssText = 'background:#fde8e8;border:1px solid #e74c3c;border-radius:10px;padding:16px;margin-bottom:16px;font-size:0.85rem;color:#c0392b;';
-            errDiv.innerHTML = '<strong>⚠️ API 오류:</strong><br>' + data.errors.map(e => '• ' + e).join('<br>');
-            document.getElementById('resultCards').before(errDiv);
-        }
+        relatedData = data.relatedKeywords || {};
+        smartBlockData = data.smartBlocks || {};
+        trendData = data.trends || {};
+        if (data.errors && data.errors.length > 0) { console.log('API Errors:', data.errors); }
         document.getElementById('results').classList.add('visible');
         renderResults();
+        renderTrends();
+        renderSmartBlocks();
+        renderRelatedKeywords();
         document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) { showToast(e.message, 'error'); }
     finally { document.getElementById('loading').classList.remove('visible'); document.getElementById('analyzeBtn').disabled = false; }
@@ -669,6 +711,132 @@ function renderSummary() {
             <td><span class="grade-pill pill-${item.grade}">${item.grade}</span></td>
         </tr>`;
     }).join('');
+}
+
+// ===== 트렌드 차트 렌더링 =====
+let trendChartInst, monthlyChartInst, dayChartInst;
+
+function renderTrends() {
+    const kw = keywords[0]; // 첫 번째 키워드 기준
+    const trend = trendData[kw];
+    if (!trend || !trend.monthly || trend.monthly.length === 0) {
+        document.getElementById('trendAnalysisContent').innerHTML = '<p style="color:var(--text-light);font-size:0.85rem;">트렌드 데이터가 없습니다.</p>';
+        return;
+    }
+
+    const a = trend.analysis || {};
+    const dirColor = a.direction?.includes('상승') ? '#03C75A' : a.direction?.includes('하락') ? '#e74c3c' : '#f39c12';
+
+    document.getElementById('trendAnalysisContent').innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+            <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
+                <div style="font-size:0.7rem;color:var(--text-light);">트렌드 방향</div>
+                <div style="font-size:1.1rem;font-weight:900;color:${dirColor};margin-top:4px;">${a.direction || '-'}</div>
+            </div>
+            <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
+                <div style="font-size:0.7rem;color:var(--text-light);">성장률</div>
+                <div style="font-size:1.1rem;font-weight:900;color:${a.growth > 0 ? '#03C75A' : '#e74c3c'};margin-top:4px;">${a.growth > 0 ? '+' : ''}${a.growth || 0}%</div>
+            </div>
+            <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
+                <div style="font-size:0.7rem;color:var(--text-light);">시즌 키워드</div>
+                <div style="font-size:1.1rem;font-weight:900;margin-top:4px;">${a.seasonal ? '🌡️ 시즌성' : '📊 연중 고름'}</div>
+            </div>
+            <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
+                <div style="font-size:0.7rem;color:var(--text-light);">검색 피크</div>
+                <div style="font-size:1.1rem;font-weight:900;color:#1a3a8a;margin-top:4px;">${a.bestMonth || '-'}</div>
+            </div>
+            <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
+                <div style="font-size:0.7rem;color:var(--text-light);">최적 발행 시기</div>
+                <div style="font-size:1.1rem;font-weight:900;color:#c471f5;margin-top:4px;">📝 ${a.publishMonth || '-'}</div>
+            </div>
+        </div>
+    `;
+
+    // 트렌드 라인 차트
+    const ctx1 = document.getElementById('trendChart').getContext('2d');
+    if (trendChartInst) trendChartInst.destroy();
+    const labels = trend.monthly.map(d => { const dt = new Date(d.period); return (dt.getMonth()+1) + '월'; });
+    const values = trend.monthly.map(d => d.ratio);
+    trendChartInst = new Chart(ctx1, {
+        type: 'line',
+        data: { labels, datasets: [{ label: kw, data: values, borderColor: '#1a3a8a', backgroundColor: 'rgba(26,58,138,0.1)', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#1a3a8a' }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#eee' } }, x: { grid: { display: false } } } }
+    });
+
+    // 월별 바 차트
+    const ctx2 = document.getElementById('monthlyChart').getContext('2d');
+    if (monthlyChartInst) monthlyChartInst.destroy();
+    const mLabels = trend.monthly.map(d => { const dt = new Date(d.period); return (dt.getMonth()+1) + '월'; });
+    const mValues = trend.monthly.map(d => d.percent);
+    monthlyChartInst = new Chart(ctx2, {
+        type: 'bar',
+        data: { labels: mLabels, datasets: [{ data: mValues, backgroundColor: '#7cb5ec' }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } } }
+    });
+
+    // 요일별 바 차트
+    const ctx3 = document.getElementById('dayChart').getContext('2d');
+    if (dayChartInst) dayChartInst.destroy();
+    if (trend.dayOfWeek && trend.dayOfWeek.length > 0) {
+        const dLabels = trend.dayOfWeek.map(d => d.day);
+        const dValues = trend.dayOfWeek.map(d => d.percent);
+        dayChartInst = new Chart(ctx3, {
+            type: 'bar',
+            data: { labels: dLabels, datasets: [{ data: dValues, backgroundColor: '#90caf9' }] },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } } }
+        });
+    }
+}
+
+// ===== 스마트블록 렌더링 =====
+function renderSmartBlocks() {
+    const container = document.getElementById('smartBlockContent');
+    let html = '';
+    for (const kw of keywords) {
+        const blocks = smartBlockData[kw] || [];
+        if (blocks.length === 0) {
+            html += `<div style="padding:12px;background:var(--bg);border-radius:10px;margin-bottom:8px;"><strong>${kw}</strong> — 스마트블록 키워드를 찾을 수 없습니다.</div>`;
+        } else {
+            html += `<div style="margin-bottom:12px;"><strong style="font-size:0.9rem;">${kw}</strong>의 스마트블록:</div>`;
+            html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">';
+            blocks.forEach(b => {
+                html += `<span style="display:inline-flex;align-items:center;gap:4px;padding:8px 14px;background:linear-gradient(135deg,#fff7e6,#fff3cd);border:1px solid #ffd700;border-radius:20px;font-size:0.82rem;font-weight:600;color:#996600;">⭐ ${b}</span>`;
+            });
+            html += '</div>';
+        }
+    }
+    container.innerHTML = html;
+}
+
+// ===== 연관 키워드 렌더링 =====
+function renderRelatedKeywords() {
+    const container = document.getElementById('relatedContent');
+    let html = '';
+    for (const kw of keywords) {
+        const related = relatedData[kw] || [];
+        if (related.length === 0) { html += `<p style="color:var(--text-light);font-size:0.85rem;">${kw}: 연관 키워드가 없습니다.</p>`; continue; }
+
+        html += `<div style="margin-bottom:8px;font-weight:700;font-size:0.9rem;">${kw} 연관 키워드 (${related.length}개)</div>`;
+        html += '<div style="overflow-x:auto;"><table class="summary-table"><thead><tr><th>키워드</th><th>월간 검색수</th><th>블로그 문서수</th><th>경쟁도</th><th>등급</th></tr></thead><tbody>';
+
+        related.forEach(r => {
+            const total = r.pc + r.mobile;
+            const eff = r.pc + (r.mobile * 0.3);
+            const blogCount = r.blogCount || 0;
+            const ratio = eff > 0 ? blogCount / eff : Infinity;
+            const g = getGrade(ratio);
+            const rText = ratio === Infinity ? '∞' : ratio.toFixed(4);
+            html += `<tr>
+                <td>${r.keyword}</td>
+                <td>${total.toLocaleString()}</td>
+                <td>${blogCount > 0 ? blogCount.toLocaleString() : '-'}</td>
+                <td style="color:${g.color};font-weight:700;">${blogCount > 0 ? rText : '-'}</td>
+                <td>${blogCount > 0 ? '<span class="grade-pill pill-' + g.grade + '">' + g.grade + '</span>' : '-'}</td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+    }
+    container.innerHTML = html;
 }
 
 function exportCSV() {
