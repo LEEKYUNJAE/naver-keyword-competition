@@ -498,21 +498,19 @@
         <div class="card" style="margin-top: 16px;" id="trendSection">
             <div class="card-title">📈 트렌드 분석</div>
             <div id="trendAnalysisContent"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
-                <div style="background:var(--bg);border-radius:12px;padding:16px;">
+            <div style="margin-top:16px;">
+                <div style="background:var(--bg);border-radius:12px;padding:16px;margin-bottom:12px;">
                     <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">검색량 트렌드 (12개월)</div>
-                    <canvas id="trendChart" height="200"></canvas>
+                    <div style="width:100%;overflow:hidden;"><canvas id="trendChart" height="120"></canvas></div>
                 </div>
-                <div style="background:var(--bg);border-radius:12px;padding:16px;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                        <div>
-                            <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">월별 검색 비율</div>
-                            <canvas id="monthlyChart" height="180"></canvas>
-                        </div>
-                        <div>
-                            <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">요일별 검색 비율</div>
-                            <canvas id="dayChart" height="180"></canvas>
-                        </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div style="background:var(--bg);border-radius:12px;padding:16px;">
+                        <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">월별 검색 비율</div>
+                        <div style="width:100%;overflow:hidden;"><canvas id="monthlyChart" height="150"></canvas></div>
+                    </div>
+                    <div style="background:var(--bg);border-radius:12px;padding:16px;">
+                        <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">요일별 검색 비율</div>
+                        <div style="width:100%;overflow:hidden;"><canvas id="dayChart" height="150"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -582,12 +580,12 @@ let smartBlockData = {};
 let trendData = {};
 
 const GRADES = [
-    { grade: 'S', max: 0.05, emoji: '💎', desc: '황금키워드', color: '#c471f5' },
-    { grade: 'A', max: 0.15, emoji: '🟢', desc: '매우 좋음', color: '#03C75A' },
-    { grade: 'B', max: 0.30, emoji: '🟢', desc: '좋음, 공략 추천', color: '#2ecc71' },
-    { grade: 'C', max: 0.50, emoji: '🟡', desc: '보통, 글 품질 중요', color: '#f39c12' },
-    { grade: 'D', max: 1.00, emoji: '🟠', desc: '경쟁 치열', color: '#e67e22' },
-    { grade: 'E', max: 2.00, emoji: '🔴', desc: '상위노출 어려움', color: '#e74c3c' },
+    { grade: 'S', max: 3, emoji: '💎', desc: '황금키워드', color: '#c471f5' },
+    { grade: 'A', max: 7, emoji: '🟢', desc: '매우 좋음', color: '#03C75A' },
+    { grade: 'B', max: 12, emoji: '🟢', desc: '좋음, 공략 추천', color: '#2ecc71' },
+    { grade: 'C', max: 20, emoji: '🟡', desc: '보통, 글 품질 중요', color: '#f39c12' },
+    { grade: 'D', max: 30, emoji: '🟠', desc: '경쟁 치열', color: '#e67e22' },
+    { grade: 'E', max: 35, emoji: '🔴', desc: '상위노출 어려움', color: '#e74c3c' },
     { grade: 'F', max: Infinity, emoji: '⛔', desc: '진입 비추천', color: '#c0392b' },
 ];
 
