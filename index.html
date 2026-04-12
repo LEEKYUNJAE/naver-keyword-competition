@@ -693,6 +693,10 @@ function renderCards() {
                 <div class="r-stat"><div class="r-stat-label">월간 총 검색수</div><div class="r-stat-value">${total.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">블로그 문서수</div><div class="r-stat-value">${item.blogCount.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">네이버 경쟁강도</div><div class="r-stat-value">${item.compIdx || '-'}</div></div>
+                <div class="r-stat"><div class="r-stat-label">월평균 PC 클릭수</div><div class="r-stat-value">${item.avgPcClk || '-'}</div></div>
+                <div class="r-stat"><div class="r-stat-label">월평균 모바일 클릭수</div><div class="r-stat-value">${item.avgMobileClk || '-'}</div></div>
+                <div class="r-stat"><div class="r-stat-label">PC 클릭률</div><div class="r-stat-value">${item.avgPcCtr ? item.avgPcCtr + '%' : '-'}</div></div>
+                <div class="r-stat"><div class="r-stat-label">모바일 클릭률</div><div class="r-stat-value">${item.avgMobileCtr ? item.avgMobileCtr + '%' : '-'}</div></div>
             </div>
             <div class="r-bottom">
                 <span class="r-comp-label">경쟁도</span>
