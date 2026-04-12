@@ -666,18 +666,19 @@ async function analyze() {
 
 function renderResults() { renderCards(); renderSummary(); }
 
-function calc(item, f) {
-    const { pc, mobile, blogCount } = item;
-    const eff = f === 'weighted' ? pc + (mobile * 0.3) : pc + mobile;
+function calc(item) {
+    const { pc, mobile, blogCount1m, blogCount } = item;
+    const useBlogCount = (blogCount1m && blogCount1m > 0) ? blogCount1m : blogCount;
+    const eff = pc + (mobile * 0.3);
     if (eff === 0) return { ratio: Infinity, eff: 0, compositeScore: Infinity };
-    const baseRatio = blogCount / eff;
+    const baseRatio = useBlogCount / eff;
     const compositeScore = getCompositeScore(baseRatio, item.compIdx || '-');
     return { ratio: compositeScore, baseRatio, eff: Math.round(eff) };
 }
 
 function renderCards() {
     const sorted = [...analysisResults].map(item => {
-        const c = calc(item, currentFormula);
+        const c = calc(item);
         const g = getGrade(c.ratio);
         return { ...item, ...c, ...g };
     }).sort((a, b) => a.ratio - b.ratio);
@@ -698,7 +699,8 @@ function renderCards() {
                 <div class="r-stat"><div class="r-stat-label">PC 검색수</div><div class="r-stat-value">${item.pc.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">모바일 검색수</div><div class="r-stat-value">${item.mobile.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월간 총 검색수</div><div class="r-stat-value">${total.toLocaleString()}</div></div>
-                <div class="r-stat"><div class="r-stat-label">블로그 문서수</div><div class="r-stat-value">${item.blogCount.toLocaleString()}</div></div>
+                <div class="r-stat"><div class="r-stat-label">1개월 문서수</div><div class="r-stat-value" style="color:#e74c3c;font-weight:900;">${(item.blogCount1m || 0).toLocaleString()}</div></div>
+                <div class="r-stat"><div class="r-stat-label">전체 문서수</div><div class="r-stat-value">${item.blogCount.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">네이버 경쟁강도</div><div class="r-stat-value">${item.compIdx || '-'}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월평균 PC 클릭수</div><div class="r-stat-value">${item.avgPcClk || '-'}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월평균 모바일 클릭수</div><div class="r-stat-value">${item.avgMobileClk || '-'}</div></div>
@@ -715,7 +717,7 @@ function renderCards() {
 
 function renderSummary() {
     const sorted = [...analysisResults].map(item => {
-        const c = calc(item, currentFormula);
+        const c = calc(item);
         const g = getGrade(c.ratio);
         return { ...item, ...c, ...g };
     }).sort((a, b) => a.ratio - b.ratio);
@@ -787,6 +789,18 @@ function renderTrends() {
                 </div>
                 <div style="font-size:1.2rem;font-weight:900;color:#c471f5;">최적 발행: ${a.publishMonth || '-'}</div>
                 <div style="font-size:0.8rem;color:var(--text-light);margin-top:6px;">검색 피크(${a.bestMonth || '-'}) 직전에 발행하면 최대 노출 가능</div>
+            </div>
+            <div style="background:var(--bg);border-radius:10px;padding:16px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <span style="font-size:1.3rem;">📅</span>
+                    <span style="font-size:0.8rem;color:var(--text-light);">추천 발행 요일</span>
+                </div>
+                ${(() => {
+                    if (!trend.dayOfWeek || trend.dayOfWeek.length === 0) return '<div style="font-size:1.2rem;font-weight:900;">데이터 없음</div>';
+                    const sorted = [...trend.dayOfWeek].sort((a, b) => b.percent - a.percent);
+                    const topDays = sorted.slice(0, 2).map(d => d.day + '요일').join(' · ');
+                    return '<div style="font-size:1.2rem;font-weight:900;color:#1a3a8a;">' + topDays + '</div><div style="font-size:0.8rem;color:var(--text-light);margin-top:6px;">검색량이 가장 높은 요일에 발행하면 유입 극대화</div>';
+                })()}
             </div>
         </div>
     `;
@@ -937,7 +951,7 @@ function exportCSV() {
     const BOM = '\uFEFF';
     let csv = BOM + '키워드,PC검색수,모바일검색수,월간총검색수,블로그문서수,유효검색수,경쟁도,등급\n';
     analysisResults.forEach(item => {
-        const c = calc(item, currentFormula);
+        const c = calc(item);
         const g = getGrade(c.ratio);
         csv += `${item.keyword},${item.pc},${item.mobile},${item.pc+item.mobile},${item.blogCount},${c.eff},${c.ratio===Infinity?'∞':c.ratio.toFixed(4)},${g.grade}\n`;
     });

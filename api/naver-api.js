@@ -85,6 +85,49 @@ function callSearchAPI(keyword, clientId, clientSecret) {
     });
 }
 
+// ===== 네이버 검색 페이지에서 기간별 블로그 문서수 추출 =====
+function fetchBlogCountByPeriod(keyword, period) {
+    // period: '1m' (1개월), '3m' (3개월), '6m' (6개월)
+    return new Promise((resolve) => {
+        const encodedKw = encodeURIComponent(keyword);
+        const path = `/search.naver?where=blog&query=${encodedKw}&nso=so:dd,p:${period}`;
+
+        const options = {
+            hostname: 'search.naver.com',
+            path: path,
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html',
+                'Accept-Language': 'ko-KR,ko;q=0.9',
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', (chunk) => data += chunk);
+            res.on('end', () => {
+                try {
+                    // "total":숫자 패턴에서 가장 큰 값 추출 (블로그 total)
+                    const matches = data.match(/"total":(\d+)/g) || [];
+                    let maxTotal = 0;
+                    matches.forEach(m => {
+                        const num = parseInt(m.replace('"total":', ''));
+                        if (num > maxTotal) maxTotal = num;
+                    });
+                    resolve(maxTotal);
+                } catch (e) {
+                    resolve(0);
+                }
+            });
+        });
+
+        req.on('error', () => resolve(0));
+        req.setTimeout(8000, () => { req.destroy(); resolve(0); });
+        req.end();
+    });
+}
+
 // ===== 네이버 DataLab API (검색 트렌드) =====
 function callDataLabAPI(keyword, clientId, clientSecret) {
     return new Promise((resolve, reject) => {
@@ -389,16 +432,25 @@ module.exports = async (req, res) => {
             }
         }
 
-        // STEP 2: 검색 API - 블로그 문서수 (메인 키워드)
+        // STEP 2: 검색 API - 블로그 문서수 (전체 + 1개월)
         for (const kw of keywords) {
             try {
-                const blogCount = await callSearchAPI(kw, searchClientId, searchClientSecret);
+                // 전체 문서수 + 1개월 문서수 병렬 조회
+                const [blogCountTotal, blogCount1m] = await Promise.all([
+                    callSearchAPI(kw, searchClientId, searchClientSecret),
+                    fetchBlogCountByPeriod(kw, '1m')
+                ]);
                 const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
-                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount, compIdx: vol.compIdx, avgPcClk: vol.avgPcClk, avgMobileClk: vol.avgMobileClk, avgPcCtr: vol.avgPcCtr, avgMobileCtr: vol.avgMobileCtr });
+                results.push({
+                    keyword: kw, pc: vol.pc, mobile: vol.mobile,
+                    blogCount: blogCountTotal, blogCount1m,
+                    compIdx: vol.compIdx, avgPcClk: vol.avgPcClk, avgMobileClk: vol.avgMobileClk,
+                    avgPcCtr: vol.avgPcCtr, avgMobileCtr: vol.avgMobileCtr
+                });
                 await new Promise(r => setTimeout(r, 100));
             } catch (e) {
                 const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
-                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, compIdx: vol.compIdx });
+                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, blogCount1m: 0, compIdx: vol.compIdx });
                 errors.push(`${kw} 블로그: ${e.message}`);
             }
         }
