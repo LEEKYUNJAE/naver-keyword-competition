@@ -403,21 +403,16 @@ module.exports = async (req, res) => {
             }
         }
 
-        // STEP 3: 연관 키워드 블로그 문서수 (상위 20개만)
+        // STEP 3: 연관 키워드 블로그 문서수 (전체 50개)
         for (const kw of keywords) {
             const related = relatedKeywordsMap[kw] || [];
-            for (let i = 0; i < Math.min(related.length, 20); i++) {
+            for (let i = 0; i < related.length; i++) {
                 try {
                     const blogCount = await callSearchAPI(related[i].keyword, searchClientId, searchClientSecret);
                     related[i].blogCount = blogCount;
-                    await new Promise(r => setTimeout(r, 80));
+                    await new Promise(r => setTimeout(r, 60));
                 } catch (e) {
                     related[i].blogCount = 0;
-                }
-            }
-            // 블로그 수를 못 가져온 나머지는 0으로 설정
-            for (let i = 20; i < related.length; i++) {
-                related[i].blogCount = 0;
             }
         }
 
