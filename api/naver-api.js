@@ -403,16 +403,18 @@ module.exports = async (req, res) => {
             }
         }
 
-        // STEP 3: 연관 키워드 블로그 문서수 (전체 50개)
+        // STEP 3: 연관 키워드 블로그 문서수 (5개씩 병렬 처리)
         for (const kw of keywords) {
             const related = relatedKeywordsMap[kw] || [];
-            for (let i = 0; i < related.length; i++) {
-                try {
-                    const blogCount = await callSearchAPI(related[i].keyword, searchClientId, searchClientSecret);
-                    related[i].blogCount = blogCount;
-                    await new Promise(r => setTimeout(r, 60));
-                } catch (e) {
-                    related[i].blogCount = 0;
+            for (let i = 0; i < related.length; i += 5) {
+                const batch = related.slice(i, i + 5);
+                const promises = batch.map(item =>
+                    callSearchAPI(item.keyword, searchClientId, searchClientSecret)
+                        .then(count => { item.blogCount = count; })
+                        .catch(() => { item.blogCount = 0; })
+                );
+                await Promise.all(promises);
+                await new Promise(r => setTimeout(r, 50));
             }
         }
 
