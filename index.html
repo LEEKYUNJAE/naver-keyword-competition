@@ -667,10 +667,10 @@ async function analyze() {
 function renderResults() { renderCards(); renderSummary(); }
 
 function calc(item) {
-    const { pc, mobile, blogCount1m, blogCount } = item;
-    const useBlogCount = (blogCount1m && blogCount1m > 0) ? blogCount1m : blogCount;
+    const { pc, mobile, blogCount6m, blogCount } = item;
+    const useBlogCount = (blogCount6m && blogCount6m > 0) ? blogCount6m : blogCount;
     const eff = pc + (mobile * 0.3);
-    if (eff === 0) return { ratio: Infinity, eff: 0, compositeScore: Infinity };
+    if (eff === 0) return { ratio: Infinity, eff: 0 };
     const baseRatio = useBlogCount / eff;
     const compositeScore = getCompositeScore(baseRatio, item.compIdx || '-');
     return { ratio: compositeScore, baseRatio, eff: Math.round(eff) };
@@ -699,7 +699,8 @@ function renderCards() {
                 <div class="r-stat"><div class="r-stat-label">PC 검색수</div><div class="r-stat-value">${item.pc.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">모바일 검색수</div><div class="r-stat-value">${item.mobile.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월간 총 검색수</div><div class="r-stat-value">${total.toLocaleString()}</div></div>
-                <div class="r-stat"><div class="r-stat-label">1개월 문서수</div><div class="r-stat-value" style="color:#e74c3c;font-weight:900;">${(item.blogCount1m || 0).toLocaleString()}</div></div>
+                <div class="r-stat"><div class="r-stat-label">1개월 문서수</div><div class="r-stat-value">${(item.blogCount1m || 0).toLocaleString()}</div></div>
+                <div class="r-stat"><div class="r-stat-label">6개월 문서수</div><div class="r-stat-value" style="color:#e74c3c;font-weight:900;">${(item.blogCount6m || 0).toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">전체 문서수</div><div class="r-stat-value">${item.blogCount.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">네이버 경쟁강도</div><div class="r-stat-value">${item.compIdx || '-'}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월평균 PC 클릭수</div><div class="r-stat-value">${item.avgPcClk || '-'}</div></div>

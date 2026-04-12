@@ -432,25 +432,25 @@ module.exports = async (req, res) => {
             }
         }
 
-        // STEP 2: 검색 API - 블로그 문서수 (전체 + 1개월)
+        // STEP 2: 검색 API - 블로그 문서수 (전체 + 1개월 + 6개월)
         for (const kw of keywords) {
             try {
-                // 전체 문서수 + 1개월 문서수 병렬 조회
-                const [blogCountTotal, blogCount1m] = await Promise.all([
+                const [blogCountTotal, blogCount1m, blogCount6m] = await Promise.all([
                     callSearchAPI(kw, searchClientId, searchClientSecret),
-                    fetchBlogCountByPeriod(kw, '1m')
+                    fetchBlogCountByPeriod(kw, '1m'),
+                    fetchBlogCountByPeriod(kw, '6m')
                 ]);
                 const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
                 results.push({
                     keyword: kw, pc: vol.pc, mobile: vol.mobile,
-                    blogCount: blogCountTotal, blogCount1m,
+                    blogCount: blogCountTotal, blogCount1m, blogCount6m,
                     compIdx: vol.compIdx, avgPcClk: vol.avgPcClk, avgMobileClk: vol.avgMobileClk,
                     avgPcCtr: vol.avgPcCtr, avgMobileCtr: vol.avgMobileCtr
                 });
                 await new Promise(r => setTimeout(r, 100));
             } catch (e) {
                 const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
-                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, blogCount1m: 0, compIdx: vol.compIdx });
+                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, blogCount1m: 0, blogCount6m: 0, compIdx: vol.compIdx });
                 errors.push(`${kw} 블로그: ${e.message}`);
             }
         }
