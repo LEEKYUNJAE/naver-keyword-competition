@@ -467,10 +467,13 @@ module.exports = async (req, res) => {
 
         for (const kw of keywords) {
             const related = relatedKeywordsMap[kw] || [];
-            for (let i = 0; i < related.length; i += 3) {
-                const batch = related.slice(i, i + 3);
+            // 검색수 높은 상위 30개만 블로그 문서수 조회 (타임아웃 방지)
+            const sortedByVolume = [...related].sort((a, b) => (b.pc + b.mobile) - (a.pc + a.mobile));
+            const top30 = sortedByVolume.slice(0, 30);
+            for (let i = 0; i < top30.length; i += 5) {
+                const batch = top30.slice(i, i + 5);
                 await Promise.all(batch.map(item => fetchWithRetry(item)));
-                await new Promise(r => setTimeout(r, 100));
+                await new Promise(r => setTimeout(r, 80));
             }
         }
 
