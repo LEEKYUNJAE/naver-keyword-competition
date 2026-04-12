@@ -805,15 +805,37 @@ function renderTrends() {
         </div>
     `;
 
-    // 트렌드 라인 차트
+    // 트렌드 라인 차트 (다중 키워드)
     const ctx1 = document.getElementById('trendChart').getContext('2d');
     if (trendChartInst) trendChartInst.destroy();
-    const labels = trend.monthly.map(d => { const dt = new Date(d.period); return (dt.getMonth()+1) + '월'; });
-    const values = trend.monthly.map(d => d.ratio);
+    const chartColors = ['#1a3a8a', '#e74c3c', '#03C75A', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#3498db', '#c0392b', '#2ecc71'];
+    const datasets = [];
+    let longestLabels = [];
+
+    keywords.forEach((kwName, idx) => {
+        const t = trendData[kwName];
+        if (t && t.monthly && t.monthly.length > 0) {
+            const labels = t.monthly.map(d => { const dt = new Date(d.period); return (dt.getMonth()+1) + '월'; });
+            if (labels.length > longestLabels.length) longestLabels = labels;
+            const color = chartColors[idx % chartColors.length];
+            datasets.push({
+                label: kwName,
+                data: t.monthly.map(d => d.ratio),
+                borderColor: color,
+                backgroundColor: color + '15',
+                fill: idx === 0,
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: color,
+                borderWidth: 2
+            });
+        }
+    });
+
     trendChartInst = new Chart(ctx1, {
         type: 'line',
-        data: { labels, datasets: [{ label: kw, data: values, borderColor: '#1a3a8a', backgroundColor: 'rgba(26,58,138,0.1)', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#1a3a8a' }] },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#eee' } }, x: { grid: { display: false } } } }
+        data: { labels: longestLabels, datasets },
+        options: { responsive: true, plugins: { legend: { display: datasets.length > 1, position: 'top', labels: { font: { size: 11, weight: '600' }, usePointStyle: true, padding: 15 } } }, scales: { y: { beginAtZero: true, grid: { color: '#eee' } }, x: { grid: { display: false } } } }
     });
 
     // 월별 바 차트

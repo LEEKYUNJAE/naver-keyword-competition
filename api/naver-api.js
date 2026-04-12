@@ -455,18 +455,25 @@ module.exports = async (req, res) => {
             }
         }
 
-        // STEP 3: 연관 키워드 블로그 문서수 (5개씩 병렬 처리)
+        // STEP 3: 연관 키워드 블로그 문서수 (3개씩 병렬 + 재시도)
+        async function fetchWithRetry(item) {
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    item.blogCount = await callSearchAPI(item.keyword, searchClientId, searchClientSecret);
+                    return;
+                } catch (e) {
+                    if (attempt === 0) await new Promise(r => setTimeout(r, 200));
+                }
+            }
+            item.blogCount = 0;
+        }
+
         for (const kw of keywords) {
             const related = relatedKeywordsMap[kw] || [];
-            for (let i = 0; i < related.length; i += 5) {
-                const batch = related.slice(i, i + 5);
-                const promises = batch.map(item =>
-                    callSearchAPI(item.keyword, searchClientId, searchClientSecret)
-                        .then(count => { item.blogCount = count; })
-                        .catch(() => { item.blogCount = 0; })
-                );
-                await Promise.all(promises);
-                await new Promise(r => setTimeout(r, 50));
+            for (let i = 0; i < related.length; i += 3) {
+                const batch = related.slice(i, i + 3);
+                await Promise.all(batch.map(item => fetchWithRetry(item)));
+                await new Promise(r => setTimeout(r, 100));
             }
         }
 
