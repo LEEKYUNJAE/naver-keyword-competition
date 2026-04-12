@@ -467,6 +467,20 @@
             </div>
         </div>
 
+        <!-- 추천 키워드 프리미엄 섹션 (최상단) -->
+        <div style="margin-bottom:20px;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);border-radius:16px;padding:28px;position:relative;overflow:hidden;" id="recommendSection">
+            <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:radial-gradient(circle,rgba(255,215,0,0.3),transparent);border-radius:50%;"></div>
+            <div style="position:absolute;bottom:-20px;left:-20px;width:80px;height:80px;background:radial-gradient(circle,rgba(199,121,245,0.2),transparent);border-radius:50%;"></div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+                <span style="font-size:2rem;">🏆</span>
+                <div>
+                    <h2 style="color:#FFD700;font-size:1.3rem;font-weight:900;margin:0;">블루키워드 추천</h2>
+                    <p style="color:rgba(255,255,255,0.6);font-size:0.8rem;margin:0;">연관 키워드 중 경쟁이 낮아 상위노출이 가능한 키워드만 선별했습니다</p>
+                </div>
+            </div>
+            <div id="recommendContent" style="margin-top:16px;"></div>
+        </div>
+
         <div class="result-grid" id="resultCards"></div>
 
         <!-- 등급 안내 + 경쟁도 기준 -->
@@ -542,13 +556,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Smart Blocks -->
-        <div class="card" style="margin-top: 16px;" id="smartBlockSection">
-            <div class="card-title">⭐ 스마트블록 키워드</div>
-            <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:14px;">현재 네이버 검색에서 노출 중인 인기주제(스마트블록) 키워드</p>
-            <div id="smartBlockContent"></div>
         </div>
 
         <!-- Related Keywords -->
@@ -650,7 +657,7 @@ async function analyze() {
         document.getElementById('results').classList.add('visible');
         renderResults();
         renderTrends();
-        renderSmartBlocks();
+        renderRecommendKeywords();
         renderRelatedKeywords();
         document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) { showToast(e.message, 'error'); }
@@ -820,23 +827,77 @@ function renderTrends() {
     }
 }
 
-// ===== 스마트블록 렌더링 =====
-function renderSmartBlocks() {
-    const container = document.getElementById('smartBlockContent');
-    let html = '';
+// ===== 추천 키워드 (블루키워드) 렌더링 =====
+function renderRecommendKeywords() {
+    const container = document.getElementById('recommendContent');
+    let allRecommended = [];
+
     for (const kw of keywords) {
-        const blocks = smartBlockData[kw] || [];
-        if (blocks.length === 0) {
-            html += `<div style="padding:12px;background:var(--bg);border-radius:10px;margin-bottom:8px;"><strong>${kw}</strong> — 스마트블록 키워드를 찾을 수 없습니다.</div>`;
-        } else {
-            html += `<div style="margin-bottom:12px;"><strong style="font-size:0.9rem;">${kw}</strong>의 스마트블록:</div>`;
-            html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">';
-            blocks.forEach(b => {
-                html += `<span style="display:inline-flex;align-items:center;gap:4px;padding:8px 14px;background:linear-gradient(135deg,#fff7e6,#fff3cd);border:1px solid #ffd700;border-radius:20px;font-size:0.82rem;font-weight:600;color:#996600;">⭐ ${b}</span>`;
-            });
-            html += '</div>';
-        }
+        const related = relatedData[kw] || [];
+        related.forEach(r => {
+            const total = r.pc + r.mobile;
+            if (total > 0 && r.blogCount > 0) {
+                const eff = r.pc + (r.mobile * 0.3);
+                if (eff > 0) {
+                    const baseRatio = r.blogCount / eff;
+                    const ratio = getCompositeScore(baseRatio, r.compIdx || '-');
+                    const grade = getGrade(ratio);
+                    if (['S','A','B','C'].includes(grade.grade)) {
+                        allRecommended.push({ ...r, total, ratio, grade: grade.grade, desc: grade.desc, color: grade.color, emoji: grade.emoji, sourceKw: kw });
+                    }
+                }
+            }
+        });
     }
+
+    // 중복 제거 + 등급순 정렬
+    const seen = new Set();
+    allRecommended = allRecommended.filter(r => {
+        if (seen.has(r.keyword)) return false;
+        seen.add(r.keyword);
+        return true;
+    }).sort((a, b) => a.ratio - b.ratio);
+
+    if (allRecommended.length === 0) {
+        container.innerHTML = '<p style="color:rgba(255,255,255,0.5);font-size:0.9rem;text-align:center;padding:20px;">추천할 블루키워드가 없습니다. 다른 키워드로 검색해보세요.</p>';
+        return;
+    }
+
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
+    allRecommended.slice(0, 12).forEach((r, i) => {
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '💎';
+        const bgGlow = r.grade === 'S' ? 'rgba(255,215,0,0.15)' : r.grade === 'A' ? 'rgba(3,199,90,0.12)' : r.grade === 'B' ? 'rgba(46,204,113,0.1)' : 'rgba(243,156,18,0.08)';
+        html += `
+        <div style="background:${bgGlow};backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;transition:transform 0.2s;cursor:default;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:1.2rem;">${medal}</span>
+                    <span style="color:#fff;font-weight:800;font-size:0.95rem;">${r.keyword}</span>
+                </div>
+                <span style="background:${r.color};color:#fff;font-weight:900;font-size:0.75rem;padding:4px 10px;border-radius:20px;">${r.grade}등급</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px;text-align:center;">
+                    <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);">월간 검색수</div>
+                    <div style="font-size:0.9rem;font-weight:700;color:#FFD700;">${r.total.toLocaleString()}</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px;text-align:center;">
+                    <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);">블로그 문서수</div>
+                    <div style="font-size:0.9rem;font-weight:700;color:#90caf9;">${r.blogCount.toLocaleString()}</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px;text-align:center;grid-column:span 2;">
+                    <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);">경쟁도</div>
+                    <div style="font-size:0.9rem;font-weight:700;color:${r.color};">${r.ratio.toFixed(2)} — ${r.desc}</div>
+                </div>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+
+    if (allRecommended.length > 12) {
+        html += `<p style="color:rgba(255,255,255,0.4);font-size:0.8rem;text-align:center;margin-top:12px;">외 ${allRecommended.length - 12}개 키워드 (연관 키워드 섹션에서 전체 확인)</p>`;
+    }
+
     container.innerHTML = html;
 }
 
