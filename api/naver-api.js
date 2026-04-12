@@ -28,9 +28,10 @@ function callSearchAdAPI(uri, apiKey, secretKey, customerId) {
         };
 
         const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', (chunk) => data += chunk);
+            const chunks = [];
+            res.on('data', (chunk) => chunks.push(chunk));
             res.on('end', () => {
+                const data = Buffer.concat(chunks).toString('utf-8');
                 if (res.statusCode === 200) {
                     try {
                         resolve(JSON.parse(data));
@@ -66,9 +67,10 @@ function callSearchAPI(keyword, clientId, clientSecret) {
         };
 
         const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', (chunk) => data += chunk);
+            const chunks = [];
+            res.on('data', (chunk) => chunks.push(chunk));
             res.on('end', () => {
+                const data = Buffer.concat(chunks).toString('utf-8');
                 if (res.statusCode === 200) {
                     try {
                         resolve(JSON.parse(data).total || 0);
@@ -413,7 +415,7 @@ module.exports = async (req, res) => {
                     // 연관 키워드 저장 (최대 50개)
                     relatedKeywordsMap[kw] = data.keywordList
                         .filter(item => item.relKeyword.replace(/\s/g, '').toLowerCase() !== kwNorm)
-                        .slice(0, 50)
+                        .slice(0, 200)
                         .map(item => ({
                             keyword: item.relKeyword,
                             pc: parseVolume(item.monthlyPcQcCnt),
@@ -432,25 +434,20 @@ module.exports = async (req, res) => {
             }
         }
 
-        // STEP 2: 검색 API - 블로그 문서수 (전체 + 1개월 + 6개월)
+        // STEP 2: 검색 API - 블로그 문서수 (전체)
         for (const kw of keywords) {
             try {
-                const [blogCountTotal, blogCount1m, blogCount6m] = await Promise.all([
-                    callSearchAPI(kw, searchClientId, searchClientSecret),
-                    fetchBlogCountByPeriod(kw, '1m'),
-                    fetchBlogCountByPeriod(kw, '6m')
-                ]);
+                const blogCount = await callSearchAPI(kw, searchClientId, searchClientSecret);
                 const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
                 results.push({
-                    keyword: kw, pc: vol.pc, mobile: vol.mobile,
-                    blogCount: blogCountTotal, blogCount1m, blogCount6m,
+                    keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount,
                     compIdx: vol.compIdx, avgPcClk: vol.avgPcClk, avgMobileClk: vol.avgMobileClk,
                     avgPcCtr: vol.avgPcCtr, avgMobileCtr: vol.avgMobileCtr
                 });
                 await new Promise(r => setTimeout(r, 100));
             } catch (e) {
                 const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
-                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, blogCount1m: 0, blogCount6m: 0, compIdx: vol.compIdx });
+                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, compIdx: vol.compIdx });
                 errors.push(`${kw} 블로그: ${e.message}`);
             }
         }

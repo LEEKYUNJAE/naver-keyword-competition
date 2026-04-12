@@ -584,8 +584,8 @@ let trendData = {};
 const GRADES = [
     { grade: 'S', max: 3, emoji: '💎', desc: '황금키워드', color: '#c471f5' },
     { grade: 'A', max: 7, emoji: '🟢', desc: '매우 좋음', color: '#03C75A' },
-    { grade: 'B', max: 12, emoji: '🟢', desc: '좋음, 공략 추천', color: '#2ecc71' },
-    { grade: 'C', max: 20, emoji: '🟡', desc: '보통, 글 품질 중요', color: '#f39c12' },
+    { grade: 'B', max: 12, emoji: '🟢', desc: '공략 추천', color: '#2ecc71' },
+    { grade: 'C', max: 20, emoji: '🟡', desc: '보통', color: '#f39c12' },
     { grade: 'D', max: 30, emoji: '🟠', desc: '경쟁 치열', color: '#e67e22' },
     { grade: 'E', max: 35, emoji: '🔴', desc: '상위노출 어려움', color: '#e74c3c' },
     { grade: 'F', max: Infinity, emoji: '⛔', desc: '진입 비추천', color: '#c0392b' },
@@ -667,11 +667,10 @@ async function analyze() {
 function renderResults() { renderCards(); renderSummary(); }
 
 function calc(item) {
-    const { pc, mobile, blogCount6m, blogCount } = item;
-    const useBlogCount = (blogCount6m && blogCount6m > 0) ? blogCount6m : blogCount;
+    const { pc, mobile, blogCount } = item;
     const eff = pc + (mobile * 0.3);
     if (eff === 0) return { ratio: Infinity, eff: 0 };
-    const baseRatio = useBlogCount / eff;
+    const baseRatio = blogCount / eff;
     const compositeScore = getCompositeScore(baseRatio, item.compIdx || '-');
     return { ratio: compositeScore, baseRatio, eff: Math.round(eff) };
 }
@@ -699,9 +698,7 @@ function renderCards() {
                 <div class="r-stat"><div class="r-stat-label">PC 검색수</div><div class="r-stat-value">${item.pc.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">모바일 검색수</div><div class="r-stat-value">${item.mobile.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월간 총 검색수</div><div class="r-stat-value">${total.toLocaleString()}</div></div>
-                <div class="r-stat"><div class="r-stat-label">1개월 문서수</div><div class="r-stat-value">${(item.blogCount1m || 0).toLocaleString()}</div></div>
-                <div class="r-stat"><div class="r-stat-label">6개월 문서수</div><div class="r-stat-value" style="color:#e74c3c;font-weight:900;">${(item.blogCount6m || 0).toLocaleString()}</div></div>
-                <div class="r-stat"><div class="r-stat-label">전체 문서수</div><div class="r-stat-value">${item.blogCount.toLocaleString()}</div></div>
+                <div class="r-stat"><div class="r-stat-label">블로그 문서수</div><div class="r-stat-value">${item.blogCount.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">네이버 경쟁강도</div><div class="r-stat-value">${item.compIdx || '-'}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월평균 PC 클릭수</div><div class="r-stat-value">${item.avgPcClk || '-'}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월평균 모바일 클릭수</div><div class="r-stat-value">${item.avgMobileClk || '-'}</div></div>
@@ -946,22 +943,35 @@ function renderRelatedKeywords() {
         const related = relatedData[kw] || [];
         if (related.length === 0) { html += `<p style="color:var(--text-light);font-size:0.85rem;">${kw}: 연관 키워드가 없습니다.</p>`; continue; }
 
-        html += `<div style="margin-bottom:8px;font-weight:700;font-size:0.9rem;">${kw} 연관 키워드 (${related.length}개)</div>`;
-        html += '<div style="overflow-x:auto;"><table class="summary-table"><thead><tr><th>키워드</th><th>월간 검색수</th><th>블로그 문서수</th><th>경쟁도</th><th>등급</th></tr></thead><tbody>';
-
-        related.forEach(r => {
+        // 경쟁도 계산 후 등급순 정렬 (S→A→B→C→D→E→F, 같은 등급은 경쟁도 낮은 순)
+        const gradeOrder = {'S':0,'A':1,'B':2,'C':3,'D':4,'E':5,'F':6};
+        const sorted = related.map(r => {
             const total = r.pc + r.mobile;
             const eff = r.pc + (r.mobile * 0.3);
             const blogCount = r.blogCount || 0;
-            const ratio = eff > 0 ? blogCount / eff : Infinity;
-            const g = getGrade(ratio);
-            const rText = ratio === Infinity ? '∞' : ratio.toFixed(4);
+            const ratio = (eff > 0 && blogCount > 0) ? getCompositeScore(blogCount / eff, r.compIdx || '-') : (blogCount > 0 ? Infinity : -1);
+            const g = ratio >= 0 ? getGrade(ratio) : { grade: '-', color: '#999', desc: '' };
+            return { ...r, total, blogCount, ratio, g };
+        }).sort((a, b) => {
+            // 블로그 문서수 있는 것 우선, 그 다음 등급순
+            if (a.ratio < 0 && b.ratio >= 0) return 1;
+            if (a.ratio >= 0 && b.ratio < 0) return -1;
+            if (a.ratio < 0 && b.ratio < 0) return b.total - a.total;
+            return a.ratio - b.ratio;
+        });
+
+        html += `<div style="margin-bottom:8px;font-weight:700;font-size:0.9rem;">${kw} 연관 키워드 (${sorted.length}개) — 등급 좋은 순</div>`;
+        html += '<div style="overflow-x:auto;"><table class="summary-table"><thead><tr><th>키워드</th><th>월간 검색수</th><th>블로그 문서수</th><th>네이버 경쟁강도</th><th>경쟁도</th><th>등급</th></tr></thead><tbody>';
+
+        sorted.forEach(r => {
+            const rText = r.ratio === Infinity ? '∞' : r.ratio >= 0 ? r.ratio.toFixed(2) : '-';
             html += `<tr>
                 <td>${r.keyword}</td>
-                <td>${total.toLocaleString()}</td>
-                <td>${blogCount > 0 ? blogCount.toLocaleString() : '-'}</td>
-                <td style="color:${g.color};font-weight:700;">${blogCount > 0 ? rText : '-'}</td>
-                <td>${blogCount > 0 ? '<span class="grade-pill pill-' + g.grade + '">' + g.grade + '</span>' : '-'}</td>
+                <td>${r.total.toLocaleString()}</td>
+                <td>${r.blogCount > 0 ? r.blogCount.toLocaleString() : '-'}</td>
+                <td>${r.compIdx || '-'}</td>
+                <td style="color:${r.g.color};font-weight:700;">${rText}</td>
+                <td>${r.ratio >= 0 ? '<span class="grade-pill pill-' + r.g.grade + '">' + r.g.grade + '</span>' : '-'}</td>
             </tr>`;
         });
         html += '</tbody></table></div>';
