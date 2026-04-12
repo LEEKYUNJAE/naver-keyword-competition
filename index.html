@@ -589,6 +589,17 @@ const GRADES = [
     { grade: 'F', max: Infinity, emoji: '⛔', desc: '진입 비추천', color: '#c0392b' },
 ];
 
+function getCompIdxMultiplier(compIdx) {
+    if (compIdx === '낮음') return 0.7;
+    if (compIdx === '보통') return 1.0;
+    if (compIdx === '높음') return 1.3;
+    return 1.0;
+}
+
+function getCompositeScore(ratio, compIdx) {
+    return ratio * getCompIdxMultiplier(compIdx);
+}
+
 function getGrade(r) { for (const g of GRADES) { if (r <= g.max) return g; } return GRADES[GRADES.length-1]; }
 
 function switchFormula(f) {
@@ -656,8 +667,10 @@ function renderResults() { renderCards(); renderSummary(); }
 function calc(item, f) {
     const { pc, mobile, blogCount } = item;
     const eff = f === 'weighted' ? pc + (mobile * 0.3) : pc + mobile;
-    if (eff === 0) return { ratio: Infinity, eff: 0 };
-    return { ratio: blogCount / eff, eff: Math.round(eff) };
+    if (eff === 0) return { ratio: Infinity, eff: 0, compositeScore: Infinity };
+    const baseRatio = blogCount / eff;
+    const compositeScore = getCompositeScore(baseRatio, item.compIdx || '-');
+    return { ratio: compositeScore, baseRatio, eff: Math.round(eff) };
 }
 
 function renderCards() {
@@ -684,6 +697,7 @@ function renderCards() {
                 <div class="r-stat"><div class="r-stat-label">모바일 검색수</div><div class="r-stat-value">${item.mobile.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월간 총 검색수</div><div class="r-stat-value">${total.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">블로그 문서수</div><div class="r-stat-value">${item.blogCount.toLocaleString()}</div></div>
+                <div class="r-stat"><div class="r-stat-label">네이버 경쟁강도</div><div class="r-stat-value">${item.compIdx || '-'}</div></div>
             </div>
             <div class="r-bottom">
                 <span class="r-comp-label">경쟁도</span>

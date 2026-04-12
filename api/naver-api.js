@@ -357,9 +357,14 @@ module.exports = async (req, res) => {
                         searchVolumeMap[kw] = {
                             pc: parseVolume(match.monthlyPcQcCnt),
                             mobile: parseVolume(match.monthlyMobileQcCnt),
+                            compIdx: match.compIdx || '-',
+                            avgPcClk: match.monthlyAvePcClkCnt || 0,
+                            avgMobileClk: match.monthlyAveMobileClkCnt || 0,
+                            avgPcCtr: match.monthlyAvePcCtr || 0,
+                            avgMobileCtr: match.monthlyAveMobileCtr || 0,
                         };
                     } else {
-                        searchVolumeMap[kw] = { pc: 0, mobile: 0 };
+                        searchVolumeMap[kw] = { pc: 0, mobile: 0, compIdx: '-', avgPcClk: 0, avgMobileClk: 0, avgPcCtr: 0, avgMobileCtr: 0 };
                     }
 
                     // 연관 키워드 저장 (최대 50개)
@@ -388,12 +393,12 @@ module.exports = async (req, res) => {
         for (const kw of keywords) {
             try {
                 const blogCount = await callSearchAPI(kw, searchClientId, searchClientSecret);
-                const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0 };
-                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount });
+                const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
+                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount, compIdx: vol.compIdx, avgPcClk: vol.avgPcClk, avgMobileClk: vol.avgMobileClk, avgPcCtr: vol.avgPcCtr, avgMobileCtr: vol.avgMobileCtr });
                 await new Promise(r => setTimeout(r, 100));
             } catch (e) {
-                const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0 };
-                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0 });
+                const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
+                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, compIdx: vol.compIdx });
                 errors.push(`${kw} 블로그: ${e.message}`);
             }
         }
