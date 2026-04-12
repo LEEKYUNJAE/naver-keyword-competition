@@ -463,15 +463,43 @@
         <div class="results-header">
             <h2>📊 분석 결과</h2>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                <div class="toggle-wrap">
-                    <button class="toggle-btn active" data-formula="weighted" onclick="switchFormula('weighted')">정밀 분석</button>
-                    <button class="toggle-btn" data-formula="basic" onclick="switchFormula('basic')">기본 분석</button>
-                </div>
                 <button class="btn-csv" onclick="exportCSV()">📥 CSV 다운로드</button>
             </div>
         </div>
 
         <div class="result-grid" id="resultCards"></div>
+
+        <!-- 등급 안내 + 경쟁도 기준 -->
+        <div class="card" style="margin-top:16px;">
+            <div class="card-title">📋 등급 안내 및 경쟁도 기준</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+                <div>
+                    <table class="summary-table" style="font-size:0.85rem;">
+                        <thead><tr><th>등급</th><th>경쟁도</th><th>의미</th></tr></thead>
+                        <tbody>
+                            <tr><td><span class="grade-pill pill-S">S</span></td><td>3 이하</td><td>💎 황금키워드 - 지금 바로 공략!</td></tr>
+                            <tr><td><span class="grade-pill pill-A">A</span></td><td>3~7</td><td>🟢 매우 좋음 - 상위노출 유리</td></tr>
+                            <tr><td><span class="grade-pill pill-B">B</span></td><td>7~12</td><td>🟢 좋음 - 글 품질로 충분히 가능</td></tr>
+                            <tr><td><span class="grade-pill pill-C">C</span></td><td>12~20</td><td>🟡 보통 - 콘텐츠 전략 필요</td></tr>
+                            <tr><td><span class="grade-pill pill-D">D</span></td><td>20~30</td><td>🟠 경쟁 치열 - 차별화 필수</td></tr>
+                            <tr><td><span class="grade-pill pill-E">E</span></td><td>30~35</td><td>🔴 상위노출 어려움</td></tr>
+                            <tr><td><span class="grade-pill pill-F">F</span></td><td>35 이상</td><td>⛔ 진입 비추천</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div>
+                    <div style="background:#f8f9fa;border-radius:10px;padding:16px;font-size:0.85rem;line-height:1.8;">
+                        <strong>경쟁도 수치 해석</strong><br>
+                        <span style="color:#c471f5;">● 1~3:</span> 검색은 있지만 글이 적음. 빠르게 선점 가능<br>
+                        <span style="color:#03C75A;">● 3~12:</span> 적당한 경쟁. 좋은 글이면 상위노출 가능<br>
+                        <span style="color:#f39c12;">● 12~20:</span> 경쟁 있음. SEO 최적화 + 양질의 콘텐츠 필요<br>
+                        <span style="color:#e67e22;">● 20~30:</span> 치열한 경쟁. 틈새 롱테일 키워드 추천<br>
+                        <span style="color:#e74c3c;">● 30~35:</span> 매우 치열. 기존 상위 블로그가 강력함<br>
+                        <span style="color:#c0392b;">● 35+:</span> 극심한 경쟁. 다른 키워드를 찾는 것이 효율적
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Summary Table -->
         <div class="card" style="margin-top: 16px;">
@@ -530,40 +558,7 @@
             <div id="relatedContent"></div>
         </div>
 
-        <!-- Legend -->
-        <div class="card" style="margin-top: 16px;">
-            <div class="card-title">📖 등급 안내</div>
-            <div class="legend-grid">
-                <div class="legend-item">
-                    <div class="legend-badge" style="background:linear-gradient(135deg,#ff6fd833,#c471f533);color:#c471f5;">S</div>
-                    <div class="legend-desc">💎 황금키워드</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-badge" style="background:#e8f8ef;color:#03C75A;">A</div>
-                    <div class="legend-desc">매우 좋음</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-badge" style="background:#e8f8ef;color:#2ecc71;">B</div>
-                    <div class="legend-desc">좋음, 공략 추천</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-badge" style="background:#fff9e6;color:#f39c12;">C</div>
-                    <div class="legend-desc">보통, 글 품질 중요</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-badge" style="background:#fff3e6;color:#e67e22;">D</div>
-                    <div class="legend-desc">경쟁 치열</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-badge" style="background:#fde8e8;color:#e74c3c;">E</div>
-                    <div class="legend-desc">상위노출 어려움</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-badge" style="background:#fde8e8;color:#c0392b;">F</div>
-                    <div class="legend-desc">진입 비추천</div>
-                </div>
-            </div>
-        </div>
+        <!-- 하단 등급 안내 제거 (상단으로 이동됨) -->
     </div>
 </div>
 
@@ -742,27 +737,45 @@ function renderTrends() {
     const a = trend.analysis || {};
     const dirColor = a.direction?.includes('상승') ? '#03C75A' : a.direction?.includes('하락') ? '#e74c3c' : '#f39c12';
 
+    // 성장률 해석
+    const growthVal = a.growth || 0;
+    let growthDesc = '';
+    if (growthVal > 20) growthDesc = '빠르게 성장 중! 지금 진입하면 유리한 키워드';
+    else if (growthVal > 5) growthDesc = '관심이 늘어나는 키워드, 선점 추천';
+    else if (growthVal > -5) growthDesc = '검색량이 안정적으로 유지되는 키워드';
+    else if (growthVal > -20) growthDesc = '관심이 줄어드는 키워드, 신중하게 판단';
+    else growthDesc = '검색량이 크게 감소 중, 다른 키워드 추천';
+
+    // 시즌성 해석
+    const seasonDesc = a.seasonal
+        ? `${a.bestMonth}에 검색이 집중되는 계절 키워드. ${a.publishMonth}에 미리 발행하면 효과적`
+        : '1년 내내 꾸준히 검색되는 키워드. 발행 시기에 구애받지 않음';
+
     document.getElementById('trendAnalysisContent').innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
-            <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
-                <div style="font-size:0.7rem;color:var(--text-light);">트렌드 방향</div>
-                <div style="font-size:1.1rem;font-weight:900;color:${dirColor};margin-top:4px;">${a.direction || '-'}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+            <div style="background:var(--bg);border-radius:10px;padding:16px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <span style="font-size:1.3rem;">${a.direction?.includes('상승') ? '📈' : a.direction?.includes('하락') ? '📉' : '➡️'}</span>
+                    <span style="font-size:0.8rem;color:var(--text-light);">최근 3개월 vs 이전 3개월</span>
+                </div>
+                <div style="font-size:1.2rem;font-weight:900;color:${dirColor};">${a.direction || '-'} (${growthVal > 0 ? '+' : ''}${growthVal}%)</div>
+                <div style="font-size:0.8rem;color:var(--text-light);margin-top:6px;">${growthDesc}</div>
             </div>
-            <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
-                <div style="font-size:0.7rem;color:var(--text-light);">성장률</div>
-                <div style="font-size:1.1rem;font-weight:900;color:${a.growth > 0 ? '#03C75A' : '#e74c3c'};margin-top:4px;">${a.growth > 0 ? '+' : ''}${a.growth || 0}%</div>
+            <div style="background:var(--bg);border-radius:10px;padding:16px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <span style="font-size:1.3rem;">${a.seasonal ? '🌡️' : '📊'}</span>
+                    <span style="font-size:0.8rem;color:var(--text-light);">시즌 분석</span>
+                </div>
+                <div style="font-size:1.2rem;font-weight:900;">${a.seasonal ? '계절 키워드' : '연중 키워드'}</div>
+                <div style="font-size:0.8rem;color:var(--text-light);margin-top:6px;">${seasonDesc}</div>
             </div>
-            <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
-                <div style="font-size:0.7rem;color:var(--text-light);">시즌 키워드</div>
-                <div style="font-size:1.1rem;font-weight:900;margin-top:4px;">${a.seasonal ? '🌡️ 시즌성' : '📊 연중 고름'}</div>
-            </div>
-            <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
-                <div style="font-size:0.7rem;color:var(--text-light);">검색 피크</div>
-                <div style="font-size:1.1rem;font-weight:900;color:#1a3a8a;margin-top:4px;">${a.bestMonth || '-'}</div>
-            </div>
-            <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
-                <div style="font-size:0.7rem;color:var(--text-light);">최적 발행 시기</div>
-                <div style="font-size:1.1rem;font-weight:900;color:#c471f5;margin-top:4px;">📝 ${a.publishMonth || '-'}</div>
+            <div style="background:var(--bg);border-radius:10px;padding:16px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <span style="font-size:1.3rem;">📝</span>
+                    <span style="font-size:0.8rem;color:var(--text-light);">발행 전략</span>
+                </div>
+                <div style="font-size:1.2rem;font-weight:900;color:#c471f5;">최적 발행: ${a.publishMonth || '-'}</div>
+                <div style="font-size:0.8rem;color:var(--text-light);margin-top:6px;">검색 피크(${a.bestMonth || '-'}) 직전에 발행하면 최대 노출 가능</div>
             </div>
         </div>
     `;
