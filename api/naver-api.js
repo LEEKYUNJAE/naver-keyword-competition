@@ -434,20 +434,23 @@ module.exports = async (req, res) => {
             }
         }
 
-        // STEP 2: 검색 API - 블로그 문서수 (전체)
+        // STEP 2: 검색 API - 블로그 문서수 (전체) + 월간 발행수
         for (const kw of keywords) {
             try {
-                const blogCount = await callSearchAPI(kw, searchClientId, searchClientSecret);
+                const [blogCount, monthlyBlogCount] = await Promise.all([
+                    callSearchAPI(kw, searchClientId, searchClientSecret),
+                    fetchBlogCountByPeriod(kw, '1m')
+                ]);
                 const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
                 results.push({
-                    keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount,
+                    keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount, monthlyBlogCount,
                     compIdx: vol.compIdx, avgPcClk: vol.avgPcClk, avgMobileClk: vol.avgMobileClk,
                     avgPcCtr: vol.avgPcCtr, avgMobileCtr: vol.avgMobileCtr
                 });
                 await new Promise(r => setTimeout(r, 100));
             } catch (e) {
                 const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
-                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, compIdx: vol.compIdx });
+                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, monthlyBlogCount: 0, compIdx: vol.compIdx });
                 errors.push(`${kw} 블로그: ${e.message}`);
             }
         }

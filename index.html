@@ -452,6 +452,37 @@
         <button class="btn-reset" onclick="resetAll()">초기화</button>
     </div>
 
+    <!-- 내 블로그 진단 -->
+    <div class="card">
+        <div class="card-title">🔍 내 블로그 진단</div>
+        <div class="toggle-wrap" style="margin-bottom:14px;width:fit-content;">
+            <button class="toggle-btn active" data-diag="rank" onclick="switchDiag('rank')">키워드 순위 확인</button>
+            <button class="toggle-btn" data-diag="missing" onclick="switchDiag('missing')">글 누락 진단</button>
+        </div>
+
+        <!-- (A) 순위 확인 -->
+        <div id="diagRankPanel">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                <input type="text" id="diagBlogId" placeholder="블로그 ID 또는 URL (예: myid 또는 blog.naver.com/myid)"
+                       style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
+                <button class="btn-add" onclick="runRankCheck()">순위 확인</button>
+            </div>
+            <p style="font-size:0.8rem;color:var(--text-light);">위 입력한 키워드들로 본인 블로그가 몇 위에 노출되는지 확인합니다 (네이버 검색 API 100위까지).</p>
+        </div>
+
+        <!-- (B) 누락 진단 -->
+        <div id="diagMissingPanel" style="display:none;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                <input type="text" id="diagPostUrl" placeholder="글 URL (예: https://blog.naver.com/myid/12345)"
+                       style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
+                <button class="btn-add" onclick="runMissingCheck()">누락 진단</button>
+            </div>
+            <p style="font-size:0.8rem;color:var(--text-light);">글의 제목으로 검색했을 때 노출되는지 확인합니다. 100위 안에 없으면 누락 의심.</p>
+        </div>
+
+        <div id="diagResult" style="margin-top:16px;"></div>
+    </div>
+
     <!-- Loading -->
     <div class="loading" id="loading">
         <div class="spinner"></div>
@@ -491,25 +522,25 @@
                     <table class="summary-table" style="font-size:0.85rem;">
                         <thead><tr><th>등급</th><th>경쟁도</th><th>의미</th></tr></thead>
                         <tbody>
-                            <tr><td><span class="grade-pill pill-S">S</span></td><td>3 이하</td><td>💎 황금키워드 - 지금 바로 공략!</td></tr>
-                            <tr><td><span class="grade-pill pill-A">A</span></td><td>3~7</td><td>🟢 매우 좋음 - 상위노출 유리</td></tr>
-                            <tr><td><span class="grade-pill pill-B">B</span></td><td>7~12</td><td>🟢 좋음 - 글 품질로 충분히 가능</td></tr>
-                            <tr><td><span class="grade-pill pill-C">C</span></td><td>12~20</td><td>🟡 보통 - 콘텐츠 전략 필요</td></tr>
-                            <tr><td><span class="grade-pill pill-D">D</span></td><td>20~30</td><td>🟠 경쟁 치열 - 차별화 필수</td></tr>
-                            <tr><td><span class="grade-pill pill-E">E</span></td><td>30~35</td><td>🔴 상위노출 어려움</td></tr>
-                            <tr><td><span class="grade-pill pill-F">F</span></td><td>35 이상</td><td>⛔ 진입 비추천</td></tr>
+                            <tr><td><span class="grade-pill pill-S">S</span></td><td>5 이하</td><td>💎 황금키워드 - 지금 바로 공략!</td></tr>
+                            <tr><td><span class="grade-pill pill-A">A</span></td><td>5~12</td><td>🟢 매우 좋음 - 상위노출 유리</td></tr>
+                            <tr><td><span class="grade-pill pill-B">B</span></td><td>12~22</td><td>🟢 좋음 - 글 품질로 충분히 가능</td></tr>
+                            <tr><td><span class="grade-pill pill-C">C</span></td><td>22~38</td><td>🟡 보통 - 콘텐츠 전략 필요 (예: 양산 맛집)</td></tr>
+                            <tr><td><span class="grade-pill pill-D">D</span></td><td>38~60</td><td>🟠 경쟁 치열 - 차별화 필수</td></tr>
+                            <tr><td><span class="grade-pill pill-E">E</span></td><td>60~90</td><td>🔴 상위노출 어려움</td></tr>
+                            <tr><td><span class="grade-pill pill-F">F</span></td><td>90 이상</td><td>⛔ 진입 비추천 (예: 강남 맛집)</td></tr>
                         </tbody>
                     </table>
                 </div>
                 <div>
                     <div style="background:#f8f9fa;border-radius:10px;padding:16px;font-size:0.85rem;line-height:1.8;">
-                        <strong>경쟁도 수치 해석</strong><br>
-                        <span style="color:#c471f5;">● 1~3:</span> 검색은 있지만 글이 적음. 빠르게 선점 가능<br>
-                        <span style="color:#03C75A;">● 3~12:</span> 적당한 경쟁. 좋은 글이면 상위노출 가능<br>
-                        <span style="color:#f39c12;">● 12~20:</span> 경쟁 있음. SEO 최적화 + 양질의 콘텐츠 필요<br>
-                        <span style="color:#e67e22;">● 20~30:</span> 치열한 경쟁. 틈새 롱테일 키워드 추천<br>
-                        <span style="color:#e74c3c;">● 30~35:</span> 매우 치열. 기존 상위 블로그가 강력함<br>
-                        <span style="color:#c0392b;">● 35+:</span> 극심한 경쟁. 다른 키워드를 찾는 것이 효율적
+                        <strong>경쟁도 수치 해석</strong> <span style="font-size:0.75rem;color:var(--text-light);">(누적문서 + 월발행 합성)</span><br>
+                        <span style="color:#c471f5;">● ~5:</span> 검색은 있지만 글이 적음. 빠르게 선점 가능<br>
+                        <span style="color:#03C75A;">● 5~22:</span> 적당한 경쟁. 좋은 글이면 상위노출 가능<br>
+                        <span style="color:#f39c12;">● 22~38:</span> 보통 경쟁. SEO 최적화 + 콘텐츠 전략 필요<br>
+                        <span style="color:#e67e22;">● 38~60:</span> 치열한 경쟁. 롱테일/차별화 필수<br>
+                        <span style="color:#e74c3c;">● 60~90:</span> 매우 치열. 기존 상위 블로그가 강력함<br>
+                        <span style="color:#c0392b;">● 90+:</span> 극심한 경쟁. 다른 키워드를 찾는 것이 효율적
                     </div>
                 </div>
             </div>
@@ -523,10 +554,12 @@
                     <thead>
                         <tr>
                             <th>키워드</th>
-                            <th>PC 검색수</th>
-                            <th>모바일 검색수</th>
-                            <th>블로그 문서수</th>
-                            <th>유효 검색수</th>
+                            <th>PC</th>
+                            <th>모바일</th>
+                            <th>누적문서수</th>
+                            <th>월발행수</th>
+                            <th>포화도</th>
+                            <th>유효검색</th>
                             <th>경쟁도</th>
                             <th>등급</th>
                         </tr>
@@ -539,23 +572,11 @@
         <!-- Trend Analysis -->
         <div class="card" style="margin-top: 16px;" id="trendSection">
             <div class="card-title">📈 트렌드 분석</div>
-            <div id="trendAnalysisContent"></div>
-            <div style="margin-top:16px;">
-                <div style="background:var(--bg);border-radius:12px;padding:16px;margin-bottom:12px;">
-                    <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">검색량 트렌드 (12개월)</div>
-                    <div style="width:100%;overflow:hidden;"><canvas id="trendChart" height="120"></canvas></div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div style="background:var(--bg);border-radius:12px;padding:16px;">
-                        <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">월별 검색 비율</div>
-                        <div style="width:100%;overflow:hidden;"><canvas id="monthlyChart" height="150"></canvas></div>
-                    </div>
-                    <div style="background:var(--bg);border-radius:12px;padding:16px;">
-                        <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">요일별 검색 비율</div>
-                        <div style="width:100%;overflow:hidden;"><canvas id="dayChart" height="150"></canvas></div>
-                    </div>
-                </div>
+            <div style="background:var(--bg);border-radius:12px;padding:16px;margin-bottom:16px;">
+                <div style="font-size:0.8rem;font-weight:700;margin-bottom:10px;">검색량 트렌드 (12개월) — 키워드 비교</div>
+                <div style="width:100%;overflow:hidden;"><canvas id="trendChart" height="120"></canvas></div>
             </div>
+            <div id="trendKeywordSections"></div>
         </div>
 
         <!-- Related Keywords -->
@@ -581,13 +602,14 @@ let relatedData = {};
 let smartBlockData = {};
 let trendData = {};
 
+// 등급 임계값 (이중지표 합성점수 기준 — 양산맛집≈C-D, 강남맛집≈F)
 const GRADES = [
-    { grade: 'S', max: 3, emoji: '💎', desc: '황금키워드', color: '#c471f5' },
-    { grade: 'A', max: 7, emoji: '🟢', desc: '매우 좋음', color: '#03C75A' },
-    { grade: 'B', max: 12, emoji: '🟢', desc: '공략 추천', color: '#2ecc71' },
-    { grade: 'C', max: 20, emoji: '🟡', desc: '보통', color: '#f39c12' },
-    { grade: 'D', max: 30, emoji: '🟠', desc: '경쟁 치열', color: '#e67e22' },
-    { grade: 'E', max: 35, emoji: '🔴', desc: '상위노출 어려움', color: '#e74c3c' },
+    { grade: 'S', max: 5, emoji: '💎', desc: '황금키워드', color: '#c471f5' },
+    { grade: 'A', max: 12, emoji: '🟢', desc: '매우 좋음', color: '#03C75A' },
+    { grade: 'B', max: 22, emoji: '🟢', desc: '공략 추천', color: '#2ecc71' },
+    { grade: 'C', max: 38, emoji: '🟡', desc: '보통', color: '#f39c12' },
+    { grade: 'D', max: 60, emoji: '🟠', desc: '경쟁 치열', color: '#e67e22' },
+    { grade: 'E', max: 90, emoji: '🔴', desc: '상위노출 어려움', color: '#e74c3c' },
     { grade: 'F', max: Infinity, emoji: '⛔', desc: '진입 비추천', color: '#c0392b' },
 ];
 
@@ -667,12 +689,28 @@ async function analyze() {
 function renderResults() { renderCards(); renderSummary(); }
 
 function calc(item) {
-    const { pc, mobile, blogCount } = item;
+    const { pc, mobile, blogCount, monthlyBlogCount } = item;
     const eff = pc + (mobile * 0.3);
-    if (eff === 0) return { ratio: Infinity, eff: 0 };
-    const baseRatio = blogCount / eff;
+    if (eff === 0) return { ratio: Infinity, eff: 0, cumRatio: Infinity, monthRatio: Infinity, saturation: 0 };
+
+    // 누적 문서수 기반 비율 (시장 포화도 반영)
+    const cumRatio = blogCount / eff;
+    // 월간 발행수 기반 비율 (실시간 경쟁 반영)
+    const monthRatio = (monthlyBlogCount || 0) / eff;
+    // 합성 점수: 누적 × (1 + 월발행 가중치 0.5)
+    const baseRatio = cumRatio * (1 + monthRatio * 0.5);
     const compositeScore = getCompositeScore(baseRatio, item.compIdx || '-');
-    return { ratio: compositeScore, baseRatio, eff: Math.round(eff) };
+    // 포화도(%) — 월발행/유효검색 비율 표시용
+    const saturation = Math.round(monthRatio * 1000) / 10;
+
+    return {
+        ratio: compositeScore,
+        baseRatio,
+        cumRatio: Math.round(cumRatio * 100) / 100,
+        monthRatio: Math.round(monthRatio * 100) / 100,
+        saturation,
+        eff: Math.round(eff)
+    };
 }
 
 function renderCards() {
@@ -698,7 +736,9 @@ function renderCards() {
                 <div class="r-stat"><div class="r-stat-label">PC 검색수</div><div class="r-stat-value">${item.pc.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">모바일 검색수</div><div class="r-stat-value">${item.mobile.toLocaleString()}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월간 총 검색수</div><div class="r-stat-value">${total.toLocaleString()}</div></div>
-                <div class="r-stat"><div class="r-stat-label">블로그 문서수</div><div class="r-stat-value">${item.blogCount.toLocaleString()}</div></div>
+                <div class="r-stat"><div class="r-stat-label">누적 블로그 문서수</div><div class="r-stat-value">${item.blogCount.toLocaleString()}</div></div>
+                <div class="r-stat"><div class="r-stat-label">월간 블로그 발행수</div><div class="r-stat-value">${(item.monthlyBlogCount || 0).toLocaleString()}</div></div>
+                <div class="r-stat"><div class="r-stat-label">포화도</div><div class="r-stat-value">${item.saturation}%</div></div>
                 <div class="r-stat"><div class="r-stat-label">네이버 경쟁강도</div><div class="r-stat-value">${item.compIdx || '-'}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월평균 PC 클릭수</div><div class="r-stat-value">${item.avgPcClk || '-'}</div></div>
                 <div class="r-stat"><div class="r-stat-label">월평균 모바일 클릭수</div><div class="r-stat-value">${item.avgMobileClk || '-'}</div></div>
@@ -721,12 +761,14 @@ function renderSummary() {
     }).sort((a, b) => a.ratio - b.ratio);
 
     document.getElementById('summaryBody').innerHTML = sorted.map(item => {
-        const rText = item.ratio === Infinity ? '∞' : item.ratio.toFixed(4);
+        const rText = item.ratio === Infinity ? '∞' : item.ratio.toFixed(2);
         return `<tr>
             <td>${item.keyword}</td>
             <td>${item.pc.toLocaleString()}</td>
             <td>${item.mobile.toLocaleString()}</td>
             <td>${item.blogCount.toLocaleString()}</td>
+            <td>${(item.monthlyBlogCount || 0).toLocaleString()}</td>
+            <td>${item.saturation}%</td>
             <td>${item.eff.toLocaleString()}</td>
             <td style="color:${item.color};font-weight:700;">${rText}</td>
             <td><span class="grade-pill pill-${item.grade}">${item.grade}</span></td>
@@ -735,75 +777,29 @@ function renderSummary() {
 }
 
 // ===== 트렌드 차트 렌더링 =====
-let trendChartInst, monthlyChartInst, dayChartInst;
+let trendChartInst;
+let monthlyChartInsts = [];
+let dayChartInsts = [];
 
 function renderTrends() {
-    const kw = keywords[0]; // 첫 번째 키워드 기준
-    const trend = trendData[kw];
-    if (!trend || !trend.monthly || trend.monthly.length === 0) {
-        document.getElementById('trendAnalysisContent').innerHTML = '<p style="color:var(--text-light);font-size:0.85rem;">트렌드 데이터가 없습니다.</p>';
+    const sectionsEl = document.getElementById('trendKeywordSections');
+
+    // 트렌드 데이터가 있는 키워드 필터
+    const validKeywords = keywords.filter(kw => {
+        const t = trendData[kw];
+        return t && t.monthly && t.monthly.length > 0;
+    });
+
+    if (validKeywords.length === 0) {
+        sectionsEl.innerHTML = '<p style="color:var(--text-light);font-size:0.85rem;">트렌드 데이터가 없습니다.</p>';
+        // 빈 라인 차트라도 정리
+        if (trendChartInst) { trendChartInst.destroy(); trendChartInst = null; }
+        monthlyChartInsts.forEach(c => c && c.destroy()); monthlyChartInsts = [];
+        dayChartInsts.forEach(c => c && c.destroy()); dayChartInsts = [];
         return;
     }
 
-    const a = trend.analysis || {};
-    const dirColor = a.direction?.includes('상승') ? '#03C75A' : a.direction?.includes('하락') ? '#e74c3c' : '#f39c12';
-
-    // 성장률 해석
-    const growthVal = a.growth || 0;
-    let growthDesc = '';
-    if (growthVal > 20) growthDesc = '빠르게 성장 중! 지금 진입하면 유리한 키워드';
-    else if (growthVal > 5) growthDesc = '관심이 늘어나는 키워드, 선점 추천';
-    else if (growthVal > -5) growthDesc = '검색량이 안정적으로 유지되는 키워드';
-    else if (growthVal > -20) growthDesc = '관심이 줄어드는 키워드, 신중하게 판단';
-    else growthDesc = '검색량이 크게 감소 중, 다른 키워드 추천';
-
-    // 시즌성 해석
-    const seasonDesc = a.seasonal
-        ? `${a.bestMonth}에 검색이 집중되는 계절 키워드. ${a.publishMonth}에 미리 발행하면 효과적`
-        : '1년 내내 꾸준히 검색되는 키워드. 발행 시기에 구애받지 않음';
-
-    document.getElementById('trendAnalysisContent').innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
-            <div style="background:var(--bg);border-radius:10px;padding:16px;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                    <span style="font-size:1.3rem;">${a.direction?.includes('상승') ? '📈' : a.direction?.includes('하락') ? '📉' : '➡️'}</span>
-                    <span style="font-size:0.8rem;color:var(--text-light);">최근 3개월 vs 이전 3개월</span>
-                </div>
-                <div style="font-size:1.2rem;font-weight:900;color:${dirColor};">${a.direction || '-'} (${growthVal > 0 ? '+' : ''}${growthVal}%)</div>
-                <div style="font-size:0.8rem;color:var(--text-light);margin-top:6px;">${growthDesc}</div>
-            </div>
-            <div style="background:var(--bg);border-radius:10px;padding:16px;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                    <span style="font-size:1.3rem;">${a.seasonal ? '🌡️' : '📊'}</span>
-                    <span style="font-size:0.8rem;color:var(--text-light);">시즌 분석</span>
-                </div>
-                <div style="font-size:1.2rem;font-weight:900;">${a.seasonal ? '계절 키워드' : '연중 키워드'}</div>
-                <div style="font-size:0.8rem;color:var(--text-light);margin-top:6px;">${seasonDesc}</div>
-            </div>
-            <div style="background:var(--bg);border-radius:10px;padding:16px;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                    <span style="font-size:1.3rem;">📝</span>
-                    <span style="font-size:0.8rem;color:var(--text-light);">발행 전략</span>
-                </div>
-                <div style="font-size:1.2rem;font-weight:900;color:#c471f5;">최적 발행: ${a.publishMonth || '-'}</div>
-                <div style="font-size:0.8rem;color:var(--text-light);margin-top:6px;">검색 피크(${a.bestMonth || '-'}) 직전에 발행하면 최대 노출 가능</div>
-            </div>
-            <div style="background:var(--bg);border-radius:10px;padding:16px;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                    <span style="font-size:1.3rem;">📅</span>
-                    <span style="font-size:0.8rem;color:var(--text-light);">추천 발행 요일</span>
-                </div>
-                ${(() => {
-                    if (!trend.dayOfWeek || trend.dayOfWeek.length === 0) return '<div style="font-size:1.2rem;font-weight:900;">데이터 없음</div>';
-                    const sorted = [...trend.dayOfWeek].sort((a, b) => b.percent - a.percent);
-                    const topDays = sorted.slice(0, 2).map(d => d.day + '요일').join(' · ');
-                    return '<div style="font-size:1.2rem;font-weight:900;color:#1a3a8a;">' + topDays + '</div><div style="font-size:0.8rem;color:var(--text-light);margin-top:6px;">검색량이 가장 높은 요일에 발행하면 유입 극대화</div>';
-                })()}
-            </div>
-        </div>
-    `;
-
-    // 트렌드 라인 차트 (다중 키워드)
+    // 다중 키워드 라인 차트 (상단 비교용)
     const ctx1 = document.getElementById('trendChart').getContext('2d');
     if (trendChartInst) trendChartInst.destroy();
     const chartColors = ['#1a3a8a', '#e74c3c', '#03C75A', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#3498db', '#c0392b', '#2ecc71'];
@@ -821,7 +817,7 @@ function renderTrends() {
                 data: t.monthly.map(d => d.ratio),
                 borderColor: color,
                 backgroundColor: color + '15',
-                fill: idx === 0,
+                fill: false,
                 tension: 0.3,
                 pointRadius: 3,
                 pointBackgroundColor: color,
@@ -836,29 +832,118 @@ function renderTrends() {
         options: { responsive: true, plugins: { legend: { display: datasets.length > 1, position: 'top', labels: { font: { size: 11, weight: '600' }, usePointStyle: true, padding: 15 } } }, scales: { y: { beginAtZero: true, grid: { color: '#eee' } }, x: { grid: { display: false } } } }
     });
 
-    // 월별 바 차트
-    const ctx2 = document.getElementById('monthlyChart').getContext('2d');
-    if (monthlyChartInst) monthlyChartInst.destroy();
-    const mLabels = trend.monthly.map(d => { const dt = new Date(d.period); return (dt.getMonth()+1) + '월'; });
-    const mValues = trend.monthly.map(d => d.percent);
-    monthlyChartInst = new Chart(ctx2, {
-        type: 'bar',
-        data: { labels: mLabels, datasets: [{ data: mValues, backgroundColor: '#7cb5ec' }] },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } } }
-    });
+    // 키워드별 섹션 HTML 빌드
+    monthlyChartInsts.forEach(c => c && c.destroy()); monthlyChartInsts = [];
+    dayChartInsts.forEach(c => c && c.destroy()); dayChartInsts = [];
 
-    // 요일별 바 차트
-    const ctx3 = document.getElementById('dayChart').getContext('2d');
-    if (dayChartInst) dayChartInst.destroy();
-    if (trend.dayOfWeek && trend.dayOfWeek.length > 0) {
-        const dLabels = trend.dayOfWeek.map(d => d.day);
-        const dValues = trend.dayOfWeek.map(d => d.percent);
-        dayChartInst = new Chart(ctx3, {
+    const sectionsHtml = validKeywords.map((kw, idx) => {
+        const trend = trendData[kw];
+        const a = trend.analysis || {};
+        const dirColor = a.direction?.includes('상승') ? '#03C75A' : a.direction?.includes('하락') ? '#e74c3c' : '#f39c12';
+        const kwColor = chartColors[keywords.indexOf(kw) % chartColors.length];
+
+        const growthVal = a.growth || 0;
+        let growthDesc = '';
+        if (growthVal > 20) growthDesc = '빠르게 성장 중! 지금 진입하면 유리한 키워드';
+        else if (growthVal > 5) growthDesc = '관심이 늘어나는 키워드, 선점 추천';
+        else if (growthVal > -5) growthDesc = '검색량이 안정적으로 유지되는 키워드';
+        else if (growthVal > -20) growthDesc = '관심이 줄어드는 키워드, 신중하게 판단';
+        else growthDesc = '검색량이 크게 감소 중, 다른 키워드 추천';
+
+        const seasonDesc = a.seasonal
+            ? `${a.bestMonth}에 검색이 집중되는 계절 키워드. ${a.publishMonth}에 미리 발행하면 효과적`
+            : '1년 내내 꾸준히 검색되는 키워드. 발행 시기에 구애받지 않음';
+
+        let dayBlock = '<div style="font-size:1.2rem;font-weight:900;">데이터 없음</div>';
+        if (trend.dayOfWeek && trend.dayOfWeek.length > 0) {
+            const sorted = [...trend.dayOfWeek].sort((a, b) => b.percent - a.percent);
+            const topDays = sorted.slice(0, 2).map(d => d.day + '요일').join(' · ');
+            dayBlock = '<div style="font-size:1.2rem;font-weight:900;color:#1a3a8a;">' + topDays + '</div><div style="font-size:0.8rem;color:var(--text-light);margin-top:6px;">검색량이 가장 높은 요일에 발행하면 유입 극대화</div>';
+        }
+
+        return `
+        <div style="border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px;background:#fff;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+                <span style="width:10px;height:10px;border-radius:50%;background:${kwColor};display:inline-block;"></span>
+                <span style="font-size:1.05rem;font-weight:900;color:var(--text);">${kw}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-bottom:14px;">
+                <div style="background:var(--bg);border-radius:10px;padding:14px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="font-size:1.2rem;">${a.direction?.includes('상승') ? '📈' : a.direction?.includes('하락') ? '📉' : '➡️'}</span>
+                        <span style="font-size:0.75rem;color:var(--text-light);">최근 3개월 vs 이전 3개월</span>
+                    </div>
+                    <div style="font-size:1.1rem;font-weight:900;color:${dirColor};">${a.direction || '-'} (${growthVal > 0 ? '+' : ''}${growthVal}%)</div>
+                    <div style="font-size:0.75rem;color:var(--text-light);margin-top:6px;">${growthDesc}</div>
+                </div>
+                <div style="background:var(--bg);border-radius:10px;padding:14px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="font-size:1.2rem;">${a.seasonal ? '🌡️' : '📊'}</span>
+                        <span style="font-size:0.75rem;color:var(--text-light);">시즌 분석</span>
+                    </div>
+                    <div style="font-size:1.1rem;font-weight:900;">${a.seasonal ? '계절 키워드' : '연중 키워드'}</div>
+                    <div style="font-size:0.75rem;color:var(--text-light);margin-top:6px;">${seasonDesc}</div>
+                </div>
+                <div style="background:var(--bg);border-radius:10px;padding:14px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="font-size:1.2rem;">📝</span>
+                        <span style="font-size:0.75rem;color:var(--text-light);">발행 전략</span>
+                    </div>
+                    <div style="font-size:1.1rem;font-weight:900;color:#c471f5;">최적 발행: ${a.publishMonth || '-'}</div>
+                    <div style="font-size:0.75rem;color:var(--text-light);margin-top:6px;">검색 피크(${a.bestMonth || '-'}) 직전에 발행</div>
+                </div>
+                <div style="background:var(--bg);border-radius:10px;padding:14px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="font-size:1.2rem;">📅</span>
+                        <span style="font-size:0.75rem;color:var(--text-light);">추천 발행 요일</span>
+                    </div>
+                    ${dayBlock}
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="background:var(--bg);border-radius:12px;padding:14px;">
+                    <div style="font-size:0.8rem;font-weight:700;margin-bottom:8px;">월별 검색 비율</div>
+                    <div style="width:100%;overflow:hidden;"><canvas id="monthlyChart_${idx}" height="150"></canvas></div>
+                </div>
+                <div style="background:var(--bg);border-radius:12px;padding:14px;">
+                    <div style="font-size:0.8rem;font-weight:700;margin-bottom:8px;">요일별 검색 비율</div>
+                    <div style="width:100%;overflow:hidden;"><canvas id="dayChart_${idx}" height="150"></canvas></div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    sectionsEl.innerHTML = sectionsHtml;
+
+    // 키워드별 차트 렌더링
+    validKeywords.forEach((kw, idx) => {
+        const trend = trendData[kw];
+        const kwColor = chartColors[keywords.indexOf(kw) % chartColors.length];
+
+        // 월별 바 차트
+        const ctxM = document.getElementById('monthlyChart_' + idx).getContext('2d');
+        const mLabels = trend.monthly.map(d => { const dt = new Date(d.period); return (dt.getMonth()+1) + '월'; });
+        const mValues = trend.monthly.map(d => d.percent);
+        monthlyChartInsts.push(new Chart(ctxM, {
             type: 'bar',
-            data: { labels: dLabels, datasets: [{ data: dValues, backgroundColor: '#90caf9' }] },
+            data: { labels: mLabels, datasets: [{ data: mValues, backgroundColor: kwColor + 'cc' }] },
             options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } } }
-        });
-    }
+        }));
+
+        // 요일별 바 차트
+        const ctxD = document.getElementById('dayChart_' + idx).getContext('2d');
+        if (trend.dayOfWeek && trend.dayOfWeek.length > 0) {
+            const dLabels = trend.dayOfWeek.map(d => d.day);
+            const dValues = trend.dayOfWeek.map(d => d.percent);
+            dayChartInsts.push(new Chart(ctxD, {
+                type: 'bar',
+                data: { labels: dLabels, datasets: [{ data: dValues, backgroundColor: kwColor + '99' }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } } }
+            }));
+        } else {
+            dayChartInsts.push(null);
+        }
+    });
 }
 
 // ===== 추천 키워드 (블루키워드) 렌더링 =====
@@ -982,11 +1067,11 @@ function renderRelatedKeywords() {
 function exportCSV() {
     if (analysisResults.length === 0) return;
     const BOM = '\uFEFF';
-    let csv = BOM + '키워드,PC검색수,모바일검색수,월간총검색수,블로그문서수,유효검색수,경쟁도,등급\n';
+    let csv = BOM + '키워드,PC검색수,모바일검색수,월간총검색수,누적문서수,월발행수,포화도(%),유효검색수,경쟁도,등급\n';
     analysisResults.forEach(item => {
         const c = calc(item);
         const g = getGrade(c.ratio);
-        csv += `${item.keyword},${item.pc},${item.mobile},${item.pc+item.mobile},${item.blogCount},${c.eff},${c.ratio===Infinity?'∞':c.ratio.toFixed(4)},${g.grade}\n`;
+        csv += `${item.keyword},${item.pc},${item.mobile},${item.pc+item.mobile},${item.blogCount},${item.monthlyBlogCount||0},${c.saturation},${c.eff},${c.ratio===Infinity?'∞':c.ratio.toFixed(2)},${g.grade}\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
@@ -1003,6 +1088,103 @@ function resetAll() {
     document.getElementById('keywordTags').innerHTML = '';
     document.getElementById('keywordInput').value = '';
     showToast('초기화 완료', 'success');
+}
+
+// ===== 내 블로그 진단 =====
+function switchDiag(mode) {
+    document.querySelectorAll('[data-diag]').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-diag="${mode}"]`).classList.add('active');
+    document.getElementById('diagRankPanel').style.display = mode === 'rank' ? '' : 'none';
+    document.getElementById('diagMissingPanel').style.display = mode === 'missing' ? '' : 'none';
+    document.getElementById('diagResult').innerHTML = '';
+}
+
+async function runRankCheck() {
+    const blogId = document.getElementById('diagBlogId').value.trim();
+    if (!blogId) { showToast('블로그 ID 또는 URL을 입력하세요.', 'error'); return; }
+    if (keywords.length === 0) { showToast('먼저 위에서 키워드를 1개 이상 추가하세요.', 'error'); return; }
+
+    const resultEl = document.getElementById('diagResult');
+    resultEl.innerHTML = '<div style="padding:20px;text-align:center;"><div class="spinner" style="margin:0 auto 10px;"></div><p style="color:var(--text-sub);font-size:0.85rem;">검색 중...</p></div>';
+
+    try {
+        const res = await fetch('/api/blog-check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'rank', blogId, keywords }),
+        });
+        if (!res.ok) { const err = await res.json(); throw new Error(err.error || '진단 실패'); }
+        const data = await res.json();
+
+        let html = `<div style="margin-bottom:10px;font-size:0.9rem;"><strong>블로그 ID:</strong> ${data.blogId}</div>`;
+        html += '<div style="overflow-x:auto;"><table class="summary-table"><thead><tr><th>키워드</th><th>전체 검색 결과</th><th>내 블로그 순위</th><th>노출 글</th></tr></thead><tbody>';
+        data.results.forEach(r => {
+            const rankCell = r.rank > 0
+                ? `<span style="color:#03C75A;font-weight:800;">${r.rank}위</span>`
+                : `<span style="color:#e74c3c;font-weight:700;">100위권 밖</span>`;
+            const titleCell = r.matchedLink
+                ? `<a href="${r.matchedLink}" target="_blank" style="color:#1a3a8a;text-decoration:underline;font-size:0.8rem;">${r.matchedTitle || '바로가기'}</a>`
+                : '-';
+            html += `<tr>
+                <td>${r.keyword}</td>
+                <td>${(r.total || 0).toLocaleString()}</td>
+                <td>${rankCell}</td>
+                <td style="text-align:left;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${titleCell}</td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+
+        if (data.errors && data.errors.length) {
+            html += '<p style="color:#e74c3c;font-size:0.8rem;margin-top:8px;">일부 키워드 오류: ' + data.errors.join(', ') + '</p>';
+        }
+        resultEl.innerHTML = html;
+    } catch (e) {
+        resultEl.innerHTML = `<p style="color:#e74c3c;font-size:0.85rem;padding:12px;background:#fde8e8;border-radius:8px;">${e.message}</p>`;
+    }
+}
+
+async function runMissingCheck() {
+    const postUrl = document.getElementById('diagPostUrl').value.trim();
+    if (!postUrl) { showToast('글 URL을 입력하세요.', 'error'); return; }
+    if (!/^https?:\/\//.test(postUrl)) { showToast('http:// 또는 https://로 시작하는 URL을 입력하세요.', 'error'); return; }
+
+    const resultEl = document.getElementById('diagResult');
+    resultEl.innerHTML = '<div style="padding:20px;text-align:center;"><div class="spinner" style="margin:0 auto 10px;"></div><p style="color:var(--text-sub);font-size:0.85rem;">제목 추출 후 검색 중...</p></div>';
+
+    try {
+        const res = await fetch('/api/blog-check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'missing', postUrl }),
+        });
+        if (!res.ok) { const err = await res.json(); throw new Error(err.error || '진단 실패'); }
+        const data = await res.json();
+
+        const verdictColor = data.verdict === '정상 노출' ? '#03C75A' : '#e74c3c';
+        const verdictBg = data.verdict === '정상 노출' ? '#e8f8ef' : '#fde8e8';
+
+        let html = `
+            <div style="background:${verdictBg};border-radius:10px;padding:14px;margin-bottom:12px;">
+                <div style="font-weight:900;color:${verdictColor};font-size:1.05rem;">진단: ${data.verdict}</div>
+                <div style="font-size:0.85rem;color:var(--text-sub);margin-top:4px;">${data.verdictDesc}</div>
+            </div>
+            <div style="font-size:0.85rem;margin-bottom:6px;"><strong>추출된 제목:</strong> ${data.title}</div>
+            <div style="overflow-x:auto;"><table class="summary-table"><thead><tr><th>검색어</th><th>전체 결과</th><th>내 글 순위</th></tr></thead><tbody>`;
+        data.checks.forEach(c => {
+            const rankCell = c.rank > 0
+                ? `<span style="color:#03C75A;font-weight:800;">${c.rank}위</span>`
+                : `<span style="color:#e74c3c;font-weight:700;">미노출</span>`;
+            html += `<tr>
+                <td style="text-align:left;">${c.query}</td>
+                <td>${(c.totalResults || 0).toLocaleString()}</td>
+                <td>${rankCell}</td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+        resultEl.innerHTML = html;
+    } catch (e) {
+        resultEl.innerHTML = `<p style="color:#e74c3c;font-size:0.85rem;padding:12px;background:#fde8e8;border-radius:8px;">${e.message}</p>`;
+    }
 }
 
 function showToast(msg, type = 'success') {
