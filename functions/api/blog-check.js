@@ -27,34 +27,37 @@ async function searchBlog(keyword, clientId, clientSecret, display = 100, start 
     return JSON.parse(text);
 }
 
-// ===== 글 페이지에서 제목 추출 =====
-async function fetchPostTitle(postUrl, depth = 0) {
-    if (depth > 2) throw new Error('리다이렉트 한도 초과');
-    let url;
-    try { url = new URL(postUrl); }
-    catch (e) { throw new Error('잘못된 URL 형식'); }
-
-    const res = await fetch(url.toString(), {
+// ===== 네이버 블로그 RSS에서 최근 글 목록 추출 =====
+async function fetchBlogRecentPosts(blogId, limit = 10) {
+    const rssUrl = `https://rss.blog.naver.com/${encodeURIComponent(blogId)}.xml`;
+    const res = await fetch(rssUrl, {
         method: 'GET',
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html',
-            'Accept-Language': 'ko-KR,ko;q=0.9',
+            'Accept': 'application/rss+xml, application/xml, text/xml',
         },
-        redirect: 'follow',
         signal: AbortSignal.timeout(10000),
     });
-    const html = await res.text();
-    let title = '';
-    const ogMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
-    if (ogMatch) title = ogMatch[1];
-    else {
-        const tMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-        if (tMatch) title = tMatch[1];
+    if (!res.ok) throw new Error(`RSS 가져오기 실패 (${res.status}). 블로그 ID 확인 필요.`);
+    const xml = await res.text();
+
+    // <item>...</item> 블록 추출
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+    const posts = [];
+    let m;
+    while ((m = itemRegex.exec(xml)) !== null && posts.length < limit) {
+        const block = m[1];
+        // title (CDATA 또는 일반 텍스트)
+        const titleMatch = block.match(/<title>(?:<!\[CDATA\[([\s\S]*?)\]\]>|([\s\S]*?))<\/title>/);
+        const linkMatch = block.match(/<link>([\s\S]*?)<\/link>/);
+        if (titleMatch && linkMatch) {
+            const title = (titleMatch[1] || titleMatch[2] || '').trim();
+            const link = linkMatch[1].trim();
+            if (title && link) posts.push({ title, link });
+        }
     }
-    title = title.replace(/\s*[:|·\-]\s*네이버\s*블로그\s*$/i, '').trim();
-    if (!title) throw new Error('제목을 찾을 수 없습니다');
-    return title;
+    if (posts.length === 0) throw new Error('RSS에서 글을 찾을 수 없습니다. 블로그가 비공개거나 글이 없을 수 있습니다.');
+    return posts;
 }
 
 function normalizeBlogId(input) {
@@ -159,24 +162,23 @@ export async function onRequestPost({ request, env }) {
             });
         }
 
-        // ===== (B) missing 모드 =====
+        // ===== (B) missing 모드: 블로그 ID로 최근 10개 글 일괄 진단 =====
         if (mode === 'missing') {
-            if (!postUrl) return jsonResponse({ error: '블로그 글 URL을 입력해주세요.' }, 400);
+            const id = normalizeBlogId(blogId);
+            if (!id) return jsonResponse({ error: '블로그 ID를 입력해주세요.' }, 400);
 
-            const targetNorm = normalizePostUrl(postUrl);
-            const targetBlogId = extractBlogIdFromLink(postUrl);
+            // 1. RSS에서 최근 10개 글 목록 가져오기
+            let posts;
+            try { posts = await fetchBlogRecentPosts(id, 10); }
+            catch (e) { return jsonResponse({ error: e.message }, 400); }
 
-            let title;
-            try { title = await fetchPostTitle(postUrl); }
-            catch (e) { return jsonResponse({ error: `글 제목을 가져올 수 없습니다: ${e.message}` }, 400); }
-
-            const queries = [title];
-            if (title.length > 25) queries.push(title.substring(0, 20));
-
-            const checks = [];
-            for (const q of queries) {
+            // 2. 각 글마다 제목으로 검색 → 노출 여부 진단
+            const results = [];
+            const errors = [];
+            for (const post of posts) {
+                const targetNorm = normalizePostUrl(post.link);
                 try {
-                    const data = await searchBlog(q, clientId, clientSecret, 100, 1);
+                    const data = await searchBlog(post.title, clientId, clientSecret, 100, 1);
                     const items = data.items || [];
                     let foundRank = -1;
                     for (let i = 0; i < items.length; i++) {
@@ -185,41 +187,56 @@ export async function onRequestPost({ request, env }) {
                             break;
                         }
                     }
-                    checks.push({
-                        query: q,
+                    results.push({
+                        title: post.title,
+                        link: post.link,
                         rank: foundRank,
                         totalResults: data.total || 0,
-                        topItems: items.slice(0, 3).map(it => ({
-                            title: (it.title || '').replace(/<[^>]+>/g, ''),
-                            blogId: extractBlogIdFromLink(it.link),
-                            link: it.link,
-                        })),
+                        status: foundRank > 0 ? 'exposed' : 'missing',
                     });
                     await new Promise(r => setTimeout(r, 100));
                 } catch (e) {
-                    checks.push({ query: q, rank: -1, totalResults: 0, error: e.message });
+                    errors.push(`${post.title}: ${e.message}`);
+                    results.push({
+                        title: post.title,
+                        link: post.link,
+                        rank: -1,
+                        totalResults: 0,
+                        status: 'error',
+                        error: e.message,
+                    });
                 }
             }
 
-            const exposedAnywhere = checks.some(c => c.rank > 0);
+            // 3. 종합 진단
+            const exposedCount = results.filter(r => r.status === 'exposed').length;
+            const missingCount = results.filter(r => r.status === 'missing').length;
+            const totalCount = results.length;
+
             let verdict, verdictDesc;
-            if (exposedAnywhere) {
-                const bestCheck = checks.find(c => c.rank > 0);
-                verdict = '정상 노출';
-                verdictDesc = `제목 검색 시 ${bestCheck.rank}위에 노출됩니다.`;
+            const exposedRate = totalCount > 0 ? exposedCount / totalCount : 0;
+            if (exposedRate >= 0.8) {
+                verdict = '건강한 블로그';
+                verdictDesc = `최근 ${totalCount}개 중 ${exposedCount}개 정상 노출. 누락 위험 낮음.`;
+            } else if (exposedRate >= 0.5) {
+                verdict = '부분 누락';
+                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 누락 의심. 일부 글에 SEO/품질 문제 가능성.`;
+            } else if (exposedRate > 0) {
+                verdict = '누락 다수';
+                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 누락 의심. 저품질 필터링 가능성 검토 필요.`;
             } else {
-                verdict = '누락 의심';
-                verdictDesc = '제목으로 검색해도 100위 안에 노출되지 않습니다. 저품질/스팸 필터링 가능성이 있으나, 키워드 경쟁이 매우 치열한 경우에도 발생할 수 있습니다.';
+                verdict = '저품질 의심';
+                verdictDesc = `최근 글 대부분이 100위 안에 노출되지 않음. 저품질 블로그 필터링 가능성 높음.`;
             }
 
             return jsonResponse({
                 mode: 'missing',
-                postUrl,
-                blogId: targetBlogId,
-                title,
-                checks,
+                blogId: id,
+                results,
+                summary: { totalCount, exposedCount, missingCount, exposedRate: Math.round(exposedRate * 100) },
                 verdict,
                 verdictDesc,
+                errors: errors.length > 0 ? errors : undefined,
                 timestamp: new Date().toISOString(),
             });
         }
