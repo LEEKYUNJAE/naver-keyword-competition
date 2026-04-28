@@ -78,20 +78,45 @@ function extractBlogIdFromLink(link) {
         const host = u.hostname.replace(/^m\./, '');
         if (host !== 'blog.naver.com') return '';
         const seg = u.pathname.split('/').filter(Boolean);
-        return (seg[0] || '').toLowerCase();
+        const first = seg[0] || '';
+        // PostView.naver?blogId=X 형식
+        if (first === 'PostView.naver' || first === 'PostView.nhn') {
+            return (u.searchParams.get('blogId') || '').toLowerCase();
+        }
+        return first.toLowerCase();
     } catch (e) { return ''; }
 }
 
+// 네이버 블로그 URL을 다양한 형식에서 통일된 키로 정규화
+// 지원 형식:
+// - blog.naver.com/myid/12345  (RSS / 일반)
+// - blog.naver.com/myid?Redirect=Log&logNo=12345  (Search API 응답)
+// - blog.naver.com/PostView.naver?blogId=myid&logNo=12345  (구식)
+// - m.blog.naver.com/* (모바일)
 function normalizePostUrl(link) {
     if (!link) return '';
     try {
         const u = new URL(link);
         const host = u.hostname.replace(/^m\./, '');
         if (host !== 'blog.naver.com') return link.toLowerCase();
+
+        let id = '';
+        let postId = u.searchParams.get('logNo') || '';
         const seg = u.pathname.split('/').filter(Boolean);
-        const id = (seg[0] || '').toLowerCase();
-        const postId = seg[1] || '';
-        return `blog.naver.com/${id}/${postId}`;
+
+        if (seg.length > 0) {
+            const first = seg[0];
+            if (first === 'PostView.naver' || first === 'PostView.nhn') {
+                id = (u.searchParams.get('blogId') || '').toLowerCase();
+            } else {
+                id = first.toLowerCase();
+                if (seg.length > 1 && /^\d+$/.test(seg[1])) {
+                    postId = postId || seg[1];
+                }
+            }
+        }
+
+        return `${id}/${postId}`;
     } catch (e) { return String(link).toLowerCase(); }
 }
 
@@ -181,10 +206,23 @@ export async function onRequestPost({ request, env }) {
                     const data = await searchBlog(post.title, clientId, clientSecret, 100, 1);
                     const items = data.items || [];
                     let foundRank = -1;
+                    // 1차: 정규화된 URL 매칭
                     for (let i = 0; i < items.length; i++) {
                         if (normalizePostUrl(items[i].link) === targetNorm) {
                             foundRank = i + 1;
                             break;
+                        }
+                    }
+                    // 2차 fallback: 같은 블로그 ID + 같은 제목으로 매칭
+                    if (foundRank === -1) {
+                        const cleanTitle = post.title.replace(/\s+/g, '').toLowerCase();
+                        for (let i = 0; i < items.length; i++) {
+                            const itemBlogId = extractBlogIdFromLink(items[i].link);
+                            const itemTitle = (items[i].title || '').replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, '').replace(/\s+/g, '').toLowerCase();
+                            if (itemBlogId === id && itemTitle === cleanTitle) {
+                                foundRank = i + 1;
+                                break;
+                            }
                         }
                     }
                     results.push({
@@ -193,6 +231,17 @@ export async function onRequestPost({ request, env }) {
                         rank: foundRank,
                         totalResults: data.total || 0,
                         status: foundRank > 0 ? 'exposed' : 'missing',
+                        // 디버그: mismatch 원인 파악용 — RSS 링크 vs API 응답 첫 3개 링크 비교
+                        debug: foundRank === -1 ? {
+                            rssLink: post.link,
+                            rssNorm: targetNorm,
+                            apiTop3: items.slice(0, 3).map(it => ({
+                                link: it.link,
+                                norm: normalizePostUrl(it.link),
+                                title: (it.title || '').replace(/<[^>]+>/g, ''),
+                                blogId: extractBlogIdFromLink(it.link),
+                            })),
+                        } : undefined,
                     });
                     await new Promise(r => setTimeout(r, 100));
                 } catch (e) {

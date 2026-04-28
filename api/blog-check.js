@@ -98,23 +98,43 @@ function extractBlogIdFromLink(link) {
         const host = u.hostname.replace(/^m\./, '');
         if (host !== 'blog.naver.com') return '';
         const seg = u.pathname.split('/').filter(Boolean);
-        return (seg[0] || '').toLowerCase();
+        const first = seg[0] || '';
+        if (first === 'PostView.naver' || first === 'PostView.nhn') {
+            return (u.searchParams.get('blogId') || '').toLowerCase();
+        }
+        return first.toLowerCase();
     } catch (e) {
         return '';
     }
 }
 
-// URL 정규화 (PC/모바일 동일시, postId 비교)
+// URL 정규화: 다양한 형식의 네이버 블로그 URL을 통일된 키로
+// 지원: blog.naver.com/myid/12345, blog.naver.com/myid?logNo=12345,
+//       blog.naver.com/PostView.naver?blogId=myid&logNo=12345, m.blog.naver.com/*
 function normalizePostUrl(link) {
     if (!link) return '';
     try {
         const u = new URL(link);
         const host = u.hostname.replace(/^m\./, '');
         if (host !== 'blog.naver.com') return link.toLowerCase();
+
+        let id = '';
+        let postId = u.searchParams.get('logNo') || '';
         const seg = u.pathname.split('/').filter(Boolean);
-        const id = (seg[0] || '').toLowerCase();
-        const postId = seg[1] || '';
-        return `blog.naver.com/${id}/${postId}`;
+
+        if (seg.length > 0) {
+            const first = seg[0];
+            if (first === 'PostView.naver' || first === 'PostView.nhn') {
+                id = (u.searchParams.get('blogId') || '').toLowerCase();
+            } else {
+                id = first.toLowerCase();
+                if (seg.length > 1 && /^\d+$/.test(seg[1])) {
+                    postId = postId || seg[1];
+                }
+            }
+        }
+
+        return `${id}/${postId}`;
     } catch (e) {
         return String(link).toLowerCase();
     }
@@ -209,10 +229,23 @@ module.exports = async (req, res) => {
                     const data = await searchBlog(post.title, clientId, clientSecret, 100, 1);
                     const items = data.items || [];
                     let foundRank = -1;
+                    // 1차: 정규화된 URL 매칭
                     for (let i = 0; i < items.length; i++) {
                         if (normalizePostUrl(items[i].link) === targetNorm) {
                             foundRank = i + 1;
                             break;
+                        }
+                    }
+                    // 2차 fallback: 같은 블로그 ID + 같은 제목 매칭
+                    if (foundRank === -1) {
+                        const cleanTitle = post.title.replace(/\s+/g, '').toLowerCase();
+                        for (let i = 0; i < items.length; i++) {
+                            const itemBlogId = extractBlogIdFromLink(items[i].link);
+                            const itemTitle = (items[i].title || '').replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, '').replace(/\s+/g, '').toLowerCase();
+                            if (itemBlogId === id && itemTitle === cleanTitle) {
+                                foundRank = i + 1;
+                                break;
+                            }
                         }
                     }
                     results.push({
