@@ -197,29 +197,30 @@ export async function onRequestPost({ request, env }) {
             try { posts = await fetchBlogRecentPosts(id, 10); }
             catch (e) { return jsonResponse({ error: e.message }, 400); }
 
-            // 2. 각 글마다 제목으로 검색 → 노출 여부 진단
+            // 2. 각 글마다 "제목 전체" 정확 일치 검색 → 인덱스 여부 판별
+            //    (쌍따옴표로 감싸면 네이버가 정확 구문 검색 → 동일 제목 글만 결과에 나옴)
             const results = [];
             const errors = [];
             for (const post of posts) {
                 const targetNorm = normalizePostUrl(post.link);
+                // 제목에서 쌍따옴표 제거 후 정확 구문 검색 쿼리 생성
+                const safeTitle = post.title.replace(/["']/g, '').trim();
+                const exactQuery = `"${safeTitle}"`;
                 try {
-                    const data = await searchBlog(post.title, clientId, clientSecret, 100, 1);
+                    const data = await searchBlog(exactQuery, clientId, clientSecret, 100, 1);
                     const items = data.items || [];
                     let foundRank = -1;
-                    // 1차: 정규화된 URL 매칭
+                    // URL 매칭 (정확 구문 검색이라 동일 블로그·동일 제목 글이 거의 무조건 상위)
                     for (let i = 0; i < items.length; i++) {
                         if (normalizePostUrl(items[i].link) === targetNorm) {
                             foundRank = i + 1;
                             break;
                         }
                     }
-                    // 2차 fallback: 같은 블로그 ID + 같은 제목으로 매칭
+                    // fallback: 같은 블로그 ID 매칭 (URL 형식 변형 대비)
                     if (foundRank === -1) {
-                        const cleanTitle = post.title.replace(/\s+/g, '').toLowerCase();
                         for (let i = 0; i < items.length; i++) {
-                            const itemBlogId = extractBlogIdFromLink(items[i].link);
-                            const itemTitle = (items[i].title || '').replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, '').replace(/\s+/g, '').toLowerCase();
-                            if (itemBlogId === id && itemTitle === cleanTitle) {
+                            if (extractBlogIdFromLink(items[i].link) === id) {
                                 foundRank = i + 1;
                                 break;
                             }
@@ -231,8 +232,8 @@ export async function onRequestPost({ request, env }) {
                         rank: foundRank,
                         totalResults: data.total || 0,
                         status: foundRank > 0 ? 'exposed' : 'missing',
-                        // 디버그: mismatch 원인 파악용 — RSS 링크 vs API 응답 첫 3개 링크 비교
                         debug: foundRank === -1 ? {
+                            query: exactQuery,
                             rssLink: post.link,
                             rssNorm: targetNorm,
                             apiTop3: items.slice(0, 3).map(it => ({
@@ -262,20 +263,24 @@ export async function onRequestPost({ request, env }) {
             const missingCount = results.filter(r => r.status === 'missing').length;
             const totalCount = results.length;
 
+            // 정확 구문 검색(쌍따옴표) 결과 기준이므로 인덱스된 글은 거의 100% 노출되어야 정상
             let verdict, verdictDesc;
             const exposedRate = totalCount > 0 ? exposedCount / totalCount : 0;
-            if (exposedRate >= 0.8) {
+            if (exposedRate >= 0.9) {
                 verdict = '건강한 블로그';
-                verdictDesc = `최근 ${totalCount}개 중 ${exposedCount}개 정상 노출. 누락 위험 낮음.`;
-            } else if (exposedRate >= 0.5) {
-                verdict = '부분 누락';
-                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 누락 의심. 일부 글에 SEO/품질 문제 가능성.`;
-            } else if (exposedRate > 0) {
+                verdictDesc = `최근 ${totalCount}개 중 ${exposedCount}개 정상 인덱스. 필터링 위험 낮음.`;
+            } else if (exposedRate >= 0.7) {
+                verdict = '일부 누락';
+                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 인덱스 누락. 해당 글들 점검 권장.`;
+            } else if (exposedRate >= 0.3) {
                 verdict = '누락 다수';
-                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 누락 의심. 저품질 필터링 가능성 검토 필요.`;
+                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 인덱스 누락. 저품질 필터링 가능성 있음.`;
+            } else if (exposedRate > 0) {
+                verdict = '저품질 강력 의심';
+                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 인덱스 누락. 블로그 전반 필터링 의심.`;
             } else {
-                verdict = '저품질 의심';
-                verdictDesc = `최근 글 대부분이 100위 안에 노출되지 않음. 저품질 블로그 필터링 가능성 높음.`;
+                verdict = '저품질 확정 가능성';
+                verdictDesc = `최근 글 모두 정확 검색 시 미노출. 블로그 자체가 검색 차단된 상태로 보임.`;
             }
 
             return jsonResponse({

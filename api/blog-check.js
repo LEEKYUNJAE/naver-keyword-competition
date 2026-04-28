@@ -225,24 +225,24 @@ module.exports = async (req, res) => {
             const errors = [];
             for (const post of posts) {
                 const targetNorm = normalizePostUrl(post.link);
+                // 제목 전체 정확 구문 검색(쌍따옴표) — 동일 제목 글만 결과에 나옴
+                const safeTitle = post.title.replace(/["']/g, '').trim();
+                const exactQuery = `"${safeTitle}"`;
                 try {
-                    const data = await searchBlog(post.title, clientId, clientSecret, 100, 1);
+                    const data = await searchBlog(exactQuery, clientId, clientSecret, 100, 1);
                     const items = data.items || [];
                     let foundRank = -1;
-                    // 1차: 정규화된 URL 매칭
+                    // URL 매칭
                     for (let i = 0; i < items.length; i++) {
                         if (normalizePostUrl(items[i].link) === targetNorm) {
                             foundRank = i + 1;
                             break;
                         }
                     }
-                    // 2차 fallback: 같은 블로그 ID + 같은 제목 매칭
+                    // fallback: 같은 블로그 ID 매칭
                     if (foundRank === -1) {
-                        const cleanTitle = post.title.replace(/\s+/g, '').toLowerCase();
                         for (let i = 0; i < items.length; i++) {
-                            const itemBlogId = extractBlogIdFromLink(items[i].link);
-                            const itemTitle = (items[i].title || '').replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, '').replace(/\s+/g, '').toLowerCase();
-                            if (itemBlogId === id && itemTitle === cleanTitle) {
+                            if (extractBlogIdFromLink(items[i].link) === id) {
                                 foundRank = i + 1;
                                 break;
                             }
@@ -275,18 +275,21 @@ module.exports = async (req, res) => {
             const exposedRate = totalCount > 0 ? exposedCount / totalCount : 0;
 
             let verdict, verdictDesc;
-            if (exposedRate >= 0.8) {
+            if (exposedRate >= 0.9) {
                 verdict = '건강한 블로그';
-                verdictDesc = `최근 ${totalCount}개 중 ${exposedCount}개 정상 노출. 누락 위험 낮음.`;
-            } else if (exposedRate >= 0.5) {
-                verdict = '부분 누락';
-                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 누락 의심. 일부 글에 SEO/품질 문제 가능성.`;
-            } else if (exposedRate > 0) {
+                verdictDesc = `최근 ${totalCount}개 중 ${exposedCount}개 정상 인덱스. 필터링 위험 낮음.`;
+            } else if (exposedRate >= 0.7) {
+                verdict = '일부 누락';
+                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 인덱스 누락. 해당 글들 점검 권장.`;
+            } else if (exposedRate >= 0.3) {
                 verdict = '누락 다수';
-                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 누락 의심. 저품질 필터링 가능성 검토 필요.`;
+                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 인덱스 누락. 저품질 필터링 가능성 있음.`;
+            } else if (exposedRate > 0) {
+                verdict = '저품질 강력 의심';
+                verdictDesc = `최근 ${totalCount}개 중 ${missingCount}개 인덱스 누락. 블로그 전반 필터링 의심.`;
             } else {
-                verdict = '저품질 의심';
-                verdictDesc = `최근 글 대부분이 100위 안에 노출되지 않음. 저품질 블로그 필터링 가능성 높음.`;
+                verdict = '저품질 확정 가능성';
+                verdictDesc = `최근 글 모두 정확 검색 시 미노출. 블로그 자체가 검색 차단된 상태로 보임.`;
             }
 
             return res.status(200).json({
