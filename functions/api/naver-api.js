@@ -345,14 +345,20 @@ export async function onRequestPost({ request, env }) {
             }
         }
 
-        // STEP 3: 연관 키워드 블로그 문서수 (병렬 + 재시도)
+        // STEP 3: 연관 키워드 블로그 문서수
+        // 네이버 Search API 한도: ~10 req/s. batch 2 + 250ms 간격 = 8 req/s (안전)
+        // 429 감지 시 exponential backoff
         async function fetchWithRetry(item) {
-            for (let attempt = 0; attempt < 2; attempt++) {
+            for (let attempt = 0; attempt < 3; attempt++) {
                 try {
                     item.blogCount = await callSearchAPI(item.keyword, searchClientId, searchClientSecret);
                     return;
                 } catch (e) {
-                    if (attempt === 0) await new Promise(r => setTimeout(r, 200));
+                    const isRateLimit = /\b429\b/.test(e.message);
+                    if (attempt < 2) {
+                        const wait = isRateLimit ? 1000 * (attempt + 1) : 200;
+                        await new Promise(r => setTimeout(r, wait));
+                    }
                 }
             }
             item.blogCount = 0;
@@ -360,10 +366,10 @@ export async function onRequestPost({ request, env }) {
 
         for (const kw of keywords) {
             const related = relatedKeywordsMap[kw] || [];
-            for (let i = 0; i < related.length; i += 5) {
-                const batch = related.slice(i, i + 5);
+            for (let i = 0; i < related.length; i += 2) {
+                const batch = related.slice(i, i + 2);
                 await Promise.all(batch.map(item => fetchWithRetry(item)));
-                await new Promise(r => setTimeout(r, 80));
+                await new Promise(r => setTimeout(r, 250));
             }
         }
 
