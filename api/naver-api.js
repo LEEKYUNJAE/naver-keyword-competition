@@ -473,13 +473,16 @@ module.exports = async (req, res) => {
             item.blogCount = 0;
         }
 
+        // 평탄화 후 일괄 처리 (마지막 메인 누락 방지)
+        const allRelated = [];
         for (const kw of keywords) {
             const related = relatedKeywordsMap[kw] || [];
-            for (let i = 0; i < related.length; i += 2) {
-                const batch = related.slice(i, i + 2);
-                await Promise.all(batch.map(item => fetchWithRetry(item)));
-                await new Promise(r => setTimeout(r, 250));
-            }
+            for (const item of related) allRelated.push(item);
+        }
+        for (let i = 0; i < allRelated.length; i += 2) {
+            const batch = allRelated.slice(i, i + 2);
+            await Promise.all(batch.map(item => fetchWithRetry(item)));
+            await new Promise(r => setTimeout(r, 250));
         }
 
         // STEP 4: 스마트블록 키워드 추출

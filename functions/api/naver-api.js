@@ -364,13 +364,17 @@ export async function onRequestPost({ request, env }) {
             item.blogCount = 0;
         }
 
+        // 모든 메인 키워드의 연관을 평탄화해서 일괄 처리
+        // → 마지막 메인이 통째로 누락되는 현상 방지 (시간 부족 시 균등 분배)
+        const allRelated = [];
         for (const kw of keywords) {
             const related = relatedKeywordsMap[kw] || [];
-            for (let i = 0; i < related.length; i += 2) {
-                const batch = related.slice(i, i + 2);
-                await Promise.all(batch.map(item => fetchWithRetry(item)));
-                await new Promise(r => setTimeout(r, 250));
-            }
+            for (const item of related) allRelated.push(item);
+        }
+        for (let i = 0; i < allRelated.length; i += 2) {
+            const batch = allRelated.slice(i, i + 2);
+            await Promise.all(batch.map(item => fetchWithRetry(item)));
+            await new Promise(r => setTimeout(r, 250));
         }
 
         // STEP 4: 스마트블록
