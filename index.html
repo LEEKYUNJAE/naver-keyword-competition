@@ -429,6 +429,24 @@
             padding: 24px 20px;
             color: var(--text-light);
             font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .footer-logo {
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+        .footer-logo img {
+            width: 180%; height: 180%;
+            margin: -40% 0 0 -40%;
+            display: block;
         }
 
         /* Toast */
@@ -631,7 +649,7 @@
     </div>
 </div>
 
-<div class="footer">Made by <strong>다퍼주는남자</strong> | 네이버 블로그 키워드 경쟁도 분석기 v1.0</div>
+<div class="footer"><span class="footer-logo"><img src="logo.png" alt="KEYPLAT"></span><span>Made by <strong>다퍼주는남자</strong> | 네이버 블로그 키워드 경쟁도 분석기 v1.0</span></div>
 
 <div class="toast" id="toast"></div>
 
