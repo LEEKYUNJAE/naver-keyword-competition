@@ -88,6 +88,119 @@
 
         .container { max-width: 960px; margin: 0 auto; padding: 24px 20px 40px; }
 
+        /* === Sidebar Layout === */
+        .app-layout {
+            display: flex;
+            align-items: stretch;
+            min-height: calc(100vh - 200px);
+            background: var(--bg);
+        }
+        .sidebar {
+            width: 240px;
+            flex-shrink: 0;
+            background: #ffffff;
+            border-right: 1px solid var(--border);
+            padding: 24px 14px 40px;
+            position: sticky;
+            top: 0;
+            align-self: flex-start;
+            max-height: 100vh;
+            overflow-y: auto;
+        }
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px 18px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sidebar-brand-logo {
+            width: 28px; height: 28px; border-radius: 8px;
+            overflow: hidden; flex-shrink: 0;
+        }
+        .sidebar-brand-logo img { width: 180%; height: 180%; margin: -40% 0 0 -40%; display: block; }
+        .sidebar-brand-text {
+            font-weight: 900; font-size: 0.95rem; color: var(--text);
+            letter-spacing: -0.5px;
+        }
+        .sidebar-brand-sub {
+            font-size: 0.7rem; color: var(--text-light); font-weight: 600;
+        }
+        .sidebar-section { margin-bottom: 18px; }
+        .sidebar-label {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            font-weight: 700;
+            padding: 6px 12px;
+            margin-bottom: 4px;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            text-align: left;
+            padding: 10px 14px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-sub);
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            margin-bottom: 2px;
+            transition: all 0.15s;
+        }
+        .nav-btn:hover { background: #f5f6f8; color: var(--text); }
+        .nav-btn.active {
+            background: linear-gradient(135deg, #fff5dc 0%, #f3e7c5 100%);
+            color: #1a1a1a;
+            font-weight: 800;
+            box-shadow: inset 3px 0 0 #d4af37;
+        }
+        .nav-btn .nav-icon { font-size: 1rem; flex-shrink: 0; }
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            background: var(--bg);
+        }
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 100;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 36px; height: 36px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+        }
+        @media (max-width: 900px) {
+            .app-layout { flex-direction: column; }
+            .sidebar {
+                width: 100%;
+                position: relative;
+                top: auto;
+                max-height: none;
+                padding: 16px 14px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                display: none;
+            }
+            .sidebar.open { display: block; }
+            .sidebar-toggle { display: block; }
+            .main-content { padding-top: 8px; }
+        }
+
         /* Card Base */
         .card {
             background: var(--white);
@@ -483,17 +596,49 @@
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-    <div class="header-inner">
-        <div class="header-title-wrap">
-            <h1>다퍼남 네이버 키워드 경쟁도 분석기</h1>
-            <p>키워드를 입력하면 경쟁도를 자동 분석하고 S~F 등급을 매겨드립니다</p>
-        </div>
-    </div>
-</div>
+<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="메뉴">☰</button>
 
-<div class="container">
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-logo"><img src="logo.png" alt="KEYPLAT"></div>
+      <div>
+        <div class="sidebar-brand-text">다퍼남</div>
+        <div class="sidebar-brand-sub">키워드 분석기 v1.0</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">분석 도구</div>
+      <button class="nav-btn active" data-section="keyword" onclick="showSection('keyword')"><span class="nav-icon">🔍</span> 키워드 경쟁도 분석</button>
+      <button class="nav-btn" data-section="posting" onclick="showSection('posting')"><span class="nav-icon">📝</span> 포스팅 분석</button>
+      <button class="nav-btn" data-section="blog-diag" onclick="showSection('blog-diag')"><span class="nav-icon">🩺</span> 내 블로그 진단</button>
+      <button class="nav-btn" data-section="bulk-blog" onclick="showSection('bulk-blog')"><span class="nav-icon">👥</span> 블로그 대량 조회</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">정보</div>
+      <button class="nav-btn" data-section="guide" onclick="showSection('guide')"><span class="nav-icon">📖</span> 사용 가이드</button>
+      <button class="nav-btn" data-section="feedback" onclick="showSection('feedback')"><span class="nav-icon">💬</span> 피드백</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-inner">
+        <div class="header-title-wrap">
+          <h1 id="pageTitle">키워드 경쟁도 분석</h1>
+          <p id="pageDesc">키워드를 입력하면 경쟁도를 자동 분석하고 S~F 등급을 매겨드립니다</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+    <!-- Section: 키워드 분석 -->
+    <div class="page-section active" id="section-keyword">
 
     <!-- Keyword Input -->
     <div class="card">
@@ -510,49 +655,6 @@
     <div class="action-bar">
         <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">경쟁도 분석</button>
         <button class="btn-reset" onclick="resetAll()">초기화</button>
-    </div>
-
-    <!-- 내 블로그 진단 -->
-    <div class="card">
-        <div class="card-title">🔍 내 블로그 진단</div>
-        <div class="toggle-wrap" style="margin-bottom:14px;width:fit-content;">
-            <button class="toggle-btn active" data-diag="rank" onclick="switchDiag('rank')">키워드 순위 확인</button>
-            <button class="toggle-btn" data-diag="missing" onclick="switchDiag('missing')">글 누락 진단</button>
-        </div>
-
-        <!-- (A) 순위 확인 -->
-        <div id="diagRankPanel">
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                <input type="text" id="diagBlogId" placeholder="블로그 ID 또는 URL (예: myid 또는 blog.naver.com/myid)"
-                       style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
-                <button class="btn-add" onclick="runRankCheck()">순위 확인</button>
-            </div>
-        </div>
-
-        <!-- (B) 누락 진단 (블로그 ID로 최근 10개 글 일괄) -->
-        <div id="diagMissingPanel" style="display:none;">
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                <input type="text" id="diagMissingBlogId" placeholder="블로그 ID 또는 URL (예: myid 또는 blog.naver.com/myid)"
-                       style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
-                <button class="btn-add" onclick="runMissingCheck()">일괄 진단</button>
-            </div>
-        </div>
-
-        <div id="diagResult" style="margin-top:16px;"></div>
-    </div>
-
-    <!-- 블로그 대량 조회 -->
-    <div class="card">
-        <div class="card-title">👥 블로그 대량 조회</div>
-        <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 12px 0;">블로그 ID를 줄 단위로 입력하세요 (최대 20개). 각 블로그의 최근 10개 글 노출 여부와 인플루언서 여부를 분석합니다.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-            <textarea id="bulkBlogIds" placeholder="블로그 ID를 한 줄에 하나씩 입력 (예: myid)" rows="4"
-                      style="flex:1;min-width:240px;padding:12px 16px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);resize:vertical;"></textarea>
-            <button class="btn-add" onclick="runBulkBlogInfo()" style="align-self:flex-start;">일괄 분석</button>
-        </div>
-        <div id="bulkBlogIdCount" style="color:var(--text-light);font-size:0.8rem;margin-top:4px;"></div>
-        <div id="bulkBlogTabs" style="margin-top:16px;display:flex;gap:6px;flex-wrap:wrap;"></div>
-        <div id="bulkBlogResult" style="margin-top:16px;"></div>
     </div>
 
     <!-- Loading -->
@@ -661,7 +763,118 @@
 
         <!-- 하단 등급 안내 제거 (상단으로 이동됨) -->
     </div>
-</div>
+    </div><!-- /section-keyword -->
+
+    <!-- Section: 포스팅 분석 -->
+    <div class="page-section" id="section-posting">
+        <div class="card">
+            <div class="card-title">📝 포스팅 분석</div>
+            <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 14px 0;">블로그 글 URL을 입력하면 등급, 노출 여부, 본문/이미지/링크 분석을 한 번에 확인합니다.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="text" id="postingUrl" placeholder="예: https://blog.naver.com/myid/123456789"
+                       style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
+                <button class="btn-add" onclick="runPostingAnalysis()">분석하기</button>
+            </div>
+            <div id="postingResult" style="margin-top:18px;">
+                <div style="padding:24px;background:var(--bg);border-radius:12px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
+                    🚧 포스팅 분석 기능은 준비 중입니다. 곧 출시 예정.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section: 내 블로그 진단 -->
+    <div class="page-section" id="section-blog-diag">
+        <div class="card">
+            <div class="card-title">🩺 내 블로그 진단</div>
+            <div class="toggle-wrap" style="margin-bottom:14px;width:fit-content;">
+                <button class="toggle-btn active" data-diag="rank" onclick="switchDiag('rank')">키워드 순위 확인</button>
+                <button class="toggle-btn" data-diag="missing" onclick="switchDiag('missing')">글 누락 진단</button>
+            </div>
+            <div id="diagRankPanel">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                    <input type="text" id="diagBlogId" placeholder="블로그 ID 또는 URL (예: myid 또는 blog.naver.com/myid)"
+                           style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
+                    <button class="btn-add" onclick="runRankCheck()">순위 확인</button>
+                </div>
+            </div>
+            <div id="diagMissingPanel" style="display:none;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                    <input type="text" id="diagMissingBlogId" placeholder="블로그 ID 또는 URL (예: myid 또는 blog.naver.com/myid)"
+                           style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
+                    <button class="btn-add" onclick="runMissingCheck()">일괄 진단</button>
+                </div>
+            </div>
+            <div id="diagResult" style="margin-top:16px;"></div>
+        </div>
+    </div>
+
+    <!-- Section: 블로그 대량 조회 -->
+    <div class="page-section" id="section-bulk-blog">
+        <div class="card">
+            <div class="card-title">👥 블로그 대량 조회</div>
+            <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 12px 0;">블로그 ID를 줄 단위로 입력하세요 (최대 20개). 각 블로그의 최근 10개 글 노출 여부와 인플루언서 여부를 분석합니다.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                <textarea id="bulkBlogIds" placeholder="블로그 ID를 한 줄에 하나씩 입력 (예: myid)" rows="4"
+                          style="flex:1;min-width:240px;padding:12px 16px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);resize:vertical;"></textarea>
+                <button class="btn-add" onclick="runBulkBlogInfo()" style="align-self:flex-start;">일괄 분석</button>
+            </div>
+            <div id="bulkBlogIdCount" style="color:var(--text-light);font-size:0.8rem;margin-top:4px;"></div>
+            <div id="bulkBlogTabs" style="margin-top:16px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+            <div id="bulkBlogResult" style="margin-top:16px;"></div>
+        </div>
+    </div>
+
+    <!-- Section: 사용 가이드 -->
+    <div class="page-section" id="section-guide">
+        <div class="card">
+            <div class="card-title">📖 사용 가이드</div>
+            <div style="font-size:0.92rem;line-height:1.8;color:var(--text);">
+                <h3 style="margin-top:8px;">🔍 키워드 경쟁도 분석</h3>
+                <p style="color:var(--text-sub);margin-bottom:12px;">분석할 키워드를 최대 10개까지 입력 → 경쟁도 분석 클릭. 등급(S~F), 누적 문서수, 월 발행수, 트렌드 차트, 추천 키워드, 연관 50개를 한 번에 확인합니다.</p>
+
+                <h3 style="margin-top:18px;">📝 포스팅 분석</h3>
+                <p style="color:var(--text-sub);margin-bottom:12px;">블로그 글 URL 입력 시 노출 여부, 본문 글자수/이미지/링크 등 글 자체의 품질을 분석합니다. (개발 중)</p>
+
+                <h3 style="margin-top:18px;">🩺 내 블로그 진단</h3>
+                <p style="color:var(--text-sub);margin-bottom:6px;"><strong>키워드 순위 확인:</strong> 본인 블로그가 특정 키워드에서 몇 위에 노출되는지 확인.</p>
+                <p style="color:var(--text-sub);margin-bottom:12px;"><strong>글 누락 진단:</strong> 블로그 ID 입력 시 RSS에서 최근 10개 글을 가져와 정확 구문 검색으로 인덱스 누락 여부를 진단합니다.</p>
+
+                <h3 style="margin-top:18px;">👥 블로그 대량 조회</h3>
+                <p style="color:var(--text-sub);margin-bottom:12px;">블로그 ID 최대 20개를 한 번에 분석. 인플루언서 여부, 최근 30일 글수, 최근 포스팅일, 최근 10개 글 노출 진단을 표시합니다.</p>
+
+                <h3 style="margin-top:18px;">⚙️ 등급 의미</h3>
+                <ul style="color:var(--text-sub);margin-left:18px;margin-bottom:6px;">
+                    <li><strong style="color:#c471f5;">S 황금키워드</strong> — 검색량 대비 경쟁이 매우 낮음</li>
+                    <li><strong style="color:#03C75A;">A 매우 좋음</strong> — 공략 시 상위노출 유리</li>
+                    <li><strong style="color:#2ecc71;">B 공략 추천</strong> — 양호한 균형</li>
+                    <li><strong style="color:#f39c12;">C 보통</strong> — 보편적 키워드</li>
+                    <li><strong style="color:#e67e22;">D 경쟁 치열</strong> — 노력 필요</li>
+                    <li><strong style="color:#e74c3c;">E 상위노출 어려움</strong> — 강한 경쟁</li>
+                    <li><strong style="color:#c0392b;">F 진입 비추천</strong> — 매우 어려움</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section: 피드백 -->
+    <div class="page-section" id="section-feedback">
+        <div class="card">
+            <div class="card-title">💬 피드백 / 문의</div>
+            <p style="color:var(--text-sub);font-size:0.92rem;line-height:1.8;">
+                개선 제안, 버그 신고, 기능 요청 환영합니다.<br>
+                <strong>제작:</strong> 다퍼주는남자<br>
+                <strong>버전:</strong> v1.0
+            </p>
+            <p style="color:var(--text-light);font-size:0.85rem;margin-top:14px;">
+                💡 새 기능 아이디어가 있으시면 카카오톡 채널 또는 댓글로 알려주세요.
+            </p>
+        </div>
+    </div>
+
+    </div><!-- /container -->
+  </main>
+</div><!-- /app-layout -->
 
 <div class="footer"><span class="footer-logo"><img src="logo.png" alt="KEYPLAT"></span><span>Made by <strong>다퍼주는남자</strong> | 다퍼남 네이버 키워드 경쟁도 분석기 v1.0</span></div>
 
@@ -1452,6 +1665,52 @@ function renderBulkBlogDetail(idx) {
     }
 
     resultEl.innerHTML = html;
+}
+
+// ===== 섹션 전환 =====
+const SECTION_META = {
+    'keyword':   { title: '키워드 경쟁도 분석',   desc: '키워드를 입력하면 경쟁도를 자동 분석하고 S~F 등급을 매겨드립니다' },
+    'posting':   { title: '포스팅 분석',           desc: '블로그 글 URL을 입력해 등급, 노출 여부, 품질을 분석합니다' },
+    'blog-diag': { title: '내 블로그 진단',         desc: '키워드 순위 확인 또는 최근 10개 글 누락 진단' },
+    'bulk-blog': { title: '블로그 대량 조회',       desc: '여러 블로그를 한 번에 분석합니다 (최대 20개)' },
+    'guide':     { title: '사용 가이드',            desc: '각 기능의 사용 방법과 등급 의미 안내' },
+    'feedback':  { title: '피드백 / 문의',          desc: '개선 제안, 버그 신고, 기능 요청' },
+};
+
+function showSection(id) {
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn[data-section]').forEach(b => b.classList.remove('active'));
+    const section = document.getElementById('section-' + id);
+    if (section) section.classList.add('active');
+    const btn = document.querySelector(`.nav-btn[data-section="${id}"]`);
+    if (btn) btn.classList.add('active');
+
+    const meta = SECTION_META[id];
+    if (meta) {
+        const t = document.getElementById('pageTitle'); if (t) t.textContent = meta.title;
+        const d = document.getElementById('pageDesc');  if (d) d.textContent = meta.desc;
+    }
+    if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 모바일에서 사이드바 자동 닫기
+    const sb = document.getElementById('sidebar');
+    if (sb && window.innerWidth <= 900) sb.classList.remove('open');
+}
+
+function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    if (sb) sb.classList.toggle('open');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const hash = (location.hash || '').replace(/^#/, '');
+    if (hash && document.getElementById('section-' + hash)) {
+        showSection(hash);
+    }
+});
+
+function runPostingAnalysis() {
+    showToast('포스팅 분석 기능은 준비 중입니다.', 'error');
 }
 
 function showToast(msg, type = 'success') {
