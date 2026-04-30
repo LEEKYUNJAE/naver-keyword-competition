@@ -541,6 +541,20 @@
         <div id="diagResult" style="margin-top:16px;"></div>
     </div>
 
+    <!-- 블로그 대량 조회 -->
+    <div class="card">
+        <div class="card-title">👥 블로그 대량 조회</div>
+        <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 12px 0;">블로그 ID를 줄 단위로 입력하세요 (최대 20개). 각 블로그의 최근 10개 글 노출 여부와 인플루언서 여부를 분석합니다.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <textarea id="bulkBlogIds" placeholder="lovekyunjae&#10;mckyunjae&#10;..." rows="4"
+                      style="flex:1;min-width:240px;padding:12px 16px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);resize:vertical;"></textarea>
+            <button class="btn-add" onclick="runBulkBlogInfo()" style="align-self:flex-start;">일괄 분석</button>
+        </div>
+        <div id="bulkBlogIdCount" style="color:var(--text-light);font-size:0.8rem;margin-top:4px;"></div>
+        <div id="bulkBlogTabs" style="margin-top:16px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div id="bulkBlogResult" style="margin-top:16px;"></div>
+    </div>
+
     <!-- Loading -->
     <div class="loading" id="loading">
         <div class="spinner"></div>
@@ -1294,6 +1308,150 @@ async function runMissingCheck() {
     } catch (e) {
         resultEl.innerHTML = `<p style="color:#e74c3c;font-size:0.85rem;padding:12px;background:#fde8e8;border-radius:8px;">${e.message}</p>`;
     }
+}
+
+// ===== 블로그 대량 조회 =====
+let bulkBlogData = null;
+let bulkBlogActiveTab = 0;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const ta = document.getElementById('bulkBlogIds');
+    if (ta) {
+        ta.addEventListener('input', () => {
+            const ids = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
+            const cntEl = document.getElementById('bulkBlogIdCount');
+            if (cntEl) cntEl.textContent = ids.length > 0 ? `입력된 블로그 ID: ${ids.length}개${ids.length > 20 ? ' (최대 20개 초과)' : ''}` : '';
+        });
+    }
+});
+
+async function runBulkBlogInfo() {
+    const raw = document.getElementById('bulkBlogIds').value;
+    const blogIds = raw.split('\n').map(s => s.trim()).filter(Boolean);
+    if (blogIds.length === 0) { showToast('블로그 ID를 1개 이상 입력하세요.', 'error'); return; }
+    if (blogIds.length > 20) { showToast('최대 20개까지 가능합니다.', 'error'); return; }
+
+    const tabsEl = document.getElementById('bulkBlogTabs');
+    const resultEl = document.getElementById('bulkBlogResult');
+    tabsEl.innerHTML = '';
+    resultEl.innerHTML = `<div style="padding:20px;text-align:center;"><div class="spinner" style="margin:0 auto 10px;"></div><p style="color:var(--text-sub);font-size:0.85rem;">${blogIds.length}개 블로그 분석 중... (블로그당 약 5~10초)</p></div>`;
+
+    try {
+        const res = await fetch('/api/blog-bulk-info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ blogIds }),
+        });
+        if (!res.ok) { const err = await res.json(); throw new Error(err.error || '분석 실패'); }
+        const data = await res.json();
+        bulkBlogData = data;
+        bulkBlogActiveTab = 0;
+        renderBulkBlogTabs();
+        renderBulkBlogDetail(0);
+    } catch (e) {
+        resultEl.innerHTML = `<p style="color:#e74c3c;font-size:0.85rem;padding:12px;background:#fde8e8;border-radius:8px;">${e.message}</p>`;
+    }
+}
+
+function renderBulkBlogTabs() {
+    if (!bulkBlogData) return;
+    const tabsEl = document.getElementById('bulkBlogTabs');
+    tabsEl.innerHTML = bulkBlogData.results.map((r, i) => {
+        const isActive = i === bulkBlogActiveTab;
+        const inf = r.isInfluencer ? ' ⭐' : '';
+        const verdictColor = {
+            '건강': '#03C75A', '주의': '#f39c12', '경고': '#e67e22',
+            '위험': '#e74c3c', '치명': '#c0392b', '조회 불가': '#999',
+        }[r.verdict] || '#666';
+        return `<button onclick="renderBulkBlogDetail(${i})" style="padding:8px 14px;border:2px solid ${isActive ? verdictColor : 'var(--border)'};background:${isActive ? verdictColor : 'var(--bg)'};color:${isActive ? '#fff' : 'var(--text)'};border-radius:8px;font-size:0.85rem;font-weight:${isActive ? '800' : '600'};cursor:pointer;font-family:inherit;">${r.blogId}${inf}</button>`;
+    }).join('');
+}
+
+function renderBulkBlogDetail(idx) {
+    if (!bulkBlogData || !bulkBlogData.results[idx]) return;
+    bulkBlogActiveTab = idx;
+    renderBulkBlogTabs();
+    const r = bulkBlogData.results[idx];
+    const resultEl = document.getElementById('bulkBlogResult');
+
+    const verdictMap = {
+        '건강': { color: '#03C75A', bg: '#e8f8ef', emoji: '💚' },
+        '주의': { color: '#f39c12', bg: '#fff9e6', emoji: '⚠️' },
+        '경고': { color: '#e67e22', bg: '#fff3e6', emoji: '🟠' },
+        '위험': { color: '#e74c3c', bg: '#fde8e8', emoji: '🚨' },
+        '치명': { color: '#c0392b', bg: '#fde8e8', emoji: '☠️' },
+        '조회 불가': { color: '#999', bg: '#f5f5f5', emoji: '❓' },
+    };
+    const v = verdictMap[r.verdict] || verdictMap['조회 불가'];
+
+    let html = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;">
+                <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:4px;">블로그</div>
+                <div style="font-size:1rem;font-weight:800;">${r.nickname || r.blogId}</div>
+                <div style="font-size:0.78rem;color:var(--text-sub);margin-top:2px;">ID: ${r.blogId}</div>
+                ${r.isInfluencer === true ? '<div style="margin-top:8px;display:inline-block;padding:3px 10px;background:linear-gradient(135deg,#FFD700,#FFA500);color:#000;border-radius:12px;font-size:0.72rem;font-weight:800;">⭐ 인플루언서</div>' : r.isInfluencer === false ? '<div style="margin-top:8px;display:inline-block;padding:3px 10px;background:#eee;color:#666;border-radius:12px;font-size:0.72rem;">일반 블로거</div>' : ''}
+            </div>
+            <div style="background:${v.bg};border:1px solid ${v.color};border-radius:10px;padding:14px;">
+                <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:4px;">진단</div>
+                <div style="font-size:1rem;font-weight:900;color:${v.color};">${v.emoji} ${r.verdict || '-'}</div>
+                <div style="font-size:0.78rem;color:var(--text-sub);margin-top:2px;">${r.verdictDesc || ''}</div>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px;">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:0.72rem;color:var(--text-light);">최근 30일 글수</div>
+                <div style="font-size:1.3rem;font-weight:800;margin-top:4px;">${r.postCount30Days || 0}</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:0.72rem;color:var(--text-light);">최근 포스팅</div>
+                <div style="font-size:1rem;font-weight:700;margin-top:4px;">${r.lastPostDate || '-'}</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:0.72rem;color:var(--text-light);">정상 노출</div>
+                <div style="font-size:1.3rem;font-weight:800;color:#03C75A;margin-top:4px;">${r.exposedCount || 0} / ${r.posts ? r.posts.length : 0}</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:0.72rem;color:var(--text-light);">누락 의심</div>
+                <div style="font-size:1.3rem;font-weight:800;color:#e74c3c;margin-top:4px;">${r.missingCount || 0}</div>
+            </div>
+        </div>`;
+
+    if (r.posts && r.posts.length > 0) {
+        html += `<div style="overflow-x:auto;"><table class="summary-table"><thead><tr><th>#</th><th>제목</th><th>작성일</th><th>순위</th><th>상태</th></tr></thead><tbody>`;
+        r.posts.forEach((p, i) => {
+            let statusCell, rankCell;
+            if (p.status === 'exposed') {
+                statusCell = `<span style="color:#03C75A;font-weight:700;">정상</span>`;
+                rankCell = `<span style="color:#03C75A;font-weight:800;">${p.rank}위</span>`;
+            } else if (p.status === 'missing') {
+                statusCell = `<span style="color:#e74c3c;font-weight:700;">누락 의심</span>`;
+                rankCell = `<span style="color:#e74c3c;font-weight:700;">미노출</span>`;
+            } else {
+                statusCell = `<span style="color:#999;">오류</span>`;
+                rankCell = '-';
+            }
+            const titleCell = p.link
+                ? `<a href="${p.link}" target="_blank" style="color:#1a3a8a;text-decoration:underline;">${p.title}</a>`
+                : p.title;
+            html += `<tr>
+                <td>${i + 1}</td>
+                <td style="text-align:left;max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${titleCell}</td>
+                <td>${p.pubDate || '-'}</td>
+                <td>${rankCell}</td>
+                <td>${statusCell}</td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+    } else {
+        html += `<p style="color:var(--text-sub);font-size:0.85rem;padding:12px;background:#f5f5f5;border-radius:8px;">최근 글 데이터가 없습니다.</p>`;
+    }
+
+    if (r.errors && r.errors.length > 0) {
+        html += `<details style="margin-top:8px;font-size:0.78rem;color:var(--text-sub);"><summary style="cursor:pointer;">에러 ${r.errors.length}건</summary><ul style="margin:6px 0 0 18px;">${r.errors.map(e => `<li>${e}</li>`).join('')}</ul></details>`;
+    }
+
+    resultEl.innerHTML = html;
 }
 
 function showToast(msg, type = 'success') {
