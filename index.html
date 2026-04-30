@@ -612,8 +612,9 @@
       <div class="sidebar-label">분석 도구</div>
       <button class="nav-btn active" data-section="keyword" onclick="showSection('keyword')"><span class="nav-icon">🔍</span> 키워드 경쟁도 분석</button>
       <button class="nav-btn" data-section="posting" onclick="showSection('posting')"><span class="nav-icon">📝</span> 포스팅 분석</button>
-      <button class="nav-btn" data-section="blog-diag" onclick="showSection('blog-diag')"><span class="nav-icon">🩺</span> 내 블로그 진단</button>
-      <button class="nav-btn" data-section="bulk-blog" onclick="showSection('bulk-blog')"><span class="nav-icon">👥</span> 블로그 대량 조회</button>
+      <button class="nav-btn" data-section="rank-check" onclick="showSection('rank-check')"><span class="nav-icon">🥇</span> 키워드 순위 확인</button>
+      <button class="nav-btn" data-section="missing-check" onclick="showSection('missing-check')"><span class="nav-icon">🩺</span> 글 누락 진단</button>
+      <button class="nav-btn" data-section="bulk-blog" onclick="showSection('bulk-blog')"><span class="nav-icon">👥</span> 블로그 분석</button>
     </div>
 
     <div class="sidebar-section">
@@ -783,36 +784,51 @@
         </div>
     </div>
 
-    <!-- Section: 내 블로그 진단 -->
-    <div class="page-section" id="section-blog-diag">
+    <!-- Section: 키워드 순위 확인 -->
+    <div class="page-section" id="section-rank-check">
         <div class="card">
-            <div class="card-title">🩺 내 블로그 진단</div>
-            <div class="toggle-wrap" style="margin-bottom:14px;width:fit-content;">
-                <button class="toggle-btn active" data-diag="rank" onclick="switchDiag('rank')">키워드 순위 확인</button>
-                <button class="toggle-btn" data-diag="missing" onclick="switchDiag('missing')">글 누락 진단</button>
+            <div class="card-title">🥇 키워드 순위 확인</div>
+            <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 14px 0;">블로그 ID와 키워드를 입력하면, 각 키워드 검색 시 본인 블로그가 몇 위에 노출되는지 확인합니다.</p>
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block;font-size:0.82rem;color:var(--text-sub);margin-bottom:6px;font-weight:700;">블로그 ID</label>
+                <input type="text" id="diagBlogId" placeholder="예: myid 또는 blog.naver.com/myid"
+                       style="width:100%;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
             </div>
-            <div id="diagRankPanel">
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                    <input type="text" id="diagBlogId" placeholder="블로그 ID 또는 URL (예: myid 또는 blog.naver.com/myid)"
-                           style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
-                    <button class="btn-add" onclick="runRankCheck()">순위 확인</button>
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block;font-size:0.82rem;color:var(--text-sub);margin-bottom:6px;font-weight:700;">검색할 키워드 (최대 10개)</label>
+                <div class="kw-input-wrap">
+                    <input type="text" id="rankKeywordInput" placeholder="키워드를 입력하고 Enter 또는 추가"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();addRankKeyword();}">
+                    <button class="btn-add" onclick="addRankKeyword()">추가</button>
                 </div>
+                <div class="keyword-tags" id="rankKeywordTags" style="margin-top:8px;"></div>
             </div>
-            <div id="diagMissingPanel" style="display:none;">
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                    <input type="text" id="diagMissingBlogId" placeholder="블로그 ID 또는 URL (예: myid 또는 blog.naver.com/myid)"
-                           style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
-                    <button class="btn-add" onclick="runMissingCheck()">일괄 진단</button>
-                </div>
-            </div>
+
+            <button class="btn-analyze" onclick="runRankCheck()" style="width:100%;">순위 확인</button>
             <div id="diagResult" style="margin-top:16px;"></div>
         </div>
     </div>
 
-    <!-- Section: 블로그 대량 조회 -->
+    <!-- Section: 글 누락 진단 -->
+    <div class="page-section" id="section-missing-check">
+        <div class="card">
+            <div class="card-title">🩺 글 누락 진단</div>
+            <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 14px 0;">블로그 ID 입력 시 RSS에서 최근 10개 글을 가져와 정확 구문 검색으로 인덱스 누락 여부를 진단합니다.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                <input type="text" id="diagMissingBlogId" placeholder="블로그 ID 또는 URL (예: myid 또는 blog.naver.com/myid)"
+                       style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
+                <button class="btn-add" onclick="runMissingCheck()">일괄 진단</button>
+            </div>
+            <div id="diagMissingResult" style="margin-top:16px;"></div>
+        </div>
+    </div>
+
+    <!-- Section: 블로그 분석 -->
     <div class="page-section" id="section-bulk-blog">
         <div class="card">
-            <div class="card-title">👥 블로그 대량 조회</div>
+            <div class="card-title">👥 블로그 분석</div>
             <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 12px 0;">블로그 ID를 줄 단위로 입력하세요 (최대 20개). 각 블로그의 최근 10개 글 노출 여부와 인플루언서 여부를 분석합니다.</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
                 <textarea id="bulkBlogIds" placeholder="블로그 ID를 한 줄에 하나씩 입력 (예: myid)" rows="4"
@@ -836,11 +852,13 @@
                 <h3 style="margin-top:18px;">📝 포스팅 분석</h3>
                 <p style="color:var(--text-sub);margin-bottom:12px;">블로그 글 URL 입력 시 노출 여부, 본문 글자수/이미지/링크 등 글 자체의 품질을 분석합니다. (개발 중)</p>
 
-                <h3 style="margin-top:18px;">🩺 내 블로그 진단</h3>
-                <p style="color:var(--text-sub);margin-bottom:6px;"><strong>키워드 순위 확인:</strong> 본인 블로그가 특정 키워드에서 몇 위에 노출되는지 확인.</p>
-                <p style="color:var(--text-sub);margin-bottom:12px;"><strong>글 누락 진단:</strong> 블로그 ID 입력 시 RSS에서 최근 10개 글을 가져와 정확 구문 검색으로 인덱스 누락 여부를 진단합니다.</p>
+                <h3 style="margin-top:18px;">🥇 키워드 순위 확인</h3>
+                <p style="color:var(--text-sub);margin-bottom:12px;">블로그 ID + 키워드 1~10개 입력 → 각 키워드 검색 시 본인 블로그가 몇 위에 노출되는지 확인합니다.</p>
 
-                <h3 style="margin-top:18px;">👥 블로그 대량 조회</h3>
+                <h3 style="margin-top:18px;">🩺 글 누락 진단</h3>
+                <p style="color:var(--text-sub);margin-bottom:12px;">블로그 ID 입력 시 RSS에서 최근 10개 글을 가져와 정확 구문 검색으로 인덱스 누락 여부를 진단합니다.</p>
+
+                <h3 style="margin-top:18px;">👥 블로그 분석</h3>
                 <p style="color:var(--text-sub);margin-bottom:12px;">블로그 ID 최대 20개를 한 번에 분석. 인플루언서 여부, 최근 30일 글수, 최근 포스팅일, 최근 10개 글 노출 진단을 표시합니다.</p>
 
                 <h3 style="margin-top:18px;">⚙️ 등급 의미</h3>
@@ -1397,19 +1415,37 @@ function resetAll() {
     showToast('초기화 완료', 'success');
 }
 
-// ===== 내 블로그 진단 =====
-function switchDiag(mode) {
-    document.querySelectorAll('[data-diag]').forEach(b => b.classList.remove('active'));
-    document.querySelector(`[data-diag="${mode}"]`).classList.add('active');
-    document.getElementById('diagRankPanel').style.display = mode === 'rank' ? '' : 'none';
-    document.getElementById('diagMissingPanel').style.display = mode === 'missing' ? '' : 'none';
-    document.getElementById('diagResult').innerHTML = '';
+// 키워드 순위 확인 전용 키워드 풀
+let rankKeywords = [];
+
+function renderRankKeywordTags() {
+    const el = document.getElementById('rankKeywordTags');
+    if (!el) return;
+    el.innerHTML = rankKeywords.map((k, i) =>
+        `<span class="keyword-tag">${k}<span class="remove" onclick="removeRankKeyword(${i})">×</span></span>`
+    ).join('');
+}
+
+function addRankKeyword() {
+    const input = document.getElementById('rankKeywordInput');
+    const v = input.value.trim();
+    if (!v) return;
+    if (rankKeywords.length >= 10) { showToast('키워드는 최대 10개까지.', 'error'); return; }
+    if (rankKeywords.includes(v)) { showToast('이미 추가된 키워드입니다.', 'error'); return; }
+    rankKeywords.push(v);
+    input.value = '';
+    renderRankKeywordTags();
+}
+
+function removeRankKeyword(idx) {
+    rankKeywords.splice(idx, 1);
+    renderRankKeywordTags();
 }
 
 async function runRankCheck() {
     const blogId = document.getElementById('diagBlogId').value.trim();
     if (!blogId) { showToast('블로그 ID 또는 URL을 입력하세요.', 'error'); return; }
-    if (keywords.length === 0) { showToast('먼저 위에서 키워드를 1개 이상 추가하세요.', 'error'); return; }
+    if (rankKeywords.length === 0) { showToast('키워드를 1개 이상 추가하세요.', 'error'); return; }
 
     const resultEl = document.getElementById('diagResult');
     resultEl.innerHTML = '<div style="padding:20px;text-align:center;"><div class="spinner" style="margin:0 auto 10px;"></div><p style="color:var(--text-sub);font-size:0.85rem;">검색 중...</p></div>';
@@ -1418,7 +1454,7 @@ async function runRankCheck() {
         const res = await fetch('/api/blog-check', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode: 'rank', blogId, keywords }),
+            body: JSON.stringify({ mode: 'rank', blogId, keywords: rankKeywords }),
         });
         if (!res.ok) { const err = await res.json(); throw new Error(err.error || '진단 실패'); }
         const data = await res.json();
@@ -1454,7 +1490,7 @@ async function runMissingCheck() {
     const blogId = document.getElementById('diagMissingBlogId').value.trim();
     if (!blogId) { showToast('블로그 ID를 입력하세요.', 'error'); return; }
 
-    const resultEl = document.getElementById('diagResult');
+    const resultEl = document.getElementById('diagMissingResult');
     resultEl.innerHTML = '<div style="padding:20px;text-align:center;"><div class="spinner" style="margin:0 auto 10px;"></div><p style="color:var(--text-sub);font-size:0.85rem;">RSS에서 최근 글 가져오는 중... (10개 검사, 약 10~20초 소요)</p></div>';
 
     try {
@@ -1669,12 +1705,13 @@ function renderBulkBlogDetail(idx) {
 
 // ===== 섹션 전환 =====
 const SECTION_META = {
-    'keyword':   { title: '키워드 경쟁도 분석',   desc: '키워드를 입력하면 경쟁도를 자동 분석하고 S~F 등급을 매겨드립니다' },
-    'posting':   { title: '포스팅 분석',           desc: '블로그 글 URL을 입력해 등급, 노출 여부, 품질을 분석합니다' },
-    'blog-diag': { title: '내 블로그 진단',         desc: '키워드 순위 확인 또는 최근 10개 글 누락 진단' },
-    'bulk-blog': { title: '블로그 대량 조회',       desc: '여러 블로그를 한 번에 분석합니다 (최대 20개)' },
-    'guide':     { title: '사용 가이드',            desc: '각 기능의 사용 방법과 등급 의미 안내' },
-    'feedback':  { title: '피드백 / 문의',          desc: '개선 제안, 버그 신고, 기능 요청' },
+    'keyword':       { title: '키워드 경쟁도 분석', desc: '키워드를 입력하면 경쟁도를 자동 분석하고 S~F 등급을 매겨드립니다' },
+    'posting':       { title: '포스팅 분석',         desc: '블로그 글 URL을 입력해 등급, 노출 여부, 품질을 분석합니다' },
+    'rank-check':    { title: '키워드 순위 확인',    desc: '블로그 ID와 키워드를 입력하면 검색 시 노출 순위를 확인합니다' },
+    'missing-check': { title: '글 누락 진단',         desc: '최근 10개 글의 인덱스 누락 여부를 진단합니다' },
+    'bulk-blog':     { title: '블로그 분석',          desc: '여러 블로그를 한 번에 분석합니다 (최대 20개)' },
+    'guide':         { title: '사용 가이드',          desc: '각 기능의 사용 방법과 등급 의미 안내' },
+    'feedback':      { title: '피드백 / 문의',        desc: '개선 제안, 버그 신고, 기능 요청' },
 };
 
 function showSection(id) {
