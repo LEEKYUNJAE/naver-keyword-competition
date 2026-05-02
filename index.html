@@ -113,16 +113,30 @@
             overflow: hidden; flex-shrink: 0;
         }
         .sidebar-brand-logo img { width: 180%; height: 180%; margin: -40% 0 0 -40%; display: block; }
+        .sidebar-brand-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            background: linear-gradient(135deg, #f5d77a 0%, #d4af37 50%, #b8932a 100%);
+            color: #1a1a1a;
+            font-size: 0.55rem;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            border-radius: 999px;
+            box-shadow: 0 1px 4px rgba(212, 175, 55, 0.32);
+            margin-bottom: 5px;
+            font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
+        }
         .sidebar-brand-text {
             font-weight: 900; font-size: 0.98rem; color: #1a1a2e;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.3px;
             line-height: 1.35;
             word-break: keep-all;
         }
         .sidebar-brand-sub {
-            font-size: 0.68rem; color: #8b94a7; font-weight: 600;
-            letter-spacing: 0.2px;
+            font-size: 0.65rem; color: #8b94a7; font-weight: 700;
+            letter-spacing: 0.16em;
             margin-top: 4px;
+            text-transform: uppercase;
         }
         .sidebar-section { margin-bottom: 18px; }
         .sidebar-label {
@@ -196,43 +210,75 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 16px;
-            background: #f5f8ff;
-            border-bottom: 1px solid var(--border);
+            padding: 10px 18px;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2332 50%, #0f1419 100%);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.35);
             height: 50px;
             box-sizing: border-box;
+            position: relative;
+        }
+        .image-gen-topbar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 100%, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+            pointer-events: none;
         }
         .image-gen-back-btn {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 16px;
-            background: #fff;
-            border: 1px solid var(--border);
+            padding: 7px 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             border-radius: 8px;
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: #1a3a8a;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #fff;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.18s;
+            position: relative;
+            z-index: 1;
         }
         .image-gen-back-btn:hover {
-            background: #1a3a8a;
-            color: #fff;
-            border-color: #1a3a8a;
+            background: rgba(212, 175, 55, 0.16);
+            border-color: rgba(212, 175, 55, 0.6);
+            color: #f5d77a;
         }
         .image-gen-title {
-            font-size: 0.92rem;
-            color: var(--text);
-            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 0.04em;
+            position: relative;
+            z-index: 1;
+            font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
+        }
+        .image-gen-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            background: linear-gradient(135deg, #f5d77a 0%, #d4af37 50%, #b8932a 100%);
+            color: #1a1a1a;
+            font-size: 0.62rem;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            border-radius: 999px;
+            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.35);
         }
         .image-gen-new-window {
-            font-size: 0.78rem;
-            color: var(--text-light);
+            font-size: 0.76rem;
+            color: rgba(255, 255, 255, 0.55);
             text-decoration: none;
             font-weight: 600;
+            letter-spacing: 0.02em;
+            position: relative;
+            z-index: 1;
+            transition: color 0.15s;
         }
-        .image-gen-new-window:hover { color: #1a3a8a; }
+        .image-gen-new-window:hover { color: #f5d77a; }
         .image-gen-frame {
             width: 100%;
             height: calc(100vh - 50px);
@@ -672,7 +718,8 @@
     <div class="sidebar-brand">
       <div class="sidebar-brand-logo"><img src="logo.png" alt="KEYPLAT"></div>
       <div>
-        <div class="sidebar-brand-text">다퍼남<br>블로그 대행 올인원</div>
+        <div class="sidebar-brand-pill">PREMIUM</div>
+        <div class="sidebar-brand-text">다퍼남 블로그<br>대행 올인원</div>
         <div class="sidebar-brand-sub">v1.0</div>
       </div>
     </div>
@@ -902,7 +949,7 @@
     <div class="page-section image-gen-fullscreen" id="section-image-gen">
         <div class="image-gen-topbar">
             <button onclick="exitImageGen()" class="image-gen-back-btn">← 돌아가기</button>
-            <span class="image-gen-title">🎨 무료 이미지 생성기</span>
+            <span class="image-gen-title"><span class="image-gen-badge">PREMIUM</span>무료 이미지 생성기</span>
             <a href="https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/" target="_blank" rel="noopener" class="image-gen-new-window">새 창에서 열기 ↗</a>
         </div>
         <iframe id="imageGenFrame" src="about:blank" class="image-gen-frame" loading="lazy" title="무료 이미지 생성기"></iframe>
