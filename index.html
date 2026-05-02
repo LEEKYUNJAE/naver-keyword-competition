@@ -33,33 +33,25 @@
 
         /* Header */
         .header {
-            background: linear-gradient(135deg, #0f1419 0%, #1a2332 50%, #0f1419 100%);
-            border-bottom: 1px solid #2a3344;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
             padding: 0;
             position: relative;
             overflow: hidden;
         }
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(circle at 20% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 50%, rgba(212, 175, 55, 0.06) 0%, transparent 50%);
-            pointer-events: none;
-        }
         .header-inner {
             max-width: 960px;
             margin: 0 auto;
-            padding: 36px 20px;
+            padding: 28px 20px;
             position: relative;
             z-index: 1;
         }
         .header-title-wrap {
-            border: 2px solid rgba(212, 175, 55, 0.55);
+            border: 2px solid #1a3a8a;
             border-radius: 14px;
             padding: 22px 28px;
-            background: rgba(212, 175, 55, 0.04);
-            box-shadow: 0 0 24px rgba(212, 175, 55, 0.08), inset 0 0 12px rgba(212, 175, 55, 0.05);
+            background: #f5f8ff;
+            box-shadow: 0 2px 12px rgba(26, 58, 138, 0.06);
             text-align: center;
         }
         .header h1 {
@@ -67,18 +59,15 @@
             font-size: 1.6rem;
             font-weight: 900;
             letter-spacing: -0.02em;
-            background: linear-gradient(135deg, #f5d77a 0%, #d4af37 50%, #b8932a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #1a3a8a;
             line-height: 1.2;
         }
         .header p {
             font-family: 'Pretendard Variable', 'Pretendard', 'Noto Sans KR', sans-serif;
             font-size: 0.78rem;
-            color: rgba(212, 175, 55, 0.72);
-            margin-top: 4px;
-            letter-spacing: 0.08em;
+            color: #5a6a8a;
+            margin-top: 6px;
+            letter-spacing: 0.04em;
             font-weight: 500;
         }
         @media (max-width: 600px) {
