@@ -209,17 +209,16 @@
         body.fullscreen-mode .image-gen-fullscreen:not(.active) {
             display: none !important;
         }
-        body.fullscreen-mode .image-gen-fullscreen:not(.active) .image-gen-back-fab,
-        body.fullscreen-mode .image-gen-fullscreen:not(.active) .image-gen-newwindow-fab {
-            display: none !important;
-        }
         .image-gen-frame {
             width: 100%;
             height: 100vh;
             border: none;
             display: block;
         }
-        /* 풀스크린 모드 플로팅 컨트롤 */
+        /* 풀스크린 모드 플로팅 컨트롤 (body 직속, 풀스크린 모드일 때만 표시) */
+        #fullscreenBackFab, #fullscreenNewWindowFab { display: none; }
+        body.fullscreen-mode #fullscreenBackFab { display: inline-flex; }
+        body.fullscreen-mode #fullscreenNewWindowFab { display: inline-flex; }
         .image-gen-back-fab {
             position: fixed;
             top: 12px;
@@ -942,8 +941,6 @@
 
     <!-- Section: 이미지 생성기 (풀스크린 임베드) -->
     <div class="page-section image-gen-fullscreen" id="section-image-gen">
-        <button onclick="exitFullscreen()" class="image-gen-back-fab" title="돌아가기">← 돌아가기</button>
-        <a href="https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/" target="_blank" rel="noopener" class="image-gen-newwindow-fab" title="새 창에서 열기">↗</a>
         <iframe id="imageGenFrame" src="about:blank" class="image-gen-frame" loading="lazy" title="무료 이미지 생성기" allow="clipboard-write; clipboard-read; fullscreen"></iframe>
         <div id="imageGenFallback" style="display:none;padding:24px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
             <p>임베드가 차단되어 표시할 수 없습니다.</p>
@@ -953,8 +950,6 @@
 
     <!-- Section: 블로그 대행 제안서 (풀스크린 임베드) -->
     <div class="page-section image-gen-fullscreen" id="section-proposal">
-        <button onclick="exitFullscreen()" class="image-gen-back-fab" title="돌아가기">← 돌아가기</button>
-        <a href="https://change-leaders.lovekyunjae.workers.dev/%EB%B8%94%EB%A1%9C%EA%B7%B8%20%EB%8C%80%ED%96%89%20%ED%99%88%ED%8E%98%EC%9D%B4%EC%A7%80%20%EC%A0%9C%EC%95%88%EC%84%9C%20%EC%A0%9C%EC%9E%91%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8" target="_blank" rel="noopener" class="image-gen-newwindow-fab" title="새 창에서 열기">↗</a>
         <iframe id="proposalFrame" src="about:blank" class="image-gen-frame" loading="lazy" title="블로그 대행 제안서" allow="clipboard-write; clipboard-read; fullscreen"></iframe>
         <div id="proposalFallback" style="display:none;padding:24px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
             <p>임베드가 차단되어 표시할 수 없습니다.</p>
@@ -964,14 +959,16 @@
 
     <!-- Section: 블로그 대행 계약서 (풀스크린 임베드) -->
     <div class="page-section image-gen-fullscreen" id="section-contract">
-        <button onclick="exitFullscreen()" class="image-gen-back-fab" title="돌아가기">← 돌아가기</button>
-        <a href="https://change-leaders.lovekyunjae.workers.dev/contract" target="_blank" rel="noopener" class="image-gen-newwindow-fab" title="새 창에서 열기">↗</a>
         <iframe id="contractFrame" src="about:blank" class="image-gen-frame" loading="lazy" title="블로그 대행 계약서" allow="clipboard-write; clipboard-read; fullscreen"></iframe>
         <div id="contractFallback" style="display:none;padding:24px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
             <p>임베드가 차단되어 표시할 수 없습니다.</p>
             <p style="margin-top:8px;"><a href="https://change-leaders.lovekyunjae.workers.dev/contract" target="_blank" rel="noopener" style="color:#1a3a8a;font-weight:700;">새 창에서 블로그 대행 계약서 열기 →</a></p>
         </div>
     </div>
+
+    <!-- 풀스크린 모드 글로벌 컨트롤 (body 직속, stacking 충돌 방지) -->
+    <button id="fullscreenBackFab" onclick="exitFullscreen()" class="image-gen-back-fab" title="돌아가기">← 돌아가기</button>
+    <a id="fullscreenNewWindowFab" href="#" target="_blank" rel="noopener" class="image-gen-newwindow-fab" title="새 창에서 열기">↗</a>
 
     <!-- Section: 블로그 분석 -->
     <div class="page-section" id="section-bulk-blog">
@@ -1918,9 +1915,11 @@ function showSection(id) {
     const sb = document.getElementById('sidebar');
     if (sb && window.innerWidth <= 900) sb.classList.remove('open');
 
-    // 풀스크린 섹션 lazy load + iframe 차단 감지
+    // 풀스크린 섹션 lazy load + iframe 차단 감지 + 글로벌 새창 버튼 href 동기화
     if (isFullscreen) {
         const cfg = FULLSCREEN_SECTIONS[id];
+        const newWindowBtn = document.getElementById('fullscreenNewWindowFab');
+        if (newWindowBtn) newWindowBtn.href = cfg.url;
         const frame = document.getElementById(cfg.frameId);
         if (frame && frame.src !== cfg.url) {
             frame.src = cfg.url;
