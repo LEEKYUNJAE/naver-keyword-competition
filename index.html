@@ -2381,17 +2381,19 @@ async function ipCopy(b64) {
     }
 }
 
+// 이미지 자동 생성기는 DALL-E 3 GPT URL로 열어서 이미지 모드 보장
+// `/g/g-2fkFE8rbu-dall-e` 는 OpenAI 공식 DALL-E 3 GPT
 async function ipOpenChatGPT(b64) {
     const text = ipDecodePrompt(b64);
-    // 클립보드 항상 복사 (백업)
     try { await navigator.clipboard.writeText(text); } catch (e) {}
     const encoded = encodeURIComponent(text);
-    if (encoded.length < 5500) {
-        window.open('https://chatgpt.com/?q=' + encoded, '_blank', 'noopener');
-        showToast('✅ ChatGPT 새 창 열림. 자동 입력 안 됐으면 Ctrl+V', 'success');
+    const dalleUrl = 'https://chatgpt.com/g/g-2fkFE8rbu-dall-e';
+    if (encoded.length < 5000) {
+        window.open(dalleUrl + '?q=' + encoded, '_blank', 'noopener');
+        showToast('✅ DALL-E 3 GPT 새 창 열림 (이미지 모드 자동 선택). Enter만!', 'success');
     } else {
-        window.open('https://chatgpt.com/', '_blank', 'noopener');
-        showToast('✅ 클립보드 복사 완료. ChatGPT에서 Ctrl+V → Enter', 'success');
+        window.open(dalleUrl, '_blank', 'noopener');
+        showToast('✅ 클립보드 복사 완료. DALL-E 3 GPT에서 Ctrl+V → Enter', 'success');
     }
 }
 
