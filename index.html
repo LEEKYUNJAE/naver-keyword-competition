@@ -103,8 +103,8 @@
             padding: 24px 14px 40px;
             position: sticky;
             top: 0;
-            align-self: flex-start;
-            max-height: 100vh;
+            align-self: stretch;
+            height: 100vh;
             overflow-y: auto;
         }
         .sidebar-brand {
@@ -121,11 +121,12 @@
         }
         .sidebar-brand-logo img { width: 180%; height: 180%; margin: -40% 0 0 -40%; display: block; }
         .sidebar-brand-text {
-            font-weight: 900; font-size: 0.95rem; color: var(--text);
+            font-weight: 900; font-size: 1.05rem; color: #1a1a2e;
             letter-spacing: -0.5px;
         }
         .sidebar-brand-sub {
-            font-size: 0.7rem; color: var(--text-light); font-weight: 600;
+            font-size: 0.68rem; color: #8b94a7; font-weight: 600;
+            letter-spacing: 0.2px;
         }
         .sidebar-section { margin-bottom: 18px; }
         .sidebar-label {
@@ -1559,7 +1560,7 @@ async function runMissingCheck() {
     }
 }
 
-// ===== 블로그 대량 조회 =====
+// ===== 블로그 분석 (다수 블로그 일괄) =====
 let bulkBlogData = null;
 let bulkBlogActiveTab = 0;
 
