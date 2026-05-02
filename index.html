@@ -725,7 +725,7 @@
       <div class="sidebar-label">콘텐츠 도구</div>
       <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')"><span class="nav-icon">🎨</span> 무료 이미지 생성기</button>
       <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')"><span class="nav-icon">🤖</span> 블로그 자동 글쓰기</button>
-      <button class="nav-btn" data-section="image-prompts" onclick="showSection('image-prompts')"><span class="nav-icon">🖼️</span> 이미지 프롬프트 생성기</button>
+      <button class="nav-btn" data-section="image-prompts" onclick="showSection('image-prompts')"><span class="nav-icon">🖼️</span> 이미지 자동 생성기</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">영업 도구</div>
@@ -1041,13 +1041,15 @@
                     <textarea id="pmPromptOutput" rows="12" readonly style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:0.82rem;font-family:'Consolas','Menlo',monospace;background:#fff;resize:vertical;line-height:1.5;"></textarea>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
                         <button onclick="copyPrompt()" class="btn-add" style="background:linear-gradient(135deg,#f5d77a 0%,#d4af37 50%,#b8932a 100%);color:#1a1a1a;font-weight:900;">📋 클립보드 복사</button>
-                        <button onclick="openInChatGPT()" class="btn-add" style="background:#10a37f;color:#fff;">🤖 ChatGPT에서 열기</button>
-                        <button onclick="openInClaude()" class="btn-add" style="background:#cc785c;color:#fff;">🤖 Claude에서 열기</button>
-                        <button onclick="openInGemini()" class="btn-add" style="background:#1a73e8;color:#fff;">🤖 Gemini에서 열기</button>
+                        <button onclick="openInChatGPT()" class="btn-add" style="background:#10a37f;color:#fff;">🤖 ChatGPT 열기 (자동입력)</button>
+                        <button onclick="openInClaude()" class="btn-add" style="background:#cc785c;color:#fff;">🤖 Claude 열기 (Ctrl+V)</button>
+                        <button onclick="openInGemini()" class="btn-add" style="background:#1a73e8;color:#fff;">🤖 Gemini 열기 (Ctrl+V)</button>
                     </div>
-                    <p style="font-size:0.78rem;color:var(--text-light);margin:10px 0 0 0;">
-                        💡 사용 팁: <strong>"클립보드 복사"</strong> → AI 새 창 열기 → <strong>Ctrl+V</strong>로 붙여넣기 → 전송
-                    </p>
+                    <div style="font-size:0.8rem;color:var(--text-sub);margin:12px 0 0 0;padding:10px 12px;background:#fff8e1;border-left:3px solid #d4af37;border-radius:6px;line-height:1.7;">
+                        <strong>📌 사용 안내:</strong><br>
+                        • <strong>ChatGPT</strong>: 새 창에서 입력칸에 자동 입력됨 → <strong>Enter</strong>만 누르면 됨<br>
+                        • <strong>Claude / Gemini</strong>: URL 자동입력 미지원 (브라우저 보안). 클립보드에는 자동 복사되니 새 창에서 <strong>Ctrl+V → Enter</strong>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1056,7 +1058,7 @@
     <!-- Section: 이미지 프롬프트 생성기 -->
     <div class="page-section" id="section-image-prompts">
         <div class="card">
-            <div class="card-title">🖼️ 이미지 프롬프트 생성기</div>
+            <div class="card-title">🖼️ 이미지 자동 생성기</div>
             <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 14px 0;">
                 완성된 블로그 글을 붙여넣으면 소제목별로 이미지 생성 프롬프트가 자동으로 만들어집니다.
                 각 프롬프트마다 ChatGPT/Gemini 새 창 자동 입력 버튼이 제공됩니다.
@@ -2011,7 +2013,7 @@ const SECTION_META = {
     'bulk-blog':     { title: '블로그 분석',          desc: '여러 블로그를 한 번에 분석합니다 (최대 20개)' },
     'image-gen':     { title: '무료 이미지 생성기',     desc: '블로그용 썸네일·이미지를 생성합니다' },
     'prompt-maker':  { title: '블로그 자동 글쓰기',     desc: '입력만 하면 ChatGPT/Claude용 통합 프롬프트가 자동 생성됩니다' },
-    'image-prompts': { title: '이미지 프롬프트 생성기',  desc: '블로그 글을 붙여넣으면 소제목별 이미지 프롬프트가 자동 생성됩니다' },
+    'image-prompts': { title: '이미지 자동 생성기',      desc: '블로그 글을 붙여넣으면 소제목별 이미지 프롬프트가 자동 생성됩니다' },
     'proposal':      { title: '블로그 대행 제안서',     desc: '클라이언트 영업용 제안서를 제작합니다' },
     'contract':      { title: '블로그 대행 계약서',     desc: '클라이언트와의 계약서를 작성합니다' },
     'guide':         { title: '사용 가이드',          desc: '각 기능의 사용 방법과 등급 의미 안내' },
@@ -2305,8 +2307,8 @@ function generateImagePrompts() {
             <textarea id="${promptId}" rows="8" readonly style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:'Consolas','Menlo',monospace;background:var(--bg);resize:vertical;line-height:1.5;">${prompt.replace(/</g,'&lt;')}</textarea>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
                 <button onclick="ipCopy('${promptB64}')" class="btn-add" style="background:linear-gradient(135deg,#f5d77a 0%,#d4af37 50%,#b8932a 100%);color:#1a1a1a;font-weight:900;padding:8px 14px;font-size:0.82rem;">📋 복사</button>
-                <button onclick="ipOpenChatGPT('${promptB64}')" class="btn-add" style="background:#10a37f;color:#fff;padding:8px 14px;font-size:0.82rem;">🤖 ChatGPT 열기</button>
-                <button onclick="ipOpenGemini('${promptB64}')" class="btn-add" style="background:#1a73e8;color:#fff;padding:8px 14px;font-size:0.82rem;">🤖 Gemini 열기</button>
+                <button onclick="ipOpenChatGPT('${promptB64}')" class="btn-add" style="background:#10a37f;color:#fff;padding:8px 14px;font-size:0.82rem;">🤖 ChatGPT (자동입력)</button>
+                <button onclick="ipOpenGemini('${promptB64}')" class="btn-add" style="background:#1a73e8;color:#fff;padding:8px 14px;font-size:0.82rem;">🤖 Gemini (Ctrl+V)</button>
             </div>
         </div>`;
     });
