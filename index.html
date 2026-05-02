@@ -724,6 +724,7 @@
     <div class="sidebar-section">
       <div class="sidebar-label">콘텐츠 도구</div>
       <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')"><span class="nav-icon">🎨</span> 무료 이미지 생성기</button>
+      <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')"><span class="nav-icon">🤖</span> 블로그 프롬프트 메이커</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">영업 도구</div>
@@ -936,6 +937,121 @@
                 <button class="btn-add" onclick="runMissingCheck()">일괄 진단</button>
             </div>
             <div id="diagMissingResult" style="margin-top:16px;"></div>
+        </div>
+    </div>
+
+    <!-- Section: 블로그 프롬프트 메이커 -->
+    <div class="page-section" id="section-prompt-maker">
+        <div class="card">
+            <div class="card-title">🤖 블로그 프롬프트 메이커</div>
+            <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 18px 0;">
+                다퍼남 v2.1 지침 기반으로 입력만 하면 ChatGPT·Claude·Gemini용 <strong>통합 프롬프트</strong>가 자동 생성됩니다.
+                생성된 프롬프트를 복사해서 AI에 붙여넣으면 즉시 블로그 글이 작성됩니다 (API 비용 0원).
+            </p>
+
+            <div style="display:grid;gap:14px;">
+                <!-- 1. 업종 -->
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">1. 주제/업종 <span style="color:#e74c3c;">*</span></label>
+                    <select id="pmIndustry" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
+                        <option value="">선택하세요</option>
+                        <option value="부동산/건축">부동산/건축</option>
+                        <option value="법률/세무">법률/세무</option>
+                        <option value="의료/건강">의료/건강</option>
+                        <option value="뷰티/패션">뷰티/패션</option>
+                        <option value="IT/기술">IT/기술</option>
+                        <option value="음식점/맛집">음식점/맛집</option>
+                        <option value="교육/학원">교육/학원</option>
+                        <option value="금융/투자">금융/투자</option>
+                        <option value="여행/레저">여행/레저</option>
+                        <option value="인테리어/리빙">인테리어/리빙</option>
+                        <option value="육아/자녀교육">육아/자녀교육</option>
+                        <option value="반려동물">반려동물</option>
+                        <option value="자동차">자동차</option>
+                        <option value="쇼핑몰/제품리뷰">쇼핑몰/제품리뷰</option>
+                        <option value="__custom__">기타 (직접 입력)</option>
+                    </select>
+                    <input type="text" id="pmIndustryCustom" placeholder="업종을 직접 입력하세요" style="display:none;width:100%;margin-top:8px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
+                </div>
+
+                <!-- 2. 핵심 키워드 -->
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">2. 핵심 키워드 / 내용 방향 <span style="color:#e74c3c;">*</span></label>
+                    <textarea id="pmKeywords" rows="3" placeholder='예시) 포함할 키워드: "역세권", "실거래가" / 강조할 내용: "2024년 최신 시세" / 제외할 내용: "과장된 표현"' style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:inherit;outline:none;background:var(--bg);resize:vertical;"></textarea>
+                </div>
+
+                <!-- 3. 제목 -->
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">3. 제목 (선택)</label>
+                    <input type="text" id="pmTitle" placeholder="제목을 직접 입력 (비워두면 AI가 5~8개 추천)" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
+                    <p style="font-size:0.75rem;color:var(--text-light);margin:4px 0 0 0;">비워두면 AI가 먼저 5~8개 제목을 추천하고, 사용자가 번호 선택 후 작성합니다.</p>
+                </div>
+
+                <!-- 4. 버전 -->
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">4. 버전 <span style="color:#e74c3c;">*</span></label>
+                    <div style="display:flex;gap:8px;">
+                        <label style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--bg);">
+                            <input type="radio" name="pmVersion" value="PC" checked> PC 버전 (긴 문단)
+                        </label>
+                        <label style="flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--bg);">
+                            <input type="radio" name="pmVersion" value="모바일"> 모바일 버전 (40자 줄바꿈)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 5. 글자수 -->
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">5. 목표 글자수 <span style="color:#e74c3c;">*</span></label>
+                    <input type="number" id="pmCharCount" value="2500" min="500" max="10000" step="100" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
+                    <p style="font-size:0.75rem;color:var(--text-light);margin:4px 0 0 0;">짧은 글: 1,500~2,000자 / 표준: 2,500~3,500자 / 긴 글: 4,000~6,000자</p>
+                </div>
+
+                <!-- 6. 소제목 수 -->
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">6. 소제목 개수 <span style="color:#e74c3c;">*</span></label>
+                    <input type="number" id="pmSubheadCount" value="5" min="1" max="15" step="1" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
+                    <p style="font-size:0.75rem;color:var(--text-light);margin:4px 0 0 0;">짧은 글: 3~4개 / 표준: 5~6개 / 긴 글: 7~10개</p>
+                </div>
+
+                <!-- 7. 톤앤매너 -->
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">7. 톤앤매너 <span style="color:#e74c3c;">*</span></label>
+                    <select id="pmTone" onchange="onPmToneChange()" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
+                        <option value="전문가형">전문가형 (격식체) - 법률·의료·금융·부동산</option>
+                        <option value="친근형">친근형 - 뷰티·패션·육아·요리</option>
+                        <option value="정보전달형">정보전달형 (간결체) - IT·기술·제품 리뷰</option>
+                        <option value="스토리텔링형">스토리텔링형 - 여행·맛집·체험 후기</option>
+                        <option value="교육형">교육형 (설명 중심) - 강의·튜토리얼</option>
+                        <option value="직접입력">직접 입력 (평소 글 스타일 그대로 재현)</option>
+                    </select>
+                    <textarea id="pmToneSample" rows="5" placeholder="평소 사용하시는 글 스타일 예시 (300~500자, 5~10문장 이상)" style="display:none;width:100%;margin-top:8px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:inherit;outline:none;background:var(--bg);resize:vertical;"></textarea>
+                </div>
+            </div>
+
+            <button class="btn-analyze" onclick="generatePrompt()" style="width:100%;margin-top:18px;">
+                ✨ 프롬프트 생성
+            </button>
+
+            <!-- 결과 영역 -->
+            <div id="pmResult" style="display:none;margin-top:24px;">
+                <div style="background:var(--bg);border-radius:12px;padding:16px;border:2px solid var(--border);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                        <strong style="font-size:0.95rem;">📋 생성된 프롬프트</strong>
+                        <span id="pmPromptLength" style="font-size:0.78rem;color:var(--text-light);"></span>
+                    </div>
+                    <textarea id="pmPromptOutput" rows="12" readonly style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:0.82rem;font-family:'Consolas','Menlo',monospace;background:#fff;resize:vertical;line-height:1.5;"></textarea>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+                        <button onclick="copyPrompt()" class="btn-add" style="background:linear-gradient(135deg,#f5d77a 0%,#d4af37 50%,#b8932a 100%);color:#1a1a1a;font-weight:900;">📋 클립보드 복사</button>
+                        <button onclick="openInChatGPT()" class="btn-add" style="background:#10a37f;color:#fff;">🤖 ChatGPT에서 열기</button>
+                        <button onclick="openInClaude()" class="btn-add" style="background:#cc785c;color:#fff;">🤖 Claude에서 열기</button>
+                        <button onclick="openInGemini()" class="btn-add" style="background:#1a73e8;color:#fff;">🤖 Gemini에서 열기</button>
+                    </div>
+                    <p style="font-size:0.78rem;color:var(--text-light);margin:10px 0 0 0;">
+                        💡 사용 팁: <strong>"클립보드 복사"</strong> → AI 새 창 열기 → <strong>Ctrl+V</strong>로 붙여넣기 → 전송
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1856,6 +1972,7 @@ const SECTION_META = {
     'missing-check': { title: '글 누락 진단',         desc: '최근 10개 글의 인덱스 누락 여부를 진단합니다' },
     'bulk-blog':     { title: '블로그 분석',          desc: '여러 블로그를 한 번에 분석합니다 (최대 20개)' },
     'image-gen':     { title: '무료 이미지 생성기',     desc: '블로그용 썸네일·이미지를 생성합니다' },
+    'prompt-maker':  { title: '블로그 프롬프트 메이커', desc: '입력만 하면 ChatGPT/Claude용 통합 프롬프트가 자동 생성됩니다' },
     'proposal':      { title: '블로그 대행 제안서',     desc: '클라이언트 영업용 제안서를 제작합니다' },
     'contract':      { title: '블로그 대행 계약서',     desc: '클라이언트와의 계약서를 작성합니다' },
     'guide':         { title: '사용 가이드',          desc: '각 기능의 사용 방법과 등급 의미 안내' },
@@ -1939,6 +2056,109 @@ function showSection(id) {
 
 function closeEmbedView() {
     showSection(prevSectionForReturn || 'keyword');
+}
+
+// ===== 블로그 프롬프트 메이커 =====
+let lastGeneratedPrompt = '';
+
+function onPmToneChange() {
+    const tone = document.getElementById('pmTone').value;
+    document.getElementById('pmToneSample').style.display = tone === '직접입력' ? 'block' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const ind = document.getElementById('pmIndustry');
+    if (ind) {
+        ind.addEventListener('change', () => {
+            document.getElementById('pmIndustryCustom').style.display =
+                ind.value === '__custom__' ? 'block' : 'none';
+        });
+    }
+});
+
+async function generatePrompt() {
+    let industry = document.getElementById('pmIndustry').value;
+    if (industry === '__custom__') {
+        industry = document.getElementById('pmIndustryCustom').value.trim();
+    }
+    const keywords = document.getElementById('pmKeywords').value.trim();
+    const title = document.getElementById('pmTitle').value.trim();
+    const version = document.querySelector('input[name="pmVersion"]:checked').value;
+    const charCount = parseInt(document.getElementById('pmCharCount').value);
+    const subheadCount = parseInt(document.getElementById('pmSubheadCount').value);
+    const tone = document.getElementById('pmTone').value;
+    const toneSample = document.getElementById('pmToneSample').value.trim();
+
+    // 클라이언트 검증
+    if (!industry) { showToast('주제/업종을 선택하거나 직접 입력하세요.', 'error'); return; }
+    if (!keywords) { showToast('핵심 키워드를 입력하세요.', 'error'); return; }
+    if (!charCount || charCount < 500) { showToast('글자수는 최소 500자 이상.', 'error'); return; }
+    if (!subheadCount || subheadCount < 1) { showToast('소제목 개수는 최소 1개.', 'error'); return; }
+    if (tone === '직접입력' && toneSample.length < 100) {
+        showToast('직접 입력 톤을 사용하려면 평소 글 스타일 예시를 100자 이상 입력하세요.', 'error');
+        return;
+    }
+
+    const btn = document.querySelector('#section-prompt-maker .btn-analyze');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ 생성 중...';
+
+    try {
+        const res = await fetch('/api/blog-prompt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                industry, keywords, title, version, charCount, subheadCount, tone, toneSample,
+            }),
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || `서버 오류 (${res.status})`);
+        }
+        const data = await res.json();
+        lastGeneratedPrompt = data.prompt;
+
+        document.getElementById('pmPromptOutput').value = data.prompt;
+        document.getElementById('pmPromptLength').textContent = `${data.length.toLocaleString()}자`;
+        document.getElementById('pmResult').style.display = 'block';
+        document.getElementById('pmResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showToast('✅ 프롬프트 생성 완료!', 'success');
+    } catch (e) {
+        showToast('생성 실패: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+async function copyPrompt() {
+    if (!lastGeneratedPrompt) return;
+    try {
+        await navigator.clipboard.writeText(lastGeneratedPrompt);
+        showToast('✅ 클립보드에 복사됨! AI에 Ctrl+V로 붙여넣으세요.', 'success');
+    } catch (e) {
+        // fallback
+        const ta = document.getElementById('pmPromptOutput');
+        ta.select();
+        document.execCommand('copy');
+        showToast('✅ 복사됨 (fallback)', 'success');
+    }
+}
+
+function openInChatGPT() {
+    copyPrompt();
+    window.open('https://chat.openai.com/', '_blank', 'noopener');
+}
+
+function openInClaude() {
+    copyPrompt();
+    window.open('https://claude.ai/new', '_blank', 'noopener');
+}
+
+function openInGemini() {
+    copyPrompt();
+    window.open('https://gemini.google.com/app', '_blank', 'noopener');
 }
 
 function toggleSidebar() {
