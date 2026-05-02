@@ -967,7 +967,7 @@
     </div>
 
     <!-- 풀스크린 모드 글로벌 컨트롤 (body 직속, stacking 충돌 방지) -->
-    <button id="fullscreenBackFab" onclick="exitFullscreen()" class="image-gen-back-fab" title="돌아가기">← 돌아가기</button>
+    <button id="fullscreenBackFab" onclick="closeEmbedView()" class="image-gen-back-fab" title="돌아가기">← 돌아가기</button>
     <a id="fullscreenNewWindowFab" href="#" target="_blank" rel="noopener" class="image-gen-newwindow-fab" title="새 창에서 열기">↗</a>
 
     <!-- Section: 블로그 분석 -->
@@ -1937,7 +1937,7 @@ function showSection(id) {
     }
 }
 
-function exitFullscreen() {
+function closeEmbedView() {
     showSection(prevSectionForReturn || 'keyword');
 }
 
