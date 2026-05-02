@@ -718,6 +718,11 @@
       <div class="sidebar-label">콘텐츠 도구</div>
       <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')"><span class="nav-icon">🎨</span> 무료 이미지 생성기</button>
     </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">영업 도구</div>
+      <button class="nav-btn" data-section="proposal" onclick="showSection('proposal')"><span class="nav-icon">📄</span> 블로그 대행 제안서</button>
+      <button class="nav-btn" data-section="contract" onclick="showSection('contract')"><span class="nav-icon">📑</span> 블로그 대행 계약서</button>
+    </div>
 
     <div class="sidebar-section">
       <div class="sidebar-label">정보</div>
@@ -927,14 +932,36 @@
         </div>
     </div>
 
-    <!-- Section: 이미지 생성기 (풀스크린 임베드, 토바 제거) -->
+    <!-- Section: 이미지 생성기 (풀스크린 임베드) -->
     <div class="page-section image-gen-fullscreen" id="section-image-gen">
-        <button onclick="exitImageGen()" class="image-gen-back-fab" title="돌아가기">← 돌아가기</button>
+        <button onclick="exitFullscreen()" class="image-gen-back-fab" title="돌아가기">← 돌아가기</button>
         <a href="https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/" target="_blank" rel="noopener" class="image-gen-newwindow-fab" title="새 창에서 열기">↗</a>
         <iframe id="imageGenFrame" src="about:blank" class="image-gen-frame" loading="lazy" title="무료 이미지 생성기" allow="clipboard-write; clipboard-read; fullscreen"></iframe>
         <div id="imageGenFallback" style="display:none;padding:24px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
             <p>임베드가 차단되어 표시할 수 없습니다.</p>
             <p style="margin-top:8px;"><a href="https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/" target="_blank" rel="noopener" style="color:#1a3a8a;font-weight:700;">새 창에서 무료 이미지 생성기 열기 →</a></p>
+        </div>
+    </div>
+
+    <!-- Section: 블로그 대행 제안서 (풀스크린 임베드) -->
+    <div class="page-section image-gen-fullscreen" id="section-proposal">
+        <button onclick="exitFullscreen()" class="image-gen-back-fab" title="돌아가기">← 돌아가기</button>
+        <a href="https://change-leaders.lovekyunjae.workers.dev/%EB%B8%94%EB%A1%9C%EA%B7%B8%20%EB%8C%80%ED%96%89%20%ED%99%88%ED%8E%98%EC%9D%B4%EC%A7%80%20%EC%A0%9C%EC%95%88%EC%84%9C%20%EC%A0%9C%EC%9E%91%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8" target="_blank" rel="noopener" class="image-gen-newwindow-fab" title="새 창에서 열기">↗</a>
+        <iframe id="proposalFrame" src="about:blank" class="image-gen-frame" loading="lazy" title="블로그 대행 제안서" allow="clipboard-write; clipboard-read; fullscreen"></iframe>
+        <div id="proposalFallback" style="display:none;padding:24px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
+            <p>임베드가 차단되어 표시할 수 없습니다.</p>
+            <p style="margin-top:8px;"><a href="https://change-leaders.lovekyunjae.workers.dev/%EB%B8%94%EB%A1%9C%EA%B7%B8%20%EB%8C%80%ED%96%89%20%ED%99%88%ED%8E%98%EC%9D%B4%EC%A7%80%20%EC%A0%9C%EC%95%88%EC%84%9C%20%EC%A0%9C%EC%9E%91%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8" target="_blank" rel="noopener" style="color:#1a3a8a;font-weight:700;">새 창에서 블로그 대행 제안서 열기 →</a></p>
+        </div>
+    </div>
+
+    <!-- Section: 블로그 대행 계약서 (풀스크린 임베드) -->
+    <div class="page-section image-gen-fullscreen" id="section-contract">
+        <button onclick="exitFullscreen()" class="image-gen-back-fab" title="돌아가기">← 돌아가기</button>
+        <a href="https://change-leaders.lovekyunjae.workers.dev/contract" target="_blank" rel="noopener" class="image-gen-newwindow-fab" title="새 창에서 열기">↗</a>
+        <iframe id="contractFrame" src="about:blank" class="image-gen-frame" loading="lazy" title="블로그 대행 계약서" allow="clipboard-write; clipboard-read; fullscreen"></iframe>
+        <div id="contractFallback" style="display:none;padding:24px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
+            <p>임베드가 차단되어 표시할 수 없습니다.</p>
+            <p style="margin-top:8px;"><a href="https://change-leaders.lovekyunjae.workers.dev/contract" target="_blank" rel="noopener" style="color:#1a3a8a;font-weight:700;">새 창에서 블로그 대행 계약서 열기 →</a></p>
         </div>
     </div>
 
@@ -1824,17 +1851,37 @@ const SECTION_META = {
     'missing-check': { title: '글 누락 진단',         desc: '최근 10개 글의 인덱스 누락 여부를 진단합니다' },
     'bulk-blog':     { title: '블로그 분석',          desc: '여러 블로그를 한 번에 분석합니다 (최대 20개)' },
     'image-gen':     { title: '무료 이미지 생성기',     desc: '블로그용 썸네일·이미지를 생성합니다' },
+    'proposal':      { title: '블로그 대행 제안서',     desc: '클라이언트 영업용 제안서를 제작합니다' },
+    'contract':      { title: '블로그 대행 계약서',     desc: '클라이언트와의 계약서를 작성합니다' },
     'guide':         { title: '사용 가이드',          desc: '각 기능의 사용 방법과 등급 의미 안내' },
     'feedback':      { title: '피드백 / 문의',        desc: '개선 제안, 버그 신고, 기능 요청' },
 };
 
-const IMAGE_GEN_URL = 'https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/';
+// 풀스크린 임베드 섹션 정의 (id → URL + iframe id + fallback id)
+const FULLSCREEN_SECTIONS = {
+    'image-gen': {
+        url: 'https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/',
+        frameId: 'imageGenFrame',
+        fallbackId: 'imageGenFallback',
+    },
+    'proposal': {
+        url: 'https://change-leaders.lovekyunjae.workers.dev/%EB%B8%94%EB%A1%9C%EA%B7%B8%20%EB%8C%80%ED%96%89%20%ED%99%88%ED%8E%98%EC%9D%B4%EC%A7%80%20%EC%A0%9C%EC%95%88%EC%84%9C%20%EC%A0%9C%EC%9E%91%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8',
+        frameId: 'proposalFrame',
+        fallbackId: 'proposalFallback',
+    },
+    'contract': {
+        url: 'https://change-leaders.lovekyunjae.workers.dev/contract',
+        frameId: 'contractFrame',
+        fallbackId: 'contractFallback',
+    },
+};
 let prevSectionForReturn = 'keyword';
 
 function showSection(id) {
-    // 풀스크린 모드 진입 시: 이전 섹션을 기억해서 돌아가기에 사용
+    // 풀스크린 진입 시: 이전 섹션 기억 (돌아가기에 사용)
+    const isFullscreen = !!FULLSCREEN_SECTIONS[id];
     const currentActive = document.querySelector('.page-section.active');
-    if (id === 'image-gen' && currentActive && currentActive.id !== 'section-image-gen') {
+    if (isFullscreen && currentActive && !FULLSCREEN_SECTIONS[currentActive.id.replace('section-', '')]) {
         prevSectionForReturn = currentActive.id.replace('section-', '');
     }
 
@@ -1845,8 +1892,8 @@ function showSection(id) {
     const btn = document.querySelector(`.nav-btn[data-section="${id}"]`);
     if (btn) btn.classList.add('active');
 
-    // 이미지 생성기는 풀스크린, 그 외는 일반 모드
-    if (id === 'image-gen') {
+    // 풀스크린 모드 토글
+    if (isFullscreen) {
         document.body.classList.add('fullscreen-mode');
     } else {
         document.body.classList.remove('fullscreen-mode');
@@ -1863,15 +1910,17 @@ function showSection(id) {
     const sb = document.getElementById('sidebar');
     if (sb && window.innerWidth <= 900) sb.classList.remove('open');
 
-    // 이미지 생성기 lazy load + iframe 차단 감지
-    if (id === 'image-gen') {
-        const frame = document.getElementById('imageGenFrame');
-        if (frame && frame.src !== IMAGE_GEN_URL) {
-            frame.src = IMAGE_GEN_URL;
+    // 풀스크린 섹션 lazy load + iframe 차단 감지
+    if (isFullscreen) {
+        const cfg = FULLSCREEN_SECTIONS[id];
+        const frame = document.getElementById(cfg.frameId);
+        if (frame && frame.src !== cfg.url) {
+            frame.src = cfg.url;
             setTimeout(() => {
                 try {
                     if (frame.contentWindow && frame.contentWindow.location.href === 'about:blank') {
-                        document.getElementById('imageGenFallback').style.display = 'block';
+                        const fb = document.getElementById(cfg.fallbackId);
+                        if (fb) fb.style.display = 'block';
                     }
                 } catch (e) {
                     // cross-origin이지만 로드 정상
@@ -1881,7 +1930,7 @@ function showSection(id) {
     }
 }
 
-function exitImageGen() {
+function exitFullscreen() {
     showSection(prevSectionForReturn || 'keyword');
 }
 
