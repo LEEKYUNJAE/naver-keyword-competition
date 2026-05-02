@@ -199,12 +199,19 @@
             padding: 0 !important;
             margin: 0 !important;
         }
-        body.fullscreen-mode #section-image-gen {
+        body.fullscreen-mode .image-gen-fullscreen.active {
             position: fixed;
             inset: 0;
             z-index: 9999;
             background: #fff;
             display: block;
+        }
+        body.fullscreen-mode .image-gen-fullscreen:not(.active) {
+            display: none !important;
+        }
+        body.fullscreen-mode .image-gen-fullscreen:not(.active) .image-gen-back-fab,
+        body.fullscreen-mode .image-gen-fullscreen:not(.active) .image-gen-newwindow-fab {
+            display: none !important;
         }
         .image-gen-frame {
             width: 100%;
@@ -223,6 +230,7 @@
             align-items: center;
             gap: 4px;
             padding: 6px 16px;
+            white-space: nowrap;
             background: linear-gradient(135deg, rgba(212, 175, 55, 0.95) 0%, rgba(184, 147, 42, 0.95) 100%);
             color: #1a1a1a;
             border: 1px solid rgba(245, 215, 122, 0.6);
@@ -720,8 +728,8 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">영업 도구</div>
-      <button class="nav-btn" data-section="proposal" onclick="showSection('proposal')"><span class="nav-icon">📄</span> 블로그 대행 제안서</button>
-      <button class="nav-btn" data-section="contract" onclick="showSection('contract')"><span class="nav-icon">📑</span> 블로그 대행 계약서</button>
+      <button class="nav-btn" data-section="proposal" onclick="showSection('proposal')"><span class="nav-icon">💼</span> 블로그 대행 제안서</button>
+      <button class="nav-btn" data-section="contract" onclick="showSection('contract')"><span class="nav-icon">📜</span> 블로그 대행 계약서</button>
     </div>
 
     <div class="sidebar-section">
