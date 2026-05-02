@@ -163,6 +163,78 @@
         }
         .page-section { display: none; }
         .page-section.active { display: block; }
+
+        /* === 이미지 생성기 풀스크린 모드 === */
+        body.fullscreen-mode { overflow: hidden; }
+        body.fullscreen-mode .header,
+        body.fullscreen-mode .sidebar,
+        body.fullscreen-mode .footer,
+        body.fullscreen-mode .sidebar-toggle,
+        body.fullscreen-mode .page-header { display: none !important; }
+        body.fullscreen-mode .app-layout {
+            display: block;
+            min-height: 100vh;
+        }
+        body.fullscreen-mode .main-content { padding: 0 !important; }
+        body.fullscreen-mode .container {
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        body.fullscreen-mode #section-image-gen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #fff;
+            display: block;
+        }
+        .image-gen-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: #f5f8ff;
+            border-bottom: 1px solid var(--border);
+            height: 50px;
+            box-sizing: border-box;
+        }
+        .image-gen-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #1a3a8a;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .image-gen-back-btn:hover {
+            background: #1a3a8a;
+            color: #fff;
+            border-color: #1a3a8a;
+        }
+        .image-gen-title {
+            font-size: 0.92rem;
+            color: var(--text);
+            font-weight: 800;
+        }
+        .image-gen-new-window {
+            font-size: 0.78rem;
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .image-gen-new-window:hover { color: #1a3a8a; }
+        .image-gen-frame {
+            width: 100%;
+            height: calc(100vh - 50px);
+            border: none;
+            display: block;
+        }
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -611,7 +683,7 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">콘텐츠 도구</div>
-      <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')"><span class="nav-icon">🎨</span> 이미지 생성기</button>
+      <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')"><span class="nav-icon">🎨</span> 무료 이미지 생성기</button>
     </div>
 
     <div class="sidebar-section">
@@ -822,21 +894,17 @@
         </div>
     </div>
 
-    <!-- Section: 이미지 생성기 (외부 임베드) -->
-    <div class="page-section" id="section-image-gen">
-        <div style="background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);background:#f5f8ff;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <button onclick="showSection('keyword')" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:0.85rem;font-weight:700;color:#1a3a8a;cursor:pointer;">← 돌아가기</button>
-                    <span style="font-size:0.85rem;color:var(--text-sub);font-weight:600;">🎨 이미지 생성기</span>
-                </div>
-                <a href="https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/" target="_blank" rel="noopener" style="font-size:0.78rem;color:var(--text-light);text-decoration:none;">새 창에서 열기 ↗</a>
-            </div>
-            <iframe id="imageGenFrame" src="about:blank" style="width:100%;height:calc(100vh - 80px);border:none;display:block;" loading="lazy" title="이미지 생성기"></iframe>
-            <div id="imageGenFallback" style="display:none;padding:24px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
-                <p>임베드가 차단되어 표시할 수 없습니다.</p>
-                <p style="margin-top:8px;"><a href="https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/" target="_blank" rel="noopener" style="color:#1a3a8a;font-weight:700;">새 창에서 이미지 생성기 열기 →</a></p>
-            </div>
+    <!-- Section: 이미지 생성기 (풀스크린 임베드) -->
+    <div class="page-section image-gen-fullscreen" id="section-image-gen">
+        <div class="image-gen-topbar">
+            <button onclick="exitImageGen()" class="image-gen-back-btn">← 돌아가기</button>
+            <span class="image-gen-title">🎨 무료 이미지 생성기</span>
+            <a href="https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/" target="_blank" rel="noopener" class="image-gen-new-window">새 창에서 열기 ↗</a>
+        </div>
+        <iframe id="imageGenFrame" src="about:blank" class="image-gen-frame" loading="lazy" title="무료 이미지 생성기"></iframe>
+        <div id="imageGenFallback" style="display:none;padding:24px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
+            <p>임베드가 차단되어 표시할 수 없습니다.</p>
+            <p style="margin-top:8px;"><a href="https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/" target="_blank" rel="noopener" style="color:#1a3a8a;font-weight:700;">새 창에서 무료 이미지 생성기 열기 →</a></p>
         </div>
     </div>
 
@@ -1725,20 +1793,34 @@ const SECTION_META = {
     'rank-check':    { title: '키워드 순위 확인',    desc: '블로그 ID와 키워드를 입력하면 검색 시 노출 순위를 확인합니다' },
     'missing-check': { title: '글 누락 진단',         desc: '최근 10개 글의 인덱스 누락 여부를 진단합니다' },
     'bulk-blog':     { title: '블로그 분석',          desc: '여러 블로그를 한 번에 분석합니다 (최대 20개)' },
-    'image-gen':     { title: '이미지 생성기',         desc: '블로그용 썸네일·이미지를 생성합니다' },
+    'image-gen':     { title: '무료 이미지 생성기',     desc: '블로그용 썸네일·이미지를 생성합니다' },
     'guide':         { title: '사용 가이드',          desc: '각 기능의 사용 방법과 등급 의미 안내' },
     'feedback':      { title: '피드백 / 문의',        desc: '개선 제안, 버그 신고, 기능 요청' },
 };
 
 const IMAGE_GEN_URL = 'https://change-leaders.lovekyunjae.workers.dev/tools/blog-image/';
+let prevSectionForReturn = 'keyword';
 
 function showSection(id) {
+    // 풀스크린 모드 진입 시: 이전 섹션을 기억해서 돌아가기에 사용
+    const currentActive = document.querySelector('.page-section.active');
+    if (id === 'image-gen' && currentActive && currentActive.id !== 'section-image-gen') {
+        prevSectionForReturn = currentActive.id.replace('section-', '');
+    }
+
     document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-btn[data-section]').forEach(b => b.classList.remove('active'));
     const section = document.getElementById('section-' + id);
     if (section) section.classList.add('active');
     const btn = document.querySelector(`.nav-btn[data-section="${id}"]`);
     if (btn) btn.classList.add('active');
+
+    // 이미지 생성기는 풀스크린, 그 외는 일반 모드
+    if (id === 'image-gen') {
+        document.body.classList.add('fullscreen-mode');
+    } else {
+        document.body.classList.remove('fullscreen-mode');
+    }
 
     const meta = SECTION_META[id];
     if (meta) {
@@ -1756,20 +1838,21 @@ function showSection(id) {
         const frame = document.getElementById('imageGenFrame');
         if (frame && frame.src !== IMAGE_GEN_URL) {
             frame.src = IMAGE_GEN_URL;
-            // 4초 내에 contentDocument 접근 가능하면 same-origin이라 OK,
-            // X-Frame-Options/CSP로 차단된 경우 빈 화면 → fallback 안내 표시
             setTimeout(() => {
                 try {
-                    // 차단 시 cross-origin 접근으로 throw
                     if (frame.contentWindow && frame.contentWindow.location.href === 'about:blank') {
                         document.getElementById('imageGenFallback').style.display = 'block';
                     }
                 } catch (e) {
-                    // cross-origin이지만 로드는 됨 (정상)
+                    // cross-origin이지만 로드 정상
                 }
             }, 4000);
         }
     }
+}
+
+function exitImageGen() {
+    showSection(prevSectionForReturn || 'keyword');
 }
 
 function toggleSidebar() {
