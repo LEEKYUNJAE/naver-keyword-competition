@@ -725,6 +725,7 @@
       <div class="sidebar-label">콘텐츠 도구</div>
       <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')"><span class="nav-icon">🎨</span> 무료 이미지 생성기</button>
       <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')"><span class="nav-icon">🤖</span> 블로그 프롬프트 메이커</button>
+      <button class="nav-btn" data-section="image-prompts" onclick="showSection('image-prompts')"><span class="nav-icon">🖼️</span> 이미지 프롬프트 생성기</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">영업 도구</div>
@@ -982,9 +983,8 @@
 
                 <!-- 3. 제목 -->
                 <div>
-                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">3. 제목 (선택)</label>
-                    <input type="text" id="pmTitle" placeholder="제목을 직접 입력 (비워두면 AI가 5~8개 추천)" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
-                    <p style="font-size:0.75rem;color:var(--text-light);margin:4px 0 0 0;">비워두면 AI가 먼저 5~8개 제목을 추천하고, 사용자가 번호 선택 후 작성합니다.</p>
+                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">3. 제목 <span style="font-weight:500;color:var(--text-light);">(선택, 비워두면 AI가 5~8개 추천)</span></label>
+                    <input type="text" id="pmTitle" placeholder="제목을 직접 입력하세요" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
                 </div>
 
                 <!-- 4. 버전 -->
@@ -1002,16 +1002,14 @@
 
                 <!-- 5. 글자수 -->
                 <div>
-                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">5. 목표 글자수 <span style="color:#e74c3c;">*</span></label>
-                    <input type="number" id="pmCharCount" value="2500" min="500" max="10000" step="100" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
-                    <p style="font-size:0.75rem;color:var(--text-light);margin:4px 0 0 0;">짧은 글: 1,500~2,000자 / 표준: 2,500~3,500자 / 긴 글: 4,000~6,000자</p>
+                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">5. 목표 글자수 <span style="font-weight:500;color:var(--text-light);">(짧은 글 1,500~2,000자 / 표준 2,500~3,500자 / 긴 글 4,000~6,000자)</span> <span style="color:#e74c3c;">*</span></label>
+                    <input type="number" id="pmCharCount" placeholder="예: 2500" min="500" max="10000" step="100" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
                 </div>
 
                 <!-- 6. 소제목 수 -->
                 <div>
-                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">6. 소제목 개수 <span style="color:#e74c3c;">*</span></label>
-                    <input type="number" id="pmSubheadCount" value="5" min="1" max="15" step="1" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
-                    <p style="font-size:0.75rem;color:var(--text-light);margin:4px 0 0 0;">짧은 글: 3~4개 / 표준: 5~6개 / 긴 글: 7~10개</p>
+                    <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">6. 소제목 개수 <span style="font-weight:500;color:var(--text-light);">(짧은 글 3~4개 / 표준 5~6개 / 긴 글 7~10개)</span> <span style="color:#e74c3c;">*</span></label>
+                    <input type="number" id="pmSubheadCount" placeholder="예: 5" min="1" max="15" step="1" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:inherit;background:var(--bg);">
                 </div>
 
                 <!-- 7. 톤앤매너 -->
@@ -1052,6 +1050,46 @@
                     </p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Section: 이미지 프롬프트 생성기 -->
+    <div class="page-section" id="section-image-prompts">
+        <div class="card">
+            <div class="card-title">🖼️ 이미지 프롬프트 생성기</div>
+            <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 14px 0;">
+                완성된 블로그 글을 붙여넣으면 소제목별로 이미지 생성 프롬프트가 자동으로 만들어집니다.
+                각 프롬프트마다 ChatGPT/Gemini 새 창 자동 입력 버튼이 제공됩니다.
+            </p>
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">블로그 글 전체 붙여넣기 <span style="color:#e74c3c;">*</span></label>
+                <textarea id="ipBlogText" rows="14" placeholder="완성된 블로그 글을 통째로 붙여넣으세요. (소제목은 1️⃣ 2️⃣ 3️⃣... 형태로 인식합니다)" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.88rem;font-family:inherit;outline:none;background:var(--bg);resize:vertical;line-height:1.6;"></textarea>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:800;margin-bottom:6px;">업종/주제 <span style="font-weight:500;color:var(--text-light);">(선택)</span></label>
+                    <input type="text" id="ipIndustry" placeholder="예: 부동산, 맛집, IT" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:inherit;background:var(--bg);">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:800;margin-bottom:6px;">이미지 스타일 <span style="font-weight:500;color:var(--text-light);">(원하는 분위기)</span></label>
+                    <select id="ipStyle" style="width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:inherit;background:var(--bg);">
+                        <option value="실사풍">실사풍 (포토리얼)</option>
+                        <option value="일러스트">깔끔한 일러스트</option>
+                        <option value="플랫">플랫 디자인 (벡터)</option>
+                        <option value="3D">3D 렌더링</option>
+                        <option value="수채화">수채화 / 따뜻한 분위기</option>
+                        <option value="미니멀">미니멀 / 아이콘 스타일</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-analyze" onclick="generateImagePrompts()" style="width:100%;">
+                🖼️ 소제목별 이미지 프롬프트 생성
+            </button>
+
+            <div id="ipResult" style="margin-top:18px;"></div>
         </div>
     </div>
 
@@ -1973,6 +2011,7 @@ const SECTION_META = {
     'bulk-blog':     { title: '블로그 분석',          desc: '여러 블로그를 한 번에 분석합니다 (최대 20개)' },
     'image-gen':     { title: '무료 이미지 생성기',     desc: '블로그용 썸네일·이미지를 생성합니다' },
     'prompt-maker':  { title: '블로그 프롬프트 메이커', desc: '입력만 하면 ChatGPT/Claude용 통합 프롬프트가 자동 생성됩니다' },
+    'image-prompts': { title: '이미지 프롬프트 생성기',  desc: '블로그 글을 붙여넣으면 소제목별 이미지 프롬프트가 자동 생성됩니다' },
     'proposal':      { title: '블로그 대행 제안서',     desc: '클라이언트 영업용 제안서를 제작합니다' },
     'contract':      { title: '블로그 대행 계약서',     desc: '클라이언트와의 계약서를 작성합니다' },
     'guide':         { title: '사용 가이드',          desc: '각 기능의 사용 방법과 등급 의미 안내' },
@@ -2171,6 +2210,137 @@ function openInClaude() {
 
 function openInGemini() {
     copyPrompt();
+    window.open('https://gemini.google.com/app', '_blank', 'noopener');
+    showToast('✅ 복사 완료. Gemini에서 Ctrl+V → Enter', 'success');
+}
+
+// ===== 이미지 프롬프트 생성기 =====
+const STYLE_DESCRIPTIONS = {
+    '실사풍': '포토리얼리스틱한 사진 같은 이미지, 자연스러운 조명',
+    '일러스트': '깔끔하고 모던한 디지털 일러스트레이션',
+    '플랫': '플랫 디자인, 단순화된 벡터 아트, 깨끗한 컬러팔레트',
+    '3D': '3D 렌더링, 부드러운 그림자와 입체감',
+    '수채화': '수채화 스타일, 부드럽고 따뜻한 분위기',
+    '미니멀': '미니멀 아이콘 스타일, 단순하고 상징적',
+};
+
+function parseSubheadings(text) {
+    // 키캡 이모지(1️⃣~9️⃣, 🔟, 1️⃣0️⃣, 1️⃣1️⃣...)로 시작하는 줄을 소제목으로 인식
+    const lines = text.split('\n');
+    const sections = [];
+    let current = null;
+    const keycapStart = /^\s*([1-9]\u{FE0F}\u{20E3}|🔟|[1-9]\u{FE0F}\u{20E3}[0-9]\u{FE0F}\u{20E3})\s*(.+)$/u;
+
+    for (const rawLine of lines) {
+        const m = rawLine.match(keycapStart);
+        if (m && m[2].trim().length > 1) {
+            if (current) sections.push(current);
+            current = { number: sections.length + 1, marker: m[1], title: m[2].trim(), content: '' };
+        } else if (current) {
+            current.content += rawLine + '\n';
+        }
+    }
+    if (current) sections.push(current);
+    return sections;
+}
+
+function buildImagePromptFor(section, industry, style) {
+    const styleDesc = STYLE_DESCRIPTIONS[style] || STYLE_DESCRIPTIONS['실사풍'];
+    // 본문에서 핵심 명사 추출 (간단히 첫 2~3문장 + 길이 제한)
+    const snippet = section.content.replace(/\s+/g, ' ').trim().substring(0, 280);
+    const industryPart = industry ? `주제: ${industry}\n` : '';
+
+    return `다음 블로그 섹션에 어울리는 블로그용 이미지를 생성해주세요.
+
+📋 섹션 정보
+${industryPart}소제목: ${section.title}
+핵심 내용: ${snippet}
+
+🎨 이미지 스타일
+- ${styleDesc}
+- 한국 정서에 맞는 따뜻하고 자연스러운 분위기
+- 블로그 썸네일 비율 (가로형 16:9 권장)
+- 텍스트나 워터마크 없이 이미지만
+- 밝고 깨끗한 배경
+
+❌ 피할 것
+- 글자, 로고, 워터마크 삽입
+- 흐릿하거나 어색한 인물 표현
+- 저작권 우려가 있는 특정 브랜드/캐릭터
+- 과도한 자극적 색감
+
+이미지를 한 장 생성해주세요.`;
+}
+
+function generateImagePrompts() {
+    const text = document.getElementById('ipBlogText').value.trim();
+    if (!text) { showToast('블로그 글을 붙여넣으세요.', 'error'); return; }
+
+    const industry = document.getElementById('ipIndustry').value.trim();
+    const style = document.getElementById('ipStyle').value;
+    const sections = parseSubheadings(text);
+
+    const resultEl = document.getElementById('ipResult');
+    if (sections.length === 0) {
+        resultEl.innerHTML = `<p style="padding:14px;background:#fde8e8;border-radius:8px;color:#c0392b;font-size:0.85rem;">소제목을 찾지 못했습니다. 1️⃣ 2️⃣ 3️⃣... 형태의 키캡 이모지로 시작하는 소제목이 있어야 합니다.</p>`;
+        return;
+    }
+
+    let html = `<div style="margin-bottom:14px;font-size:0.88rem;color:var(--text-sub);">📌 <strong>${sections.length}개</strong>의 소제목을 인식했습니다. 각 카드의 버튼을 누르면 ChatGPT/Gemini로 자동 전송됩니다.</div>`;
+
+    sections.forEach((sec, idx) => {
+        const prompt = buildImagePromptFor(sec, industry, style);
+        const promptId = 'ipPrompt_' + idx;
+        // base64 인코딩으로 안전하게 보관 (쿼터 이스케이프 회피)
+        const promptB64 = btoa(unescape(encodeURIComponent(prompt)));
+        html += `
+        <div class="card" style="margin-bottom:14px;background:#fff;border:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="background:#1a3a8a;color:#fff;padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:800;">${sec.marker} 섹션 ${sec.number}</span>
+                <strong style="font-size:0.95rem;">${sec.title}</strong>
+            </div>
+            <textarea id="${promptId}" rows="8" readonly style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:'Consolas','Menlo',monospace;background:var(--bg);resize:vertical;line-height:1.5;">${prompt.replace(/</g,'&lt;')}</textarea>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                <button onclick="ipCopy('${promptB64}')" class="btn-add" style="background:linear-gradient(135deg,#f5d77a 0%,#d4af37 50%,#b8932a 100%);color:#1a1a1a;font-weight:900;padding:8px 14px;font-size:0.82rem;">📋 복사</button>
+                <button onclick="ipOpenChatGPT('${promptB64}')" class="btn-add" style="background:#10a37f;color:#fff;padding:8px 14px;font-size:0.82rem;">🤖 ChatGPT 열기</button>
+                <button onclick="ipOpenGemini('${promptB64}')" class="btn-add" style="background:#1a73e8;color:#fff;padding:8px 14px;font-size:0.82rem;">🤖 Gemini 열기</button>
+            </div>
+        </div>`;
+    });
+
+    resultEl.innerHTML = html;
+    resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function ipDecodePrompt(b64) {
+    return decodeURIComponent(escape(atob(b64)));
+}
+
+async function ipCopy(b64) {
+    const text = ipDecodePrompt(b64);
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast('✅ 클립보드 복사 완료', 'success');
+    } catch (e) {
+        showToast('복사 실패: ' + e.message, 'error');
+    }
+}
+
+function ipOpenChatGPT(b64) {
+    const text = ipDecodePrompt(b64);
+    const encoded = encodeURIComponent(text);
+    if (encoded.length < 7500) {
+        window.open('https://chatgpt.com/?q=' + encoded, '_blank', 'noopener');
+        showToast('✅ ChatGPT에 자동 입력됨. Enter만 누르세요!', 'success');
+    } else {
+        ipCopy(b64);
+        window.open('https://chatgpt.com/', '_blank', 'noopener');
+        showToast('프롬프트가 길어 클립보드 복사 후 새 창. Ctrl+V → Enter', 'success');
+    }
+}
+
+function ipOpenGemini(b64) {
+    ipCopy(b64);
     window.open('https://gemini.google.com/app', '_blank', 'noopener');
     showToast('✅ 복사 완료. Gemini에서 Ctrl+V → Enter', 'success');
 }
