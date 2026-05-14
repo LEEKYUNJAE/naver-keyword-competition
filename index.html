@@ -724,7 +724,9 @@
     <div class="sidebar-section">
       <div class="sidebar-label">콘텐츠 도구</div>
       <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')"><span class="nav-icon">🎨</span> 무료 이미지 생성기</button>
-      <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')"><span class="nav-icon">🤖</span> 블로그 자동 글쓰기</button>
+      <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')"><span class="nav-icon">🤖</span> 블로그 글쓰기 프롬프트</button>
+      <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-68fdbd5d6a888191b5a31e95cef9f6e7-beulrogeu-daehaeng-jadong-geul-jagseonggi-v1-0-dapeojuneunnamja','_blank','noopener')"><span class="nav-icon">✨</span> 블로그 자동 글쓰기</button>
+      <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-69bf61a7397c8191b4fb86da9e9a62eb-beulrogeu-daehaeng-obsyeon-ius-sotong-daesgeul-jagseong-dapeojuneunnamja','_blank','noopener')"><span class="nav-icon">💬</span> 블로그 이웃 댓글 자동 생성</button>
       <button class="nav-btn" data-section="image-prompts" onclick="showSection('image-prompts')"><span class="nav-icon">🖼️</span> 이미지 자동 생성기</button>
     </div>
     <div class="sidebar-section">
@@ -944,7 +946,7 @@
     <!-- Section: 블로그 프롬프트 메이커 -->
     <div class="page-section" id="section-prompt-maker">
         <div class="card">
-            <div class="card-title">🤖 블로그 자동 글쓰기</div>
+            <div class="card-title">🤖 블로그 글쓰기 프롬프트</div>
             <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 18px 0;">
                 다퍼남 v2.1 지침 기반으로 입력만 하면 ChatGPT·Claude·Gemini용 <strong>통합 프롬프트</strong>가 자동 생성됩니다.
                 생성된 프롬프트를 복사해서 AI에 붙여넣으면 즉시 블로그 글이 작성됩니다 (API 비용 0원).
@@ -1066,7 +1068,7 @@
 
             <div style="margin-bottom:12px;">
                 <label style="display:block;font-size:0.85rem;font-weight:800;margin-bottom:6px;">블로그 글 전체 붙여넣기 <span style="color:#e74c3c;">*</span></label>
-                <textarea id="ipBlogText" rows="14" placeholder="완성된 블로그 글을 통째로 붙여넣으세요. (소제목은 1️⃣ 2️⃣ 3️⃣... 형태로 인식합니다)" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.88rem;font-family:inherit;outline:none;background:var(--bg);resize:vertical;line-height:1.6;"></textarea>
+                <textarea id="ipBlogText" rows="14" placeholder="완성된 블로그 글을 통째로 붙여넣으세요. (소제목은 ## 제목, **제목**, 1️⃣ 형태 모두 인식합니다)" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:0.88rem;font-family:inherit;outline:none;background:var(--bg);resize:vertical;line-height:1.6;"></textarea>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
@@ -2012,7 +2014,7 @@ const SECTION_META = {
     'missing-check': { title: '글 누락 진단',         desc: '최근 10개 글의 인덱스 누락 여부를 진단합니다' },
     'bulk-blog':     { title: '블로그 분석',          desc: '여러 블로그를 한 번에 분석합니다 (최대 20개)' },
     'image-gen':     { title: '무료 이미지 생성기',     desc: '블로그용 썸네일·이미지를 생성합니다' },
-    'prompt-maker':  { title: '블로그 자동 글쓰기',     desc: '입력만 하면 ChatGPT/Claude용 통합 프롬프트가 자동 생성됩니다' },
+    'prompt-maker':  { title: '블로그 글쓰기 프롬프트',     desc: '입력만 하면 ChatGPT/Claude용 통합 프롬프트가 자동 생성됩니다' },
     'image-prompts': { title: '이미지 자동 생성기',      desc: '블로그 글을 붙여넣으면 소제목별 이미지 프롬프트가 자동 생성됩니다' },
     'proposal':      { title: '블로그 대행 제안서',     desc: '클라이언트 영업용 제안서를 제작합니다' },
     'contract':      { title: '블로그 대행 계약서',     desc: '클라이언트와의 계약서를 작성합니다' },
@@ -2196,7 +2198,7 @@ async function openInChatGPT() {
     try { await navigator.clipboard.writeText(lastGeneratedPrompt); } catch (e) {}
     const encoded = encodeURIComponent(lastGeneratedPrompt);
     // 2) URL 파라미터 시도 (짧을 때만)
-    if (encoded.length < 5500) {
+    if (encoded.length < 30000) {
         window.open('https://chatgpt.com/?q=' + encoded, '_blank', 'noopener');
         showToast('✅ ChatGPT 새 창 열림. 자동 입력 안 됐으면 Ctrl+V (클립보드 복사 완료)', 'success');
     } else {
@@ -2220,7 +2222,8 @@ async function openInGemini() {
 }
 
 // Claude/Gemini 클릭 시 큰 안내 배너 (Ctrl+V 명시)
-function showCtrlVNotice(serviceName) {
+// extraHint: 서비스명 뒤에 추가로 보여줄 안내 문구 (예: "대화창에서 이미지 모드로 변경 후")
+function showCtrlVNotice(serviceName, extraHint = '') {
     let banner = document.getElementById('ctrlVNotice');
     if (!banner) {
         banner = document.createElement('div');
@@ -2228,10 +2231,12 @@ function showCtrlVNotice(serviceName) {
         banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;background:linear-gradient(135deg,#1a3a8a 0%,#2c4eaa 100%);color:#fff;padding:18px 20px;text-align:center;font-size:1.05rem;font-weight:800;box-shadow:0 4px 20px rgba(26,58,138,0.4);font-family:"Pretendard Variable",sans-serif;letter-spacing:0.02em;';
         document.body.appendChild(banner);
     }
+    const icon = extraHint ? '🖼️' : '🎯';
+    const hintHtml = extraHint ? `${extraHint} ` : '';
     banner.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;">
-            <span style="font-size:1.4rem;">🎯</span>
-            <span><strong>${serviceName}</strong> 새 창이 열렸습니다. <span style="background:#f5d77a;color:#1a1a1a;padding:4px 12px;border-radius:6px;font-weight:900;margin:0 4px;">Ctrl + V</strong>를 눌러 프롬프트를 붙여넣고 <strong>Enter</strong>를 누르세요!</span>
+            <span style="font-size:1.4rem;">${icon}</span>
+            <span><strong>${serviceName}</strong> 새 창이 열렸습니다. ${hintHtml}<span style="background:#f5d77a;color:#1a1a1a;padding:4px 12px;border-radius:6px;font-weight:900;margin:0 4px;">Ctrl + V</strong>를 눌러 프롬프트를 붙여넣고 <strong>Enter</strong>를 누르세요!</span>
             <button onclick="document.getElementById('ctrlVNotice').remove()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:6px 14px;font-size:0.85rem;font-weight:700;cursor:pointer;">닫기</button>
         </div>
     `;
@@ -2241,56 +2246,42 @@ function showCtrlVNotice(serviceName) {
 }
 
 // ===== 이미지 프롬프트 생성기 =====
-// 각 스타일은 AI(DALL-E 3, Midjourney, Imagen)가 강하게 반응하는 키워드 조합
+// GPT-4o(gpt-image-1)에 최적화: 짧은 톤 가이드만 주고 장면 결정은 모델에 위임
 const STYLE_DESCRIPTIONS = {
-    '실사풍': `누가 봐도 진짜 사진으로 보이는 초사실적 포토리얼리스틱 이미지
-- 풀프레임 DSLR/미러리스 카메라(Canon EOS R5, Sony A7 IV) 또는 iPhone 15 Pro로 촬영한 듯한 고해상도 사진
-- 35mm 또는 50mm 표준 렌즈, f/1.8~f/2.8 얕은 심도(자연스러운 배경 보케)
-- 자연광 또는 황금시간대(golden hour) 조명, 부드러운 그림자
-- 8K 해상도, 초세밀 디테일, 표면 질감(피부·천·금속·나무) 사실적 표현
-- 전문 사진작가의 editorial / lifestyle photography 스타일
-- 색감은 자연스럽고 사실적, 과채도 금지
-- ⚠️ 매우 중요: AI 일러스트·디지털 페인팅·만화 스타일 절대 금지
-- ⚠️ 매우 중요: cgi처럼 보이거나 손가락 왜곡 금지, 진짜 카메라로 찍은 사진처럼만 보이게`,
-    '일러스트': `모던하고 깔끔한 디지털 일러스트레이션
-- 평면적이지 않으면서 그림체가 자연스럽고 세련됨
-- 부드러운 그라디언트 + 적당한 그림자 (지나친 음영은 금지)
-- 컬러는 톤이 잘 잡힌 모던 팔레트 (브랜드 무드보드 스타일)
-- 한국 블로그/인스타에 어울리는 트렌디한 디자인`,
-    '플랫': `플랫 디자인 벡터 아트
-- 단순화된 도형, 평면적 표현, 그라디언트 최소화
-- 깔끔한 컬러 팔레트(2~4색 위주)
-- 아이콘과 일러스트의 중간 형태
-- 인포그래픽 / 비즈니스 자료 스타일`,
-    '3D': `3D 렌더링 이미지
-- Blender / Cinema 4D / Octane 렌더링 스타일
-- 부드러운 글로벌 일루미네이션, 입체감 있는 그림자
-- 매끄러운 표면 텍스처, 약간의 ambient occlusion
-- 2024년 트렌드의 isometric 또는 dimensional 스타일`,
-    '수채화': `따뜻한 수채화 일러스트
-- 종이 질감 위에 그린 듯한 수채물감 텍스처
-- 부드럽고 자연스러운 색 번짐
-- 따뜻하고 감성적인 분위기 (오프화이트 배경, 파스텔 톤)
-- 손으로 그린 듯한 자연스러운 선과 면`,
-    '미니멀': `미니멀 아이콘 스타일
-- 단순한 도형으로 핵심만 표현
-- 컬러는 1~2색만 사용 (모노톤 또는 액센트 컬러)
-- 선과 면이 깔끔하고 상징적
-- 픽토그램·아이콘 디자인 느낌`,
+    '실사풍': `스마트폰으로 우연히 찍은 듯한 자연스러운 다큐 사진톤. 모델 같지 않은 진짜 한국인. 과한 보정·연출 없이 일상의 한 순간.`,
+    '일러스트': `모던하고 깔끔한 디지털 일러스트.`,
+    '플랫': `단순한 플랫 디자인 벡터 아트, 2~4색 팔레트.`,
+    '3D': `부드러운 3D 렌더링 이미지.`,
+    '수채화': `종이 질감 위 따뜻한 수채화 일러스트.`,
+    '미니멀': `단순한 도형의 미니멀 아이콘 스타일, 1~2색.`,
 };
 
 function parseSubheadings(text) {
-    // 키캡 이모지(1️⃣~9️⃣, 🔟, 1️⃣0️⃣, 1️⃣1️⃣...)로 시작하는 줄을 소제목으로 인식
+    // 다양한 소제목 형식 지원:
+    // 1) 마크다운 헤딩: ## 제목, ### 제목
+    // 2) 볼드 단독 줄: **제목**
+    // 3) 키캡 이모지: 1️⃣ 제목 (구버전 호환)
     const lines = text.split('\n');
     const sections = [];
     let current = null;
-    const keycapStart = /^\s*([1-9]\u{FE0F}\u{20E3}|🔟|[1-9]\u{FE0F}\u{20E3}[0-9]\u{FE0F}\u{20E3})\s*(.+)$/u;
+
+    const mdHeading   = /^\s*#{1,4}\s+(.+?)\s*$/;
+    const boldOnly    = /^\s*\*\*\s*(.+?)\s*\*\*\s*$/;
+    const keycapStart = /^\s*(?:[1-9]\u{FE0F}\u{20E3}|🔟|[1-9]\u{FE0F}\u{20E3}[0-9]\u{FE0F}\u{20E3})\s*(.+)$/u;
+
+    function detectTitle(line) {
+        let m = line.match(mdHeading);   if (m && m[1].trim().length > 1) return m[1].trim();
+        m = line.match(boldOnly);        if (m && m[1].trim().length > 1) return m[1].trim();
+        m = line.match(keycapStart);     if (m && m[1].trim().length > 1) return m[1].trim();
+        return null;
+    }
 
     for (const rawLine of lines) {
-        const m = rawLine.match(keycapStart);
-        if (m && m[2].trim().length > 1) {
+        const title = detectTitle(rawLine);
+        if (title) {
             if (current) sections.push(current);
-            current = { number: sections.length + 1, marker: m[1], title: m[2].trim(), content: '' };
+            const num = sections.length + 1;
+            current = { number: num, marker: `${num}.`, title, content: '' };
         } else if (current) {
             current.content += rawLine + '\n';
         }
@@ -2301,30 +2292,21 @@ function parseSubheadings(text) {
 
 function buildImagePromptFor(section, industry, style) {
     const styleDesc = STYLE_DESCRIPTIONS[style] || STYLE_DESCRIPTIONS['실사풍'];
-    // 본문에서 핵심 명사 추출 (간단히 첫 2~3문장 + 길이 제한)
     const snippet = section.content.replace(/\s+/g, ' ').trim().substring(0, 280);
     const industryPart = industry ? `주제: ${industry}\n` : '';
 
-    return `다음 블로그 섹션에 어울리는 블로그용 이미지를 생성해주세요.
+    return `다음 블로그 섹션에 어울리는 이미지를 한 장 만들어주세요.
 
-📋 섹션 정보
+[섹션]
 ${industryPart}소제목: ${section.title}
 핵심 내용: ${snippet}
 
-🎨 이미지 스타일
-- ${styleDesc}
-- 한국 정서에 맞는 따뜻하고 자연스러운 분위기
-- 블로그 썸네일 비율 (가로형 16:9 권장)
-- 텍스트나 워터마크 없이 이미지만
-- 밝고 깨끗한 배경
+[톤]
+${styleDesc}
+가로 16:9. 글자·로고·워터마크 없음.
 
-❌ 피할 것
-- 글자, 로고, 워터마크 삽입
-- 흐릿하거나 어색한 인물 표현
-- 저작권 우려가 있는 특정 브랜드/캐릭터
-- 과도한 자극적 색감
-
-이미지를 한 장 생성해주세요.`;
+장면·인물·앵글·조명은 자유롭게 결정해주세요.
+매번 새로운 구도와 새로운 인물로 만들어주세요.`;
 }
 
 function generateImagePrompts() {
@@ -2337,7 +2319,7 @@ function generateImagePrompts() {
 
     const resultEl = document.getElementById('ipResult');
     if (sections.length === 0) {
-        resultEl.innerHTML = `<p style="padding:14px;background:#fde8e8;border-radius:8px;color:#c0392b;font-size:0.85rem;">소제목을 찾지 못했습니다. 1️⃣ 2️⃣ 3️⃣... 형태의 키캡 이모지로 시작하는 소제목이 있어야 합니다.</p>`;
+        resultEl.innerHTML = `<p style="padding:14px;background:#fde8e8;border-radius:8px;color:#c0392b;font-size:0.85rem;">소제목을 찾지 못했습니다. <strong>## 제목</strong>, <strong>**제목**</strong>, 또는 <strong>1️⃣ 제목</strong> 형태로 작성된 소제목이 있어야 합니다.</p>`;
         return;
     }
 
@@ -2357,7 +2339,7 @@ function generateImagePrompts() {
             <textarea id="${promptId}" rows="8" readonly style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:'Consolas','Menlo',monospace;background:var(--bg);resize:vertical;line-height:1.5;">${prompt.replace(/</g,'&lt;')}</textarea>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
                 <button onclick="ipCopy('${promptB64}')" class="btn-add" style="background:linear-gradient(135deg,#f5d77a 0%,#d4af37 50%,#b8932a 100%);color:#1a1a1a;font-weight:900;padding:8px 14px;font-size:0.82rem;">📋 복사</button>
-                <button onclick="ipOpenChatGPT('${promptB64}')" class="btn-add" style="background:#10a37f;color:#fff;padding:8px 14px;font-size:0.82rem;">🤖 ChatGPT (자동입력)</button>
+                <button onclick="ipOpenChatGPT('${promptB64}')" class="btn-add" style="background:#10a37f;color:#fff;padding:8px 14px;font-size:0.82rem;">🤖 ChatGPT (Ctrl+V)</button>
                 <button onclick="ipOpenGemini('${promptB64}')" class="btn-add" style="background:#1a73e8;color:#fff;padding:8px 14px;font-size:0.82rem;">🤖 Gemini (Ctrl+V)</button>
             </div>
         </div>`;
@@ -2381,26 +2363,21 @@ async function ipCopy(b64) {
     }
 }
 
-// 이미지 자동 생성기는 DALL-E 3 GPT URL로 열어서 이미지 모드 보장
-// `/g/g-2fkFE8rbu-dall-e` 는 OpenAI 공식 DALL-E 3 GPT
+// 이미지 자동 생성기: 일반 ChatGPT 새 창 열기 + 클립보드 복사
+// 사용자가 대화창에서 직접 "이미지 선택 추론" 모드로 변경 후 Ctrl+V로 붙여넣기
+// 주의: window.open은 사용자 제스처가 살아있을 때(=await 전에) 먼저 호출해야
+// 팝업 차단을 회피할 수 있음
 async function ipOpenChatGPT(b64) {
     const text = ipDecodePrompt(b64);
+    window.open('https://chatgpt.com/', '_blank', 'noopener');
     try { await navigator.clipboard.writeText(text); } catch (e) {}
-    const encoded = encodeURIComponent(text);
-    const dalleUrl = 'https://chatgpt.com/g/g-2fkFE8rbu-dall-e';
-    if (encoded.length < 5000) {
-        window.open(dalleUrl + '?q=' + encoded, '_blank', 'noopener');
-        showToast('✅ DALL-E 3 GPT 새 창 열림 (이미지 모드 자동 선택). Enter만!', 'success');
-    } else {
-        window.open(dalleUrl, '_blank', 'noopener');
-        showToast('✅ 클립보드 복사 완료. DALL-E 3 GPT에서 Ctrl+V → Enter', 'success');
-    }
+    showCtrlVNotice('ChatGPT', '대화창에서 <strong>이미지 선택 추론</strong>으로 변경 후');
 }
 
 async function ipOpenGemini(b64) {
     const text = ipDecodePrompt(b64);
-    try { await navigator.clipboard.writeText(text); } catch (e) {}
     window.open('https://gemini.google.com/app', '_blank', 'noopener');
+    try { await navigator.clipboard.writeText(text); } catch (e) {}
     showCtrlVNotice('Gemini');
 }
 
@@ -2426,6 +2403,19 @@ function showToast(msg, type = 'success') {
     t.className = `toast ${type} visible`;
     setTimeout(() => t.classList.remove('visible'), 3000);
 }
+</script>
+<!-- 체인지리더스 돌아가기 버튼 (ALL in ONE에서 진입 시 표시) -->
+<script>
+(function(){
+  if (!new URLSearchParams(location.search).has('ref')) return;
+  var btn = document.createElement('button');
+  btn.innerHTML = '<span style="font-size:15px;">←</span> 체인지리더스 홈';
+  btn.style.cssText = 'position:fixed;top:18px;right:24px;z-index:99999;padding:11px 20px 11px 16px;border-radius:100px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 8px 24px rgba(124,58,237,.4),0 0 0 1px rgba(255,255,255,.15);font-family:inherit;letter-spacing:-.3px;display:inline-flex;align-items:center;gap:6px;transition:all .2s ease;';
+  btn.onmouseover = function(){this.style.transform='translateY(-2px) scale(1.04)';this.style.boxShadow='0 12px 30px rgba(124,58,237,.55)';};
+  btn.onmouseout = function(){this.style.transform='';this.style.boxShadow='0 8px 24px rgba(124,58,237,.4),0 0 0 1px rgba(255,255,255,.15)';};
+  btn.onclick = function(){location.href='https://daperm.com/index-new.html#allinone';};
+  document.body.appendChild(btn);
+})();
 </script>
 </body>
 </html>
