@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>다퍼남 블로그 대행 올인원</title>
+    <title>DaLog 다로그 - 블로그 대행 올인원</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -704,14 +704,23 @@
 
 <div class="app-layout">
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <div class="sidebar-brand-logo"><img src="logo.png" alt="KEYPLAT"></div>
+    <div class="sidebar-brand dalog-brand">
       <div>
-        <div class="sidebar-brand-pill">PREMIUM</div>
-        <div class="sidebar-brand-text">다퍼남 블로그<br>대행 올인원</div>
-        <div class="sidebar-brand-sub">v1.0</div>
+        <div class="dalog-brand-text"><span class="da">Da</span><span class="log">Log</span><span class="kr">다로그<span class="dalog-plane">✈</span></span></div>
+        <div class="dalog-brand-sub">블로그 대행 올인원</div>
       </div>
     </div>
+    <style>
+      .sidebar-brand.dalog-brand{padding:0 12px 18px;margin-bottom:14px;border-bottom:1px solid var(--border,#e5e8eb);display:block;}
+      .dalog-brand-text{font-weight:900;font-size:1.55rem;color:#0F172A;letter-spacing:-0.7px;line-height:1.15;word-break:keep-all;}
+      .dalog-brand-text .da{color:#0F172A;}
+      .dalog-brand-text .log{background:linear-gradient(90deg,#0EA5E9,#06B6D4,#10b981,#0EA5E9);background-size:300% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:dalogShimmer 3s linear infinite;}
+      .dalog-brand-text .kr{display:block;font-size:1.1rem;color:#0F172A;margin-top:4px;font-weight:800;position:relative;padding-left:2px;}
+      .dalog-plane{position:absolute;left:-22px;top:1px;color:#0EA5E9;font-size:1.1rem;animation:dalogFly 4s linear infinite;pointer-events:none;text-shadow:0 0 4px rgba(14,165,233,.5);}
+      .dalog-brand-sub{font-size:.7rem;color:#64748b;font-weight:700;letter-spacing:0.08em;margin-top:6px;text-transform:uppercase;}
+      @keyframes dalogShimmer{0%{background-position:0% 50%;}100%{background-position:300% 50%;}}
+      @keyframes dalogFly{0%{transform:translateX(0);opacity:0;}8%{opacity:1;}70%{transform:translateX(110px);opacity:1;}82%{transform:translateX(135px);opacity:0;}100%{transform:translateX(0);opacity:0;}}
+    </style>
 
     <div class="sidebar-section">
       <div class="sidebar-label">분석 도구</div>
@@ -1197,7 +1206,7 @@
   </main>
 </div><!-- /app-layout -->
 
-<div class="footer"><span class="footer-logo"><img src="logo.png" alt="KEYPLAT"></span><span>Made by <strong>다퍼주는남자</strong> | 다퍼남 블로그 대행 올인원 v1.0</span></div>
+<div class="footer"><span class="footer-logo"><img src="logo.png" alt="KEYPLAT"></span><span>Made by <strong>다퍼주는남자</strong> | <strong>DaLog</strong> 다로그 · 블로그 대행 올인원</span></div>
 
 <div class="toast" id="toast"></div>
 
@@ -2404,17 +2413,18 @@ function showToast(msg, type = 'success') {
     setTimeout(() => t.classList.remove('visible'), 3000);
 }
 </script>
-<!-- 체인지리더스 돌아가기 버튼 (ALL in ONE에서 진입 시 표시) -->
+<!-- 체인지리더스 돌아가기 버튼 (항상 표시) -->
 <script>
 (function(){
-  if (!new URLSearchParams(location.search).has('ref')) return;
   var btn = document.createElement('button');
   btn.innerHTML = '<span style="font-size:15px;">←</span> 체인지리더스 홈';
-  btn.style.cssText = 'position:fixed;top:18px;right:24px;z-index:99999;padding:11px 20px 11px 16px;border-radius:100px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 8px 24px rgba(124,58,237,.4),0 0 0 1px rgba(255,255,255,.15);font-family:inherit;letter-spacing:-.3px;display:inline-flex;align-items:center;gap:6px;transition:all .2s ease;';
-  btn.onmouseover = function(){this.style.transform='translateY(-2px) scale(1.04)';this.style.boxShadow='0 12px 30px rgba(124,58,237,.55)';};
-  btn.onmouseout = function(){this.style.transform='';this.style.boxShadow='0 8px 24px rgba(124,58,237,.4),0 0 0 1px rgba(255,255,255,.15)';};
+  btn.style.cssText = 'position:fixed;top:16px;right:24px;z-index:99999;padding:10px 18px 10px 14px;border-radius:100px;background:linear-gradient(135deg,#0EA5E9,#06B6D4);color:#fff;border:none;font-weight:800;font-size:12.5px;cursor:pointer;box-shadow:0 6px 20px rgba(14,165,233,.35),0 0 0 1px rgba(255,255,255,.18);font-family:inherit;letter-spacing:-.3px;display:inline-flex;align-items:center;gap:5px;transition:all .2s ease;';
+  btn.onmouseover = function(){this.style.transform='translateY(-2px) scale(1.04)';this.style.boxShadow='0 10px 26px rgba(14,165,233,.5)';};
+  btn.onmouseout = function(){this.style.transform='';this.style.boxShadow='0 6px 20px rgba(14,165,233,.35),0 0 0 1px rgba(255,255,255,.18)';};
   btn.onclick = function(){location.href='https://daperm.com/index-new.html#allinone';};
-  document.body.appendChild(btn);
+  // body 준비된 후 추가
+  if(document.body) document.body.appendChild(btn);
+  else window.addEventListener('DOMContentLoaded', function(){document.body.appendChild(btn);});
 })();
 </script>
 </body>
