@@ -436,6 +436,16 @@
         }
         .loading p { color: var(--text-sub); font-size: 0.9rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        /* 포스팅/블로그 분석 로딩 애니메이션 */
+        @keyframes paLoadingDot { 0%, 60%, 100% { transform: scale(0.6); opacity: 0.4; } 30% { transform: scale(1); opacity: 1; } }
+        @keyframes paLoadingPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        .pa-loading-dot { width: 10px; height: 10px; background: #F59E0B; border-radius: 50%; display: inline-block; animation: paLoadingDot 1.4s infinite ease-in-out both; }
+        .pa-loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .pa-loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        .pa-loading-spinner { width: 56px; height: 56px; border: 4px solid #FEF3C7; border-top-color: #F59E0B; border-right-color: #FFD700; border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto; box-shadow: 0 0 20px rgba(245,158,11,0.15); }
+        .pa-loading-title { animation: paLoadingPulse 1.6s ease-in-out infinite; }
+        /* 풀폭 모드 (포스팅/블로그 분석 결과만) */
+        body.kw-wide-mode .container { max-width: none; padding-left: 20px; padding-right: 20px; }
 
         /* Results */
         .results { display: none; }
@@ -516,21 +526,28 @@
         }
         .r-grade-label { font-size: 0.65rem; font-weight: 700; margin-top: 4px; }
 
-        /* Grade Colors */
-        .g-S .r-grade { background: linear-gradient(135deg, #ff6fd8, #c471f5); color: #fff; }
-        .g-S .r-grade-label { color: #c471f5; }
-        .g-A .r-grade { background: #e8f8ef; color: #03C75A; border: 2px solid #03C75A; }
-        .g-A .r-grade-label { color: #03C75A; }
-        .g-B .r-grade { background: #e8f8ef; color: #2ecc71; border: 2px solid #2ecc71; }
-        .g-B .r-grade-label { color: #2ecc71; }
-        .g-C .r-grade { background: #fff9e6; color: #f39c12; border: 2px solid #f39c12; }
-        .g-C .r-grade-label { color: #f39c12; }
-        .g-D .r-grade { background: #fff3e6; color: #e67e22; border: 2px solid #e67e22; }
-        .g-D .r-grade-label { color: #e67e22; }
-        .g-E .r-grade { background: #fde8e8; color: #e74c3c; border: 2px solid #e74c3c; }
-        .g-E .r-grade-label { color: #e74c3c; }
-        .g-F .r-grade { background: #fde8e8; color: #c0392b; border: 2px solid #c0392b; }
-        .g-F .r-grade-label { color: #c0392b; }
+        /* Grade Colors — 7등급 명확 구분 (그라데이션 + 그림자) */
+        /* S = 💎 황금키워드 (핑크→퍼플) */
+        .g-S .r-grade { background: linear-gradient(135deg, #ff6fd8, #c471f5); color: #fff; box-shadow: 0 4px 14px rgba(196,113,245,.4); }
+        .g-S .r-grade-label { color: #c471f5; font-weight:900; }
+        /* A = 매우 좋음 (에메랄드 그린) */
+        .g-A .r-grade { background: linear-gradient(135deg, #34d399, #10b981); color: #fff; box-shadow: 0 4px 14px rgba(16,185,129,.35); }
+        .g-A .r-grade-label { color: #059669; font-weight:900; }
+        /* B = 좋음 (시안 블루) — A와 명확히 구분 */
+        .g-B .r-grade { background: linear-gradient(135deg, #22d3ee, #06b6d4); color: #fff; box-shadow: 0 4px 14px rgba(6,182,212,.35); }
+        .g-B .r-grade-label { color: #0891b2; font-weight:900; }
+        /* C = 보통 (옐로우) */
+        .g-C .r-grade { background: linear-gradient(135deg, #fde047, #eab308); color: #1a1a1a; box-shadow: 0 4px 14px rgba(234,179,8,.4); }
+        .g-C .r-grade-label { color: #a16207; font-weight:900; }
+        /* D = 경쟁 치열 (오렌지) */
+        .g-D .r-grade { background: linear-gradient(135deg, #fb923c, #f97316); color: #fff; box-shadow: 0 4px 14px rgba(249,115,22,.4); }
+        .g-D .r-grade-label { color: #c2410c; font-weight:900; }
+        /* E = 어려움 (레드) */
+        .g-E .r-grade { background: linear-gradient(135deg, #f87171, #ef4444); color: #fff; box-shadow: 0 4px 14px rgba(239,68,68,.4); }
+        .g-E .r-grade-label { color: #b91c1c; font-weight:900; }
+        /* F = 진입 비추천 (다크 그라데이션 — 위험 신호) */
+        .g-F .r-grade { background: linear-gradient(135deg, #475569, #1e293b); color: #fff; box-shadow: 0 4px 14px rgba(15,23,42,.5); border: 1.5px solid #1e293b; }
+        .g-F .r-grade-label { color: #1e293b; font-weight:900; }
 
         .r-stats {
             display: grid;
@@ -610,13 +627,14 @@
             font-weight: 800;
             font-size: 0.75rem;
         }
-        .pill-S { background: linear-gradient(135deg, #ff6fd822, #c471f522); color: #c471f5; }
-        .pill-A { background: #e8f8ef; color: #03C75A; }
-        .pill-B { background: #e8f8ef; color: #2ecc71; }
-        .pill-C { background: #fff9e6; color: #f39c12; }
-        .pill-D { background: #fff3e6; color: #e67e22; }
-        .pill-E { background: #fde8e8; color: #e74c3c; }
-        .pill-F { background: #fde8e8; color: #c0392b; }
+        /* 등급 칩 — 7등급 명확 구분 (위 r-grade와 동일 컬러팔레트) */
+        .pill-S { background: linear-gradient(135deg, #ff6fd8, #c471f5); color: #fff; }
+        .pill-A { background: linear-gradient(135deg, #34d399, #10b981); color: #fff; }
+        .pill-B { background: linear-gradient(135deg, #22d3ee, #06b6d4); color: #fff; }
+        .pill-C { background: linear-gradient(135deg, #fde047, #eab308); color: #1a1a1a; }
+        .pill-D { background: linear-gradient(135deg, #fb923c, #f97316); color: #fff; }
+        .pill-E { background: linear-gradient(135deg, #f87171, #ef4444); color: #fff; }
+        .pill-F { background: linear-gradient(135deg, #475569, #1e293b); color: #fff; }
 
         /* Legend */
         .legend-grid {
@@ -724,30 +742,29 @@
 
     <div class="sidebar-section">
       <div class="sidebar-label">분석 도구</div>
-      <button class="nav-btn active" data-section="keyword" onclick="showSection('keyword')"><span class="nav-icon">🔍</span> 키워드 경쟁도 분석</button>
-      <button class="nav-btn" data-section="posting" onclick="showSection('posting')"><span class="nav-icon">📝</span> 포스팅 분석</button>
-      <button class="nav-btn" data-section="rank-check" onclick="showSection('rank-check')"><span class="nav-icon">🥇</span> 키워드 순위 확인</button>
-      <button class="nav-btn" data-section="missing-check" onclick="showSection('missing-check')"><span class="nav-icon">🩺</span> 글 누락 진단</button>
-      <button class="nav-btn" data-section="bulk-blog" onclick="showSection('bulk-blog')"><span class="nav-icon">👥</span> 블로그 분석</button>
+      <button class="nav-btn active" data-section="keyword" onclick="showSection('keyword')">키워드 경쟁도 분석</button>
+      <button class="nav-btn" data-section="bulk-blog" onclick="showSection('bulk-blog')">블로그 분석</button>
+      <button class="nav-btn" data-section="posting" onclick="showSection('posting')">포스팅 분석</button>
+      <button class="nav-btn" data-section="rank-check" onclick="showSection('rank-check')">키워드 순위 확인</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">콘텐츠 도구</div>
-      <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')"><span class="nav-icon">🎨</span> 무료 이미지 생성기</button>
-      <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')"><span class="nav-icon">🤖</span> 블로그 글쓰기 프롬프트</button>
-      <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-68fdbd5d6a888191b5a31e95cef9f6e7-beulrogeu-daehaeng-jadong-geul-jagseonggi-v1-0-dapeojuneunnamja','_blank','noopener')"><span class="nav-icon">✨</span> 블로그 자동 글쓰기</button>
-      <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-69bf61a7397c8191b4fb86da9e9a62eb-beulrogeu-daehaeng-obsyeon-ius-sotong-daesgeul-jagseong-dapeojuneunnamja','_blank','noopener')"><span class="nav-icon">💬</span> 블로그 이웃 댓글 자동 생성</button>
-      <button class="nav-btn" data-section="image-prompts" onclick="showSection('image-prompts')"><span class="nav-icon">🖼️</span> 이미지 자동 생성기</button>
+      <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')">무료 이미지 생성기</button>
+      <button class="nav-btn" data-section="image-prompts" onclick="showSection('image-prompts')">이미지 자동 생성기</button>
+      <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')">블로그 글쓰기 프롬프트</button>
+      <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-68fdbd5d6a888191b5a31e95cef9f6e7-beulrogeu-daehaeng-jadong-geul-jagseonggi-v1-0-dapeojuneunnamja','_blank','noopener')">블로그 자동 글쓰기</button>
+      <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-69bf61a7397c8191b4fb86da9e9a62eb-beulrogeu-daehaeng-obsyeon-ius-sotong-daesgeul-jagseong-dapeojuneunnamja','_blank','noopener')">블로그 이웃 댓글 자동 생성</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">영업 도구</div>
-      <button class="nav-btn" data-section="proposal" onclick="showSection('proposal')"><span class="nav-icon">💼</span> 블로그 대행 제안서</button>
-      <button class="nav-btn" data-section="contract" onclick="showSection('contract')"><span class="nav-icon">📜</span> 블로그 대행 계약서</button>
+      <button class="nav-btn" data-section="proposal" onclick="showSection('proposal')">블로그 대행 제안서</button>
+      <button class="nav-btn" data-section="contract" onclick="showSection('contract')">블로그 대행 계약서</button>
     </div>
 
     <div class="sidebar-section">
       <div class="sidebar-label">정보</div>
-      <button class="nav-btn" data-section="guide" onclick="showSection('guide')"><span class="nav-icon">📖</span> 사용 가이드</button>
-      <button class="nav-btn" data-section="feedback" onclick="showSection('feedback')"><span class="nav-icon">💬</span> 피드백</button>
+      <button class="nav-btn" data-section="guide" onclick="showSection('guide')">사용 가이드</button>
+      <button class="nav-btn" data-section="feedback" onclick="showSection('feedback')">피드백</button>
     </div>
   </aside>
 
@@ -895,20 +912,25 @@
 
     <!-- Section: 포스팅 분석 -->
     <div class="page-section" id="section-posting">
-        <div class="card">
+        <div class="card" id="paInputCard" style="max-width:960px;margin-left:auto;margin-right:auto;">
             <div class="card-title">📝 포스팅 분석</div>
-            <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 14px 0;">블로그 글 URL을 입력하면 등급, 노출 여부, 본문/이미지/링크 분석을 한 번에 확인합니다.</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <input type="text" id="postingUrl" placeholder="예: https://blog.naver.com/myid/123456789"
-                       style="flex:1;min-width:240px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
-                <button class="btn-add" onclick="runPostingAnalysis()">분석하기</button>
+                <input type="text" id="postingUrl" placeholder="블로그 아이디(예: lovekyunjae) 또는 글 주소(예: blog.naver.com/myid/123456789)"
+                       style="flex:1;min-width:280px;padding:14px 18px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);">
+                <button class="btn-add" onclick="runPostingAnalysis()">분석</button>
             </div>
-            <div id="postingResult" style="margin-top:18px;">
-                <div style="padding:24px;background:var(--bg);border-radius:12px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
-                    🚧 포스팅 분석 기능은 준비 중입니다. 곧 출시 예정.
+            <div id="paHints" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(103,232,249,0.08);border-left:3px solid #67E8F9;border-radius:8px;color:var(--text);font-size:0.88rem;line-height:1.5;">
+                    <span style="font-size:1.1rem;">💎</span>
+                    <span><strong>블로그 아이디 또는 블로그 주소</strong>를 입력하면 → <strong>최근 10개 글</strong>이 자동으로 나옵니다. 각 글을 개별 분석할 수 있어요.</span>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(255,215,0,0.08);border-left:3px solid #FFD700;border-radius:8px;color:var(--text);font-size:0.88rem;line-height:1.5;">
+                    <span style="font-size:1.1rem;">📄</span>
+                    <span><strong>글 주소</strong>를 입력하면 → 해당 글을 <strong>단독으로 깊이 분석</strong>합니다.</span>
                 </div>
             </div>
         </div>
+        <div id="postingResult" style="margin-top:18px;"></div>
     </div>
 
     <!-- Section: 키워드 순위 확인 -->
@@ -1139,18 +1161,27 @@
 
     <!-- Section: 블로그 분석 -->
     <div class="page-section" id="section-bulk-blog">
-        <div class="card">
+        <div class="card" id="baInputCard" style="max-width:960px;margin-left:auto;margin-right:auto;">
             <div class="card-title">👥 블로그 분석</div>
-            <p style="color:var(--text-light);font-size:0.85rem;margin:0 0 12px 0;">블로그 ID를 줄 단위로 입력하세요 (최대 20개). 각 블로그의 최근 10개 글 노출 여부와 인플루언서 여부를 분석합니다.</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                <textarea id="bulkBlogIds" placeholder="블로그 ID를 한 줄에 하나씩 입력 (예: myid)" rows="4"
-                          style="flex:1;min-width:240px;padding:12px 16px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);resize:vertical;"></textarea>
-                <button class="btn-add" onclick="runBulkBlogInfo()" style="align-self:flex-start;">일괄 분석</button>
+                <textarea id="bulkBlogIds" placeholder="블로그 아이디 또는 주소를 한 줄에 하나씩 (최대 5개)&#10;예: lovekyunjae&#10;예: blog.naver.com/myid" rows="4"
+                          style="flex:1;min-width:280px;padding:12px 16px;border:2px solid var(--border);border-radius:12px;font-size:0.95rem;font-family:inherit;outline:none;background:var(--bg);resize:vertical;"></textarea>
+                <button class="btn-add" onclick="runBulkBlogInfo()" style="align-self:flex-start;">분석</button>
             </div>
             <div id="bulkBlogIdCount" style="color:var(--text-light);font-size:0.8rem;margin-top:4px;"></div>
-            <div id="bulkBlogTabs" style="margin-top:16px;display:flex;gap:6px;flex-wrap:wrap;"></div>
-            <div id="bulkBlogResult" style="margin-top:16px;"></div>
+            <div id="baHints" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(103,232,249,0.08);border-left:3px solid #0891B2;border-radius:8px;color:var(--text);font-size:0.88rem;line-height:1.5;">
+                    <span style="font-size:1.1rem;">💎</span>
+                    <span><strong>1~5개</strong> 블로그를 한 번에 진단 — 프로필, 방문자, 이웃, 카테고리, 인플루언서, 최근 글 인덱스까지 모두 한눈에</span>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(245,158,11,0.08);border-left:3px solid #F59E0B;border-radius:8px;color:var(--text);font-size:0.88rem;line-height:1.5;">
+                    <span style="font-size:1.1rem;">📊</span>
+                    <span>분석 결과는 <strong>탭으로 전환</strong>해서 블로그별로 확인 가능. 약 15~30초 소요</span>
+                </div>
+            </div>
         </div>
+        <div id="bulkBlogTabs" style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap;padding:0 20px;"></div>
+        <div id="bulkBlogResult" style="margin-top:14px;"></div>
     </div>
 
     <!-- Section: 사용 가이드 -->
@@ -2198,21 +2229,33 @@ async function copyPrompt() {
     }
 }
 
-// ChatGPT 열기: 짧으면 ?q=로 자동 입력 시도, 동시에 클립보드 복사도 항상 수행
-// URL 자동 입력은 ChatGPT 정책 변경/로그인 리다이렉트 등으로 종종 실패하므로,
-// 클립보드 복사는 무조건 백업으로 진행해 사용자가 Ctrl+V로 붙여넣을 수 있게 함
+// ChatGPT 열기: 무조건 클립보드 복사 후 일반 페이지 열기
+// (?q= 파라미터 방식은 ChatGPT 정책 변경으로 에러 발생 빈도 높아 사용 중단)
 async function openInChatGPT() {
     if (!lastGeneratedPrompt) { showToast('먼저 프롬프트를 생성하세요.', 'error'); return; }
-    // 1) 클립보드에 항상 복사 (안전 백업)
-    try { await navigator.clipboard.writeText(lastGeneratedPrompt); } catch (e) {}
-    const encoded = encodeURIComponent(lastGeneratedPrompt);
-    // 2) URL 파라미터 시도 (짧을 때만)
-    if (encoded.length < 30000) {
-        window.open('https://chatgpt.com/?q=' + encoded, '_blank', 'noopener');
-        showToast('✅ ChatGPT 새 창 열림. 자동 입력 안 됐으면 Ctrl+V (클립보드 복사 완료)', 'success');
+    // 클립보드 복사
+    let copied = false;
+    try {
+        await navigator.clipboard.writeText(lastGeneratedPrompt);
+        copied = true;
+    } catch (e) {
+        // 폴백: textarea 방식
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = lastGeneratedPrompt;
+            ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta); ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            copied = true;
+        } catch (_) {}
+    }
+    // ChatGPT 일반 페이지 새 탭 열기
+    window.open('https://chatgpt.com/', '_blank', 'noopener');
+    if (copied) {
+        showToast('✅ 클립보드 복사 완료! ChatGPT 입력창에서 Ctrl+V → Enter', 'success');
     } else {
-        window.open('https://chatgpt.com/', '_blank', 'noopener');
-        showToast('✅ 클립보드 복사 완료. ChatGPT에서 Ctrl+V → Enter', 'success');
+        showToast('⚠️ 자동 복사 실패 — 프롬프트 박스에서 직접 복사하세요', 'error');
     }
 }
 
@@ -2402,9 +2445,995 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function runPostingAnalysis() {
-    showToast('포스팅 분석 기능은 준비 중입니다.', 'error');
+// ===== 블로그 분석 (DaScope · 풀버전) =====
+let baResults = []; // [{blogId, data, error}]
+let baActiveIdx = 0;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const ta = document.getElementById('bulkBlogIds');
+    if (ta) {
+        ta.addEventListener('input', () => {
+            const ids = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
+            const cntEl = document.getElementById('bulkBlogIdCount');
+            if (cntEl) cntEl.textContent = ids.length > 0 ? `입력된 블로그: ${ids.length}개${ids.length > 5 ? ' (최대 5개 초과 — 처음 5개만 분석)' : ''}` : '';
+        });
+    }
+});
+
+function baEsc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+
+function baNum(n) { return (n || 0).toLocaleString('ko-KR'); }
+
+function baExtractBlogId(raw) {
+    let v = (raw || '').trim();
+    if (/^[a-zA-Z0-9_-]+$/.test(v)) return v.toLowerCase();
+    try {
+        if (!/^https?:\/\//.test(v)) v = 'https://' + v;
+        const u = new URL(v);
+        const seg = u.pathname.split('/').filter(Boolean);
+        if (seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn') {
+            return (u.searchParams.get('blogId') || '').toLowerCase();
+        }
+        return (seg[0] || '').toLowerCase();
+    } catch (e) { return ''; }
+}
+
+async function runBulkBlogInfo() {
+    const raw = document.getElementById('bulkBlogIds').value;
+    const inputs = raw.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 5);
+    if (inputs.length === 0) { showToast('블로그 아이디를 1개 이상 입력하세요.', 'error'); return; }
+
+    const blogIds = inputs.map(baExtractBlogId).filter(Boolean);
+    if (blogIds.length === 0) { showToast('블로그 아이디를 인식할 수 없습니다.', 'error'); return; }
+
+    // 안내 숨김
+    const hints = document.getElementById('baHints');
+    if (hints) hints.style.display = 'none';
+
+    const tabsEl = document.getElementById('bulkBlogTabs');
+    const resultEl = document.getElementById('bulkBlogResult');
+    baResults = blogIds.map(id => ({ blogId: id, status: 'pending' }));
+    baActiveIdx = 0;
+    baRenderTabs();
+    baRenderProgress();
+
+    // 클라이언트에서 순차 실행 (Cloudflare timeout 회피)
+    for (let i = 0; i < blogIds.length; i++) {
+        baResults[i].status = 'loading';
+        baRenderTabs();
+        if (i === 0) baRenderProgress();
+        try {
+            const res = await fetch('/api/blog-analysis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ blogId: blogIds[i], postCount: 20 }),
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                baResults[i] = { blogId: blogIds[i], status: 'error', error: data.error || '분석 실패' };
+            } else {
+                baResults[i] = { blogId: blogIds[i], status: 'done', data };
+            }
+        } catch (e) {
+            baResults[i] = { blogId: blogIds[i], status: 'error', error: e.message };
+        }
+        baRenderTabs();
+        if (i === baActiveIdx) baRenderDetail(baActiveIdx);
+    }
+    // 분석 완료, 첫 결과 표시
+    baRenderDetail(0);
+}
+
+function baRenderProgress() {
+    const resultEl = document.getElementById('bulkBlogResult');
+    const total = baResults.length;
+    const done = baResults.filter(r => r.status === 'done' || r.status === 'error').length;
+    resultEl.innerHTML = `<div style="background:linear-gradient(135deg,#FFFFFF 0%,#F8FAFC 100%);border:1px solid #E5E7EB;border-radius:18px;padding:40px 24px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.04);">
+        <div class="pa-loading-spinner" style="margin:0 auto;"></div>
+        <div class="pa-loading-title" style="font-weight:800;font-size:1.1rem;color:#F59E0B;margin-top:20px;">블로그 분석 진행 중 · ${done}/${total}</div>
+        <div style="font-size:0.86rem;margin-top:8px;color:#6B7280;">프로필 · 방문자 · 카테고리 · 인플루언서 · 최근 글 인덱스 (블로그당 약 15~30초)</div>
+        <div style="margin-top:18px;max-width:400px;margin-left:auto;margin-right:auto;height:8px;background:#F3F4F6;border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${Math.round((done/total)*100)}%;background:linear-gradient(90deg,#F59E0B,#FCD34D);border-radius:99px;transition:width 0.3s;"></div>
+        </div>
+    </div>`;
+}
+
+function baRenderTabs() {
+    const tabsEl = document.getElementById('bulkBlogTabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = baResults.map((r, i) => {
+        const active = i === baActiveIdx;
+        let status, color;
+        if (r.status === 'done') { status = '✓'; color = '#10B981'; }
+        else if (r.status === 'error') { status = '⚠'; color = '#EF4444'; }
+        else if (r.status === 'loading') { status = '○'; color = '#F59E0B'; }
+        else { status = '·'; color = '#9CA3AF'; }
+        const bg = active ? `linear-gradient(135deg,${color},${color}dd)` : '#FFFFFF';
+        const tc = active ? 'white' : '#374151';
+        const bd = active ? color : '#E5E7EB';
+        const inf = r.data && r.data.influencer && r.data.influencer.isInfluencer ? ' ⭐' : '';
+        return `<button onclick="baRenderDetail(${i})" style="padding:9px 16px;border:1.5px solid ${bd};background:${bg};color:${tc};border-radius:10px;font-size:0.88rem;font-weight:${active?'900':'700'};cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:all 0.15s;box-shadow:${active?'0 4px 12px '+color+'55':'0 1px 2px rgba(0,0,0,0.04)'};">
+            <span style="color:${active?'white':color};">${status}</span>
+            ${baEsc(r.blogId)}${inf}
+        </button>`;
+    }).join('');
+}
+
+function baRenderDetail(idx) {
+    if (idx < 0 || idx >= baResults.length) return;
+    baActiveIdx = idx;
+    baRenderTabs();
+    const r = baResults[idx];
+    const resultEl = document.getElementById('bulkBlogResult');
+
+    if (r.status === 'pending' || r.status === 'loading') {
+        baRenderProgress();
+        return;
+    }
+    if (r.status === 'error') {
+        resultEl.innerHTML = `<div style="background:#FEF2F2;border:1px solid #FECACA;border-left:4px solid #EF4444;border-radius:10px;padding:16px 18px;color:#991B1B;font-size:0.92rem;">⚠️ ${baEsc(r.error || '분석 실패')}</div>`;
+        return;
+    }
+    resultEl.innerHTML = baRenderBlogPage(r.data);
+}
+
+// SVG 라인 차트 (방문자 5일)
+function baLineChart(points) {
+    if (!points || points.length === 0) return '';
+    const W = 800, H = 220, PAD_L = 50, PAD_R = 30, PAD_T = 30, PAD_B = 40;
+    const w = W - PAD_L - PAD_R, h = H - PAD_T - PAD_B;
+    const maxV = Math.max(...points.map(p => p.count), 1);
+    const minV = Math.min(...points.map(p => p.count));
+    const range = Math.max(maxV - minV, 1);
+    const yScale = v => PAD_T + h - ((v - minV) / range) * h;
+    const xScale = i => PAD_L + (i / Math.max(1, points.length - 1)) * w;
+
+    let path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i).toFixed(1)} ${yScale(p.count).toFixed(1)}`).join(' ');
+    let area = path + ` L ${xScale(points.length - 1).toFixed(1)} ${(PAD_T + h).toFixed(1)} L ${PAD_L.toFixed(1)} ${(PAD_T + h).toFixed(1)} Z`;
+    let dots = points.map((p, i) => `<circle cx="${xScale(i).toFixed(1)}" cy="${yScale(p.count).toFixed(1)}" r="5" fill="#F59E0B" stroke="white" stroke-width="2.5"/>`).join('');
+    let labels = points.map((p, i) => {
+        const x = xScale(i), y = yScale(p.count);
+        const date = p.date.substring(5).replace('-', '/');
+        return `<text x="${x.toFixed(1)}" y="${(y - 12).toFixed(1)}" text-anchor="middle" font-size="12" fill="#F59E0B" font-weight="900">${baNum(p.count)}</text>
+                <text x="${x.toFixed(1)}" y="${(PAD_T + h + 22).toFixed(1)}" text-anchor="middle" font-size="11" fill="#6B7280" font-weight="700">${date}</text>`;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;max-height:240px;">
+        <defs><linearGradient id="baLineGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F59E0B" stop-opacity="0.3"/><stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/></linearGradient></defs>
+        <path d="${area}" fill="url(#baLineGrad)"/>
+        <path d="${path}" fill="none" stroke="#F59E0B" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}${labels}
+    </svg>`;
+}
+
+// SVG 도넛 차트 (카테고리)
+function baDonutChart(categories) {
+    if (!categories || categories.length === 0) return '<div style="color:#9CA3AF;font-size:0.85rem;text-align:center;padding:30px;">카테고리 데이터 없음</div>';
+    const palette = ['#F59E0B', '#0891B2', '#10B981', '#A78BFA', '#EC4899', '#0F172A', '#FB923C', '#06B6D4'];
+    const total = categories.reduce((s, c) => s + c.count, 0);
+    if (total === 0) return '<div style="color:#9CA3AF;font-size:0.85rem;text-align:center;padding:30px;">카테고리 데이터 없음</div>';
+    const cx = 100, cy = 100, r = 70, ir = 42;
+    let cumA = -Math.PI / 2;
+    const segs = categories.slice(0, 8).map((c, i) => {
+        const a = (c.count / total) * Math.PI * 2;
+        const start = cumA, end = cumA + a;
+        cumA = end;
+        const large = a > Math.PI ? 1 : 0;
+        const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start);
+        const x2 = cx + r * Math.cos(end), y2 = cy + r * Math.sin(end);
+        const xi1 = cx + ir * Math.cos(start), yi1 = cy + ir * Math.sin(start);
+        const xi2 = cx + ir * Math.cos(end), yi2 = cy + ir * Math.sin(end);
+        const d = `M ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} L ${xi2.toFixed(1)} ${yi2.toFixed(1)} A ${ir} ${ir} 0 ${large} 0 ${xi1.toFixed(1)} ${yi1.toFixed(1)} Z`;
+        return { path: d, color: palette[i % palette.length], name: c.name, count: c.count, pct: Math.round((c.count / total) * 100) };
+    });
+    const svg = `<svg viewBox="0 0 200 200" style="width:200px;height:200px;flex-shrink:0;">
+        ${segs.map(s => `<path d="${s.path}" fill="${s.color}" stroke="white" stroke-width="2"/>`).join('')}
+        <text x="100" y="95" text-anchor="middle" font-size="14" font-weight="900" fill="#111827">${total}개</text>
+        <text x="100" y="115" text-anchor="middle" font-size="10" fill="#6B7280" font-weight="700">최근 글</text>
+    </svg>`;
+    const legend = segs.map(s => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:0.85rem;">
+        <span style="width:12px;height:12px;background:${s.color};border-radius:3px;flex-shrink:0;"></span>
+        <span style="color:#111827;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${baEsc(s.name)}</span>
+        <span style="color:#6B7280;font-weight:700;font-size:0.78rem;">${s.count}<span style="color:#9CA3AF;margin-left:3px;">(${s.pct}%)</span></span>
+    </div>`).join('');
+    return `<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">${svg}<div style="flex:1;min-width:200px;">${legend}</div></div>`;
+}
+
+function baRenderBlogPage(data) {
+    const b = data.blog || {};
+    const s = data.stats || {};
+    const inf = data.influencer || {};
+    const isInf = !!inf.isInfluencer;
+    const expSum = data.expSummary;
+
+    // 블로그 등급 — 노출률 기반
+    let gradeLabel = '미진단', gradeColor = '#9CA3AF', gradeIcon = '👁';
+    if (expSum) {
+        if (expSum.rate >= 90) { gradeLabel = '최상위 블로그'; gradeColor = '#F59E0B'; gradeIcon = '👑'; }
+        else if (expSum.rate >= 75) { gradeLabel = '건강한 블로그'; gradeColor = '#10B981'; gradeIcon = '💎'; }
+        else if (expSum.rate >= 50) { gradeLabel = '양호한 블로그'; gradeColor = '#0891B2'; gradeIcon = '🔵'; }
+        else if (expSum.rate >= 30) { gradeLabel = '보강 필요'; gradeColor = '#F97316'; gradeIcon = '🟠'; }
+        else { gradeLabel = '저품질 의심'; gradeColor = '#EF4444'; gradeIcon = '🚨'; }
+    }
+
+    let html = `<div style="background:linear-gradient(135deg,#FFFFFF 0%,#F8FAFC 100%);border:1px solid #E5E7EB;border-radius:18px;padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.04);position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:radial-gradient(circle,rgba(245,158,11,0.1),transparent);border-radius:50%;pointer-events:none;"></div>
+        <div style="position:relative;z-index:1;">`;
+
+    // 1. 헤로: 프로필 + 등급
+    const introText = b.introduction ? `<div style="color:#6B7280;font-size:0.85rem;margin-top:6px;line-height:1.55;max-width:600px;">${baEsc(b.introduction)}</div>` : '';
+    const profilePic = b.profileImage
+        ? `<img src="${baEsc(b.profileImage)}" alt="" referrerpolicy="no-referrer" style="width:84px;height:84px;border-radius:50%;border:3px solid ${isInf ? '#F59E0B' : '#E5E7EB'};object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,0.1);">`
+        : `<div style="width:84px;height:84px;border-radius:50%;border:3px solid ${isInf ? '#F59E0B' : '#E5E7EB'};background:linear-gradient(135deg,#F3F4F6,#E5E7EB);display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:900;color:#9CA3AF;">${baEsc((b.name || data.blogId).charAt(0))}</div>`;
+    const infBadge = isInf
+        ? `<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:linear-gradient(135deg,#FFD700,#F59E0B);color:#1a1a1a;border-radius:99px;font-weight:900;font-size:0.78rem;letter-spacing:0.5px;box-shadow:0 2px 8px rgba(245,158,11,0.4);">⭐ INFLUENCER${inf.category ? ' · '+baEsc(inf.category) : ''}</div>`
+        : `<div style="display:inline-flex;padding:5px 12px;background:#F3F4F6;color:#6B7280;border-radius:99px;font-weight:700;font-size:0.78rem;letter-spacing:0.5px;">📝 일반 블로그</div>`;
+
+    html += `<div style="display:flex;gap:24px;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;">
+        <div style="flex-shrink:0;">${profilePic}</div>
+        <div style="flex:1;min-width:240px;">
+            <div style="font-size:0.62rem;letter-spacing:3px;color:#F59E0B;font-weight:900;margin-bottom:4px;">BLOG ANALYSIS · DASCOPE</div>
+            <h2 style="margin:0;font-size:1.6rem;font-weight:900;color:#0F172A;line-height:1.2;">${baEsc(b.name || data.blogId)}</h2>
+            <div style="color:#6B7280;font-size:0.88rem;margin-top:4px;font-weight:700;">@${baEsc(data.blogId)}${b.nickname && b.nickname !== b.name ? ' · '+baEsc(b.nickname) : ''}</div>
+            <div style="margin-top:10px;">${infBadge}${isInf && inf.fanCount ? `<span style="margin-left:8px;color:#F59E0B;font-weight:800;font-size:0.85rem;">👥 팬 ${baNum(inf.fanCount)}</span>` : ''}</div>
+            ${introText}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:0.62rem;letter-spacing:2px;color:#9CA3AF;font-weight:900;">CURRENT GRADE</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;justify-content:flex-end;">
+                <span style="font-size:1.6rem;">${gradeIcon}</span>
+                <span style="color:${gradeColor};font-size:1.4rem;font-weight:900;line-height:1;">${gradeLabel}</span>
+            </div>
+            ${expSum ? `<div style="color:#6B7280;font-size:0.82rem;margin-top:4px;font-weight:700;">최근 글 노출률 ${expSum.rate}%</div>` : ''}
+        </div>
+    </div>`;
+
+    // 2. 통계 그리드 (매거진 인라인)
+    html += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:#FAFAFA;border:1px solid #E5E7EB;border-radius:8px;margin-bottom:24px;overflow:hidden;">
+        <div style="padding:14px 18px;border-right:1px solid #E5E7EB;">
+            <div style="font-size:0.62rem;letter-spacing:2px;color:#9CA3AF;font-weight:800;margin-bottom:5px;">전체 방문자</div>
+            <div style="font-size:1.2rem;font-weight:900;color:#0F172A;">${baNum(s.totalVisitor)}</div>
+        </div>
+        <div style="padding:14px 18px;border-right:1px solid #E5E7EB;">
+            <div style="font-size:0.62rem;letter-spacing:2px;color:#9CA3AF;font-weight:800;margin-bottom:5px;">금일 방문자</div>
+            <div style="font-size:1.2rem;font-weight:900;color:#F59E0B;">${baNum(s.dayVisitor)}</div>
+        </div>
+        <div style="padding:14px 18px;border-right:1px solid #E5E7EB;">
+            <div style="font-size:0.62rem;letter-spacing:2px;color:#9CA3AF;font-weight:800;margin-bottom:5px;">일 평균 방문자</div>
+            <div style="font-size:1.2rem;font-weight:900;color:#0891B2;">${baNum(s.avgDailyVisitor)}</div>
+        </div>
+        <div style="padding:14px 18px;border-right:1px solid #E5E7EB;">
+            <div style="font-size:0.62rem;letter-spacing:2px;color:#9CA3AF;font-weight:800;margin-bottom:5px;">총 이웃</div>
+            <div style="font-size:1.2rem;font-weight:900;color:#8B5CF6;">${baNum(s.subscriber)}</div>
+        </div>
+        <div style="padding:14px 18px;border-right:1px solid #E5E7EB;">
+            <div style="font-size:0.62rem;letter-spacing:2px;color:#9CA3AF;font-weight:800;margin-bottom:5px;">총 게시글</div>
+            <div style="font-size:1.2rem;font-weight:900;color:#10B981;">${baNum(s.totalPost)}</div>
+        </div>
+        <div style="padding:14px 18px;">
+            <div style="font-size:0.62rem;letter-spacing:2px;color:#9CA3AF;font-weight:800;margin-bottom:5px;">최근 30일 글</div>
+            <div style="font-size:1.2rem;font-weight:900;color:#EC4899;">${baNum(s.recent30Posts)}</div>
+        </div>
+    </div>`;
+
+    // 3. 방문자 차트 + 카테고리 도넛 (2-col)
+    html += `<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:24px;margin-bottom:24px;">
+        <div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:14px;padding:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;">DAILY VISITORS · 최근 5일</div>
+                ${s.recentPostDate ? `<div style="font-size:0.78rem;color:#6B7280;font-weight:700;">최근 포스팅 ${baEsc(s.recentPostDate)}</div>` : ''}
+            </div>
+            ${baLineChart(data.dailyVisitors || [])}
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:14px;padding:20px;">
+            <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;margin-bottom:14px;">CATEGORY · 최근 글 분포</div>
+            ${baDonutChart(data.categories || [])}
+        </div>
+    </div>`;
+
+    // 4. 자주 쓰는 단어
+    if (data.keywords && data.keywords.length > 0) {
+        const chips = data.keywords.slice(0, 20).map((k, i) => {
+            const size = i < 3 ? '1.05rem' : i < 8 ? '0.92rem' : '0.82rem';
+            const opacity = i < 3 ? 1 : i < 8 ? 0.9 : 0.75;
+            return `<span style="display:inline-block;background:#ECFEFF;color:#0891B2;padding:6px 14px;border-radius:99px;font-size:${size};margin:4px;font-weight:700;border:1px solid #A5F3FC;opacity:${opacity};">${baEsc(k.word)}<span style="color:#9CA3AF;font-weight:500;margin-left:5px;">×${k.count}</span></span>`;
+        }).join('');
+        html += `<div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:14px;padding:20px;margin-bottom:24px;">
+            <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;margin-bottom:12px;">KEYWORDS · 자주 쓰는 단어 Top 20</div>
+            <div>${chips}</div>
+        </div>`;
+    }
+
+    // 5. 최근 글 + 인덱스 진단
+    if (data.recentPosts && data.recentPosts.length > 0) {
+        const rows = data.recentPosts.map((p, i) => {
+            const exp = p.exposure;
+            let statusHtml;
+            if (!exp || exp.exposed === null) {
+                statusHtml = `<span style="color:#9CA3AF;font-weight:700;font-size:0.82rem;">진단 안 됨</span>`;
+            } else if (exp.exposed) {
+                const dup = exp.totalResults > 1 ? ` <span style="color:#9CA3AF;font-size:0.74rem;font-weight:600;">(동일 제목 ${exp.totalResults}건 중 ${exp.rank}번째)</span>` : '';
+                statusHtml = `<span style="color:#10B981;font-weight:800;font-size:0.82rem;">✅ 정상 인덱스</span>${dup}`;
+            } else {
+                statusHtml = `<span style="color:#EF4444;font-weight:800;font-size:0.82rem;">⚠️ 누락 의심</span>`;
+            }
+            return `<div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-bottom:1px solid #F3F4F6;">
+                <div style="color:#9CA3AF;font-weight:900;font-size:0.82rem;min-width:24px;text-align:center;">${i + 1}</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="color:#111827;font-size:0.9rem;font-weight:600;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${baEsc(p.title)}</div>
+                    <div style="margin-top:4px;">${statusHtml}</div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                    <div style="color:#6B7280;font-size:0.76rem;font-weight:700;">${baEsc(p.addDate || '')}</div>
+                    <div style="color:#9CA3AF;font-size:0.72rem;margin-top:2px;">💬 ${p.commentCount}</div>
+                </div>
+                <a href="${baEsc(p.url)}" target="_blank" rel="noopener" style="color:#0891B2;text-decoration:none;font-size:1.1rem;flex-shrink:0;" title="새 창에서 보기">↗</a>
+            </div>`;
+        }).join('');
+        html += `<div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:14px;padding:20px;margin-bottom:24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;">RECENT POSTS · 최근 ${data.recentPosts.length}개 + 인덱스 진단</div>
+                ${expSum ? `<div style="display:flex;gap:14px;font-size:0.78rem;font-weight:700;">
+                    <span style="color:#10B981;">정상 ${expSum.exposed}</span>
+                    <span style="color:#EF4444;">누락 ${expSum.missing}</span>
+                    <span style="color:#F59E0B;">노출률 ${expSum.rate}%</span>
+                </div>` : ''}
+            </div>
+            <div>${rows}</div>
+            <div style="background:#ECFEFF;border:1px solid #A5F3FC;border-radius:8px;padding:11px 14px;margin-top:12px;color:#155E75;font-size:0.78rem;line-height:1.65;">
+                ℹ️ <strong style="color:#0891B2;">인덱스 안내</strong> — 글 제목 정확 검색 시 검색 결과 노출 여부만 확인 (키워드 순위와 다른 개념)
+            </div>
+        </div>`;
+    }
+
+    html += '</div></div>';
+    return html;
+}
+
+// 호환 alias (옛 호출용)
+// (옛 renderBulkBlogTabs/renderBulkBlogDetail 제거됨 — baRenderTabs/baRenderDetail로 대체)
+window.renderBulkBlogTabs = function() { baRenderTabs(); };
+window.renderBulkBlogDetail = function(idx) { baRenderDetail(idx); };
+
+// ===== 섹션 전환 =====
+// ===== 포스팅 분석 (DaScope) — 다크 시네마틱 =====
+const PA_GRADE_LABEL = {
+    'S': '황금 글', 'A': '탄탄한 글', 'B': '쓸만한 글',
+    'C': '보강 필요', 'D': '손질 시급', 'E': '재구성 권장', 'F': '처음부터',
+};
+// 블로그 모드에서 진입했는지 추적 (백 버튼용)
+let paBlogModeContext = null;
+const PA_GRADE_COLOR = {
+    'S': '#FFD700', 'A': '#4ADE80', 'B': '#67E8F9',
+    'C': '#A78BFA', 'D': '#FB923C', 'E': '#F472B6', 'F': '#F87171',
+};
+
+function paEsc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function paNum(n) {
+    return (n || 0).toLocaleString('ko-KR');
+}
+
+function paDaysAgo(publishDate) {
+    if (!publishDate) return null;
+    const m = publishDate.match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/);
+    if (!m) return null;
+    const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+    const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+    return days;
+}
+
+function paMsgQuality(textLen, imgCnt) {
+    if (textLen >= 1500 && imgCnt >= 5) {
+        return { ok: true, msg: `글자 ${paNum(textLen)}자에 이미지 ${imgCnt}장. 검색 노출과 체류시간 모두 유리한 구성입니다. 이대로 유지하세요.` };
+    }
+    if (textLen >= 800 && imgCnt >= 3) {
+        const need = 1500 - textLen;
+        return { ok: true, msg: `기본 요건 충족 (${paNum(textLen)}자, 이미지 ${imgCnt}장). 글을 ${paNum(need)}자만 더 보강하거나 이미지 1-2장 추가하면 상위 등급권에 들어갑니다.` };
+    }
+    if (textLen >= 400) {
+        return { ok: false, msg: `현재 ${paNum(textLen)}자, 이미지 ${imgCnt}장. 목표는 800자 이상 + 이미지 3장 이상입니다. 추가 사례·경험담·요약 단락을 넣으면 글자수가 자연스럽게 늘어요.` };
+    }
+    return { ok: false, msg: `본문이 너무 짧습니다 (${paNum(textLen)}자). 800자 이상으로 보강해야 검색 노출 가능성이 생깁니다. 도입→내용→정리 3단 구조로 단락을 늘려보세요.` };
+}
+
+function paMsgStructure(kwUniq) {
+    if (kwUniq >= 8) {
+        return { ok: true, msg: `다양한 단어 ${kwUniq}개가 사용됐습니다. 여러 검색어로 노출될 가능성이 높아요. 이 흐름을 유지하세요.` };
+    }
+    if (kwUniq >= 4) {
+        return { ok: false, msg: `핵심 단어 ${kwUniq}개. 다소 단조롭습니다. 동의어·상위 카테고리·관련 사례를 3-4개 더 섞으면 노출 키워드 수가 1.5배까지 늘 수 있어요.` };
+    }
+    return { ok: false, msg: `핵심 단어 ${kwUniq}개로 매우 좁습니다. 정의→이유→방법→사례 순으로 단락을 늘리면서 자연스럽게 단어 폭을 넓혀보세요.` };
+}
+
+function paMsgFit(textLen, imgCnt, videoCnt) {
+    if (textLen <= 0) return { ok: false, msg: '본문 추출에 실패했습니다. 비공개 글이거나 페이지 구조가 특수한 경우입니다.' };
+    const ratio = (imgCnt + videoCnt) / Math.max(1, textLen / 500);
+    if (ratio >= 0.5 && ratio <= 4) {
+        return { ok: true, msg: '텍스트와 미디어 비율이 안정적입니다. 독자가 스크롤하면서 지치지 않을 구성이에요.' };
+    }
+    if (ratio < 0.5) {
+        return { ok: false, msg: `글에 비해 이미지가 부족합니다. 200-300자마다 이미지 1장 정도가 이상적이에요. 현재 기준 ${Math.max(1, Math.ceil(textLen/300) - imgCnt)}장 정도 더 넣으면 좋습니다.` };
+    }
+    return { ok: false, msg: '이미지가 너무 많아 본문이 묻혔습니다. 이미지마다 1-2문장씩 설명 글을 추가해서 텍스트를 늘리거나, 핵심 이미지만 남기고 정리해보세요.' };
+}
+
+function paMsgRecency(publishDate) {
+    const days = paDaysAgo(publishDate);
+    if (days == null) return { ok: true, msg: '작성일을 파싱할 수 없지만 글 자체에는 영향 없습니다.' };
+    if (days <= 30) return { ok: true, msg: `올린 지 ${days}일. 검색 알고리즘에서도 신선도 가산점이 있는 시기예요.` };
+    if (days <= 180) return { ok: true, msg: `올린 지 ${days}일. 아직 양호한 상태이지만 6개월 넘기 전에 본문 일부 보강을 검토해보세요.` };
+    if (days <= 365) return { ok: false, msg: `올린 지 ${days}일. 최신 정보로 업데이트하면 노출 순위 회복에 도움됩니다. 통계 수치·연도·신제품 정보 위주로 손보세요.` };
+    return { ok: false, msg: `1년 이상 지난 글입니다 (${days}일). 통계/연도/제품명/가격 등을 최신으로 갱신하고 발행일을 다시 잡아보세요.` };
+}
+
+function paMsgForbidden(forbidden) {
+    if (!forbidden.hits || forbidden.hits.length === 0) {
+        return { ok: true, msg: '검출된 위험 단어가 없습니다. 안전한 글이에요.' };
+    }
+    const words = forbidden.hits.slice(0, 5).map(h => `<span style="background:#FEE2E2;color:#991B1B;padding:2px 8px;border-radius:6px;font-weight:600;font-size:0.85rem;">${paEsc(h.word)}</span>`).join(' ');
+    return { ok: false, msg: `${forbidden.hits.length}건 검출 (${forbidden.categories.join(', ')}). 광고·의료 가이드라인 위반 가능성. 검출 단어: ${words}<br><span style="color:#6B7280;font-size:0.85rem;">→ 우회 표현으로 다듬으세요. 예: "최저가" → "합리적 가격", "100% 효과" → "꾸준한 관리".</span>` };
+}
+
+function paMsgExposed(exposed) {
+    if (!exposed) return { ok: false, msg: '노출 점검을 수행하지 못했습니다.' };
+    if (exposed.exposed === true) {
+        return { ok: true, emoji: '😊', label: '정상 노출중', accent: 'GOOD', msg: `네이버 통합검색 블로그 탭에서 <strong>${exposed.rank}위</strong>로 노출됩니다. 검색에서 정상적으로 발견되는 상태예요.` };
+    }
+    if (exposed.exposed === false) {
+        return { ok: false, emoji: '😐', label: '검색 누락', accent: 'CHECK', msg: '제목으로 정확 검색해도 잡히지 않습니다. 저품질 누락이나 인덱싱 지연 가능성이 있어요. 24시간 후 다시 확인하거나, 본문을 보강해서 재발행해보세요.' };
+    }
+    return { ok: false, emoji: '⚠️', label: '점검 실패', accent: 'ERR', msg: `노출 점검 중 오류가 났습니다 (${paEsc(exposed.reason || '알 수 없음')}).` };
+}
+
+// 다크 시네마틱 진단 카드
+// 다플로지 시그니처 진단 카드 (좌측 번호 + PASS/CHECK)
+function paItemCard(icon, title, msg, ok, idx) {
+    const accent = ok ? '#10B981' : '#F59E0B';
+    const accentDeep = ok ? '#059669' : '#D97706';
+    const status = ok ? 'PASS' : 'CHECK';
+    const numStr = idx ? ('0' + idx).slice(-2) : '';
+    const numCol = idx ? `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 16px;background:linear-gradient(180deg,${accent}18,${accent}08);border-right:1px solid ${accent}40;min-width:64px;">
+        <div style="font-size:1rem;font-weight:900;color:${accentDeep};letter-spacing:1px;line-height:1;">${numStr}</div>
+        <div style="font-size:0.62rem;font-weight:900;color:${accent};margin-top:5px;letter-spacing:1.5px;padding:2px 7px;background:white;border-radius:4px;border:1px solid ${accent}50;">${status}</div>
+    </div>` : '';
+    const sidePill = !idx ? `<span style="background:linear-gradient(135deg,${accent},${accentDeep});color:white;padding:4px 11px;border-radius:6px;font-size:0.7rem;font-weight:900;letter-spacing:1.5px;box-shadow:0 2px 6px ${accent}55;">${status}</span>` : '';
+    return `<div style="display:flex;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        ${numCol}
+        <div style="flex:1;padding:14px 18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:5px;">
+                <strong style="color:#111827;font-size:0.98rem;font-weight:800;">${paEsc(title)}</strong>
+                ${sidePill}
+            </div>
+            <div style="color:#4B5563;font-size:0.87rem;line-height:1.7;">${msg}</div>
+        </div>
+    </div>`;
+}
+
+// 화이트 톤 스탯 카드
+function paStatCard(label, value, sub, accent) {
+    accent = accent || '#0891B2';
+    return `<div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+        <div style="color:#6B7280;font-size:0.74rem;font-weight:700;margin-bottom:5px;letter-spacing:0.3px;">${paEsc(label)}</div>
+        <div style="color:${accent};font-size:1.35rem;font-weight:900;line-height:1.2;">${value}</div>
+        ${sub ? `<div style="color:#9CA3AF;font-size:0.72rem;margin-top:3px;">${paEsc(sub)}</div>` : ''}
+    </div>`;
+}
+
+// 풀스크린 화이트 wrap (사이드바 옆 화면 전체)
+function paDarkWrap(innerHtml) {
+    return `<div style="width:100%;background:linear-gradient(135deg,#FFFFFF 0%,#F8FAFC 100%);border:1px solid #E5E7EB;border-radius:18px;padding:28px 32px;position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.04);">
+        <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(245,158,11,0.08),transparent);border-radius:50%;pointer-events:none;"></div>
+        <div style="position:absolute;bottom:-30px;left:-30px;width:140px;height:140px;background:radial-gradient(circle,rgba(6,182,212,0.07),transparent);border-radius:50%;pointer-events:none;"></div>
+        <div style="position:relative;z-index:1;">${innerHtml}</div>
+    </div>`;
+}
+
+function paErrorBox(msg) {
+    return `<div style="background:#FEF2F2;border:1px solid #FECACA;border-left:4px solid #EF4444;border-radius:10px;padding:16px 18px;color:#991B1B;font-size:0.92rem;">${paEsc(msg)}</div>`;
+}
+
+function paLoadingBox(title, sub) {
+    return paDarkWrap(`<div style="text-align:center;padding:40px 20px;">
+        <div class="pa-loading-spinner"></div>
+        <div class="pa-loading-title" style="font-weight:800;font-size:1.1rem;color:#F59E0B;margin-top:20px;">${paEsc(title)}</div>
+        ${sub ? `<div style="font-size:0.86rem;margin-top:8px;color:#6B7280;">${paEsc(sub)}</div>` : ''}
+        <div style="margin-top:18px;display:flex;justify-content:center;gap:8px;">
+            <span class="pa-loading-dot"></span>
+            <span class="pa-loading-dot"></span>
+            <span class="pa-loading-dot"></span>
+        </div>
+    </div>`);
+}
+
+// 입력 자동 감지
+function paDetectInputType(input) {
+    const v = (input || '').trim();
+    if (!v) return 'empty';
+    let cand = v;
+    if (!/^https?:\/\//.test(cand)) cand = 'https://' + cand;
+    try {
+        const u = new URL(cand);
+        const host = u.hostname.toLowerCase().replace(/^m\./, '');
+        if (host === 'blog.naver.com' || host.endsWith('.blog.naver.com')) {
+            const seg = u.pathname.split('/').filter(Boolean);
+            const ln = u.searchParams.get('logNo');
+            if (ln && /^\d+$/.test(ln)) return 'post';
+            if (seg.length >= 2 && /^\d+$/.test(seg[1])) return 'post';
+            if ((seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn') && ln) return 'post';
+            if (seg.length >= 1) return 'blog';
+        }
+    } catch (e) {}
+    if (/^[a-zA-Z0-9_-]+$/.test(v) && v.length >= 3 && v.length <= 30) return 'blog';
+    return 'unknown';
+}
+
+function paExtractBlogId(input) {
+    let v = (input || '').trim();
+    if (/^[a-zA-Z0-9_-]+$/.test(v)) return v.toLowerCase();
+    try {
+        if (!/^https?:\/\//.test(v)) v = 'https://' + v;
+        const u = new URL(v);
+        const seg = u.pathname.split('/').filter(Boolean);
+        if (seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn') {
+            return (u.searchParams.get('blogId') || '').toLowerCase();
+        }
+        return (seg[0] || '').toLowerCase();
+    } catch (e) { return ''; }
+}
+
+async function paShowBlogMode(blogId, resultEl) {
+    if (!resultEl) resultEl = document.getElementById('postingResult');
+    paBlogModeContext = { blogId };
+    resultEl.innerHTML = paLoadingBox('블로그 최근 10개 글 가져오는 중', '약 5~10초 소요');
+    // 입력란도 블로그 ID로 복원
+    const input = document.getElementById('postingUrl');
+    if (input) input.value = blogId;
+    try {
+        const res = await fetch('/api/blog-check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'missing', blogId }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+            resultEl.innerHTML = paErrorBox(data.error || '블로그 글을 가져올 수 없습니다.');
+            return;
+        }
+        resultEl.innerHTML = paRenderBlogList(data);
+    } catch (e) {
+        resultEl.innerHTML = paErrorBox('서버 오류: ' + (e.message || '연결 실패'));
+    }
+}
+
+// 단일 글 깊은 분석 (paAnalyzeFromList와 직접 URL 진입 모두에서 사용)
+async function paShowSingleMode(url, resultEl) {
+    if (!resultEl) resultEl = document.getElementById('postingResult');
+    resultEl.innerHTML = paLoadingBox('글 깊이 분석 중', '본문 추출 · 이미지 점검 · 검색 노출 확인 (10~20초 소요)');
+    try {
+        const res = await fetch('/api/posting-analysis', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        if (data.error) {
+            resultEl.innerHTML = paErrorBox(data.error);
+            return;
+        }
+        resultEl.innerHTML = paRenderResult(data);
+        paRevalidateImages(data);
+    } catch (err) {
+        resultEl.innerHTML = paErrorBox('서버 오류: ' + (err.message || '연결 실패'));
+    }
+}
+
+function paRenderBlogList(data) {
+    const s = data.summary || {};
+    const results = data.results || [];
+    const verdictColors = {
+        '건강한 블로그': '#10B981', '부분 누락': '#F59E0B',
+        '누락 다수': '#F97316', '저품질 의심': '#EF4444',
+    };
+    const verdictColor = verdictColors[data.verdict] || '#0891B2';
+
+    let inner = `<div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
+        <span style="font-size:2rem;">💎</span>
+        <div style="flex:1;">
+            <div style="color:#0891B2;font-size:0.78rem;font-weight:800;letter-spacing:1.5px;">BLOG · DASCOPE</div>
+            <h2 style="color:#111827;font-size:1.4rem;font-weight:900;margin:0;">${paEsc(data.blogId)}</h2>
+        </div>
+        <div style="background:${verdictColor};color:white;padding:6px 14px;border-radius:99px;font-weight:900;font-size:0.85rem;box-shadow:0 2px 8px ${verdictColor}55;">${paEsc(data.verdict || '진단')}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+        ${paStatCard('전체 글', `${s.totalCount || 0}<span style="color:#9CA3AF;font-size:0.78rem;font-weight:600;margin-left:3px;">개</span>`, '', '#111827')}
+        ${paStatCard('정상 인덱스', `${s.exposedCount || 0}<span style="color:#9CA3AF;font-size:0.78rem;font-weight:600;margin-left:3px;">개</span>`, '', '#10B981')}
+        ${paStatCard('누락 의심', `${s.missingCount || 0}<span style="color:#9CA3AF;font-size:0.78rem;font-weight:600;margin-left:3px;">개</span>`, '', (s.missingCount > 0 ? '#EF4444' : '#10B981'))}
+        ${paStatCard('노출률', `${s.exposedRate || 0}<span style="color:#9CA3AF;font-size:0.78rem;font-weight:600;margin-left:3px;">%</span>`, '', '#F59E0B')}
+    </div>
+    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:14px 18px;margin-bottom:22px;">
+        <div style="color:${verdictColor};font-weight:800;font-size:0.98rem;margin-bottom:5px;">📊 ${paEsc(data.verdict || '진단 완료')}</div>
+        <div style="color:#374151;font-size:0.85rem;line-height:1.65;">${paEsc(data.verdictDesc || '')}</div>
+    </div>
+    <div style="color:#111827;font-size:0.98rem;font-weight:800;margin-bottom:12px;">📋 최근 글 ${results.length}개 — [개별 분석] 클릭 시 깊은 분석</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">`;
+
+    results.forEach((r, idx) => {
+        const isExposed = r.status === 'exposed';
+        const sc = isExposed ? '#10B981' : '#EF4444';
+        const sl = isExposed ? '정상 인덱스' : '누락 의심';
+        const dt = (r.totalResults > 1 && isExposed)
+            ? ` <span style="color:#9CA3AF;font-size:0.76rem;font-weight:600;">(동일 제목 ${r.totalResults}건 중 ${r.rank}번째)</span>` : '';
+        const enc = encodeURIComponent(r.link || '');
+        const t = paEsc(r.title || '');
+        inner += `<div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:14px;transition:all 0.2s;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+            <div style="color:#9CA3AF;font-weight:900;font-size:0.85rem;min-width:24px;text-align:center;">${idx + 1}</div>
+            <div style="flex:1;min-width:0;">
+                <div style="color:#111827;font-size:0.92rem;font-weight:600;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t}</div>
+                <div style="color:${sc};font-size:0.78rem;font-weight:700;margin-top:4px;">${isExposed ? '✅' : '⚠️'} ${sl}${dt}</div>
+            </div>
+            <button onclick="paAnalyzeFromList('${enc}')" style="background:linear-gradient(135deg,#F59E0B,#D97706);color:white;border:none;padding:8px 14px;border-radius:8px;font-weight:800;font-size:0.78rem;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(245,158,11,0.3);">개별 분석 →</button>
+        </div>`;
+    });
+
+    inner += `</div>
+    <div style="background:#ECFEFF;border:1px solid #A5F3FC;border-radius:10px;padding:13px 16px;margin-top:18px;color:#155E75;font-size:0.82rem;line-height:1.7;">
+        ℹ️ <strong style="color:#0891B2;">인덱스 안내</strong> — 글 제목으로 정확 검색 시 글이 검색에 잡히는지(인덱스 등록)만 확인합니다. 키워드 순위와는 다른 개념이며, 키워드 순위는 [키워드 순위 확인] 메뉴를 이용하세요.
+    </div>`;
+    return paDarkWrap(inner);
+}
+
+function paAnalyzeFromList(encodedUrl) {
+    let url = decodeURIComponent(encodedUrl);
+    url = url.replace(/^<!\[CDATA\[/, '').replace(/\]\]>$/, '').trim();
+    try {
+        const u = new URL(url);
+        u.searchParams.delete('fromRss');
+        u.searchParams.delete('trackingCode');
+        url = u.toString();
+    } catch (e) {}
+    if (!url) return;
+    // paBlogModeContext 유지 (백 버튼 활성화). 입력란은 변경하지 않음
+    paShowSingleMode(url, document.getElementById('postingResult'));
+    const r = document.getElementById('postingResult');
+    if (r) r.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// 레이더 차트 (5축)
+function paRadarChart(metrics) {
+    const cx = 160, cy = 165, R = 95;
+    const n = metrics.length;
+    const startAngle = -Math.PI / 2;
+    let gridSvg = '';
+    [0.25, 0.5, 0.75, 1].forEach((level, i) => {
+        const pts = [];
+        for (let k = 0; k < n; k++) {
+            const a = startAngle + (2 * Math.PI * k / n);
+            const r = R * level;
+            pts.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
+        }
+        gridSvg += `<polygon points="${pts.join(' ')}" fill="${i === 3 ? 'rgba(243,244,246,0.4)' : 'none'}" stroke="#E5E7EB" stroke-width="1"/>`;
+    });
+    let axesSvg = '';
+    for (let k = 0; k < n; k++) {
+        const a = startAngle + (2 * Math.PI * k / n);
+        const x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+        axesSvg += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#E5E7EB" stroke-width="1"/>`;
+    }
+    const dataPoints = metrics.map((p, k) => {
+        const a = startAngle + (2 * Math.PI * k / n);
+        const r = R * (p.value / 100);
+        return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    });
+    const dataPath = dataPoints.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    const dotsSvg = dataPoints.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="5" fill="#F59E0B" stroke="white" stroke-width="2.5"/>`).join('');
+    const labelR = R + 22;
+    let labelsSvg = '';
+    metrics.forEach((p, k) => {
+        const a = startAngle + (2 * Math.PI * k / n);
+        const x = cx + labelR * Math.cos(a), y = cy + labelR * Math.sin(a);
+        const anchor = Math.abs(Math.cos(a)) < 0.15 ? 'middle' : (Math.cos(a) > 0 ? 'start' : 'end');
+        labelsSvg += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="middle" font-size="11" fill="#111827" font-weight="800">${paEsc(p.label)}</text>`;
+        labelsSvg += `<text x="${x.toFixed(1)}" y="${(y + 13).toFixed(1)}" text-anchor="${anchor}" dominant-baseline="middle" font-size="10" fill="#0891B2" font-weight="900">${Math.round(p.value)}</text>`;
+    });
+    return `<svg viewBox="0 0 320 330" style="width:100%;max-width:340px;height:auto;display:block;margin:0 auto;">
+        ${gridSvg}${axesSvg}
+        <polygon points="${dataPath}" fill="rgba(245,158,11,0.22)" stroke="#F59E0B" stroke-width="2.5" stroke-linejoin="round"/>
+        ${dotsSvg}${labelsSvg}
+    </svg>`;
+}
+
+// 매거진형 인라인 스탯 항목
+function paStatLine(label, value, accent) {
+    accent = accent || '#111827';
+    return `<div style="padding:14px 18px;border-right:1px solid #E5E7EB;">
+        <div style="font-size:0.62rem;letter-spacing:2px;color:#9CA3AF;font-weight:800;margin-bottom:5px;text-transform:uppercase;">${paEsc(label)}</div>
+        <div style="font-size:1.15rem;font-weight:900;color:${accent};line-height:1.1;">${value}</div>
+    </div>`;
+}
+
+// 진행률 막대 (매거진형)
+function paProgressBar(label, value, status, accent) {
+    return `<div style="padding:14px 0;border-bottom:1px solid #F3F4F6;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+            <span style="font-size:0.9rem;font-weight:800;color:#111827;">${paEsc(label)}</span>
+            <span style="font-size:0.66rem;font-weight:900;color:${accent};letter-spacing:1.5px;padding:3px 9px;background:${accent}15;border:1px solid ${accent}40;border-radius:3px;">${paEsc(status)}</span>
+        </div>
+        <div style="height:6px;background:#F3F4F6;border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${Math.max(0, Math.min(100, value))}%;background:linear-gradient(90deg,${accent},${accent}cc);border-radius:99px;"></div>
+        </div>
+    </div>`;
+}
+
+function paRenderResult(data) {
+    const stats = data.stats || {};
+    const aiFit = data.aiFit || {};
+    const grade = aiFit.grade || 'F';
+    const score = aiFit.score || 0;
+    const gradeLabel = PA_GRADE_LABEL[grade] || '평가 불가';
+    const gradeColorMap = {
+        'S': '#F59E0B', 'A': '#10B981', 'B': '#0891B2',
+        'C': '#6366F1', 'D': '#F97316', 'E': '#EC4899', 'F': '#EF4444',
+    };
+    const gradeColor = gradeColorMap[grade] || '#6B7280';
+    const exposedM = paMsgExposed(data.exposed);
+    const exposedAccent = (data.exposed && data.exposed.exposed === true) ? '#10B981'
+        : (data.exposed && data.exposed.exposed === false) ? '#EF4444' : '#F59E0B';
+    const daysAgo = paDaysAgo(data.publishDate);
+    const daysAgoLabel = daysAgo == null ? (data.publishDate || '-') : (daysAgo === 0 ? '오늘' : `${daysAgo}일 전`);
+
+    // 백 버튼
+    const backButton = paBlogModeContext
+        ? `<button onclick="paShowBlogMode('${paEsc(paBlogModeContext.blogId)}')" style="background:transparent;color:#0891B2;border:none;padding:0;font-weight:800;font-size:0.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-bottom:18px;letter-spacing:1px;">← BACK TO <strong>${paEsc(paBlogModeContext.blogId.toUpperCase())}</strong></button>`
+        : '';
+
+    // ============ 1. 매거진 헤드라인 (제목) ============
+    let inner = `${backButton}
+    <div style="font-size:0.65rem;letter-spacing:3px;color:#F59E0B;font-weight:900;margin-bottom:6px;">POSTING ANALYSIS · DASCOPE</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#0F172A;line-height:1.3;margin:0 0 20px 0;">${paEsc(data.title || '제목 없음')} <a href="${paEsc(data.url)}" target="_blank" rel="noopener" style="color:#9CA3AF;text-decoration:none;font-size:1.1rem;font-weight:400;" title="새 창에서 열기">↗</a></h1>`;
+
+    // ============ 2. 매거진 헤로 바 (등급 + 점수 + 노출) ============
+    inner += `<div style="border-top:3px solid #0F172A;border-bottom:3px solid #0F172A;padding:22px 0;display:flex;align-items:center;gap:32px;flex-wrap:wrap;margin-bottom:28px;">
+        <div style="display:flex;align-items:flex-end;gap:14px;">
+            <div>
+                <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;margin-bottom:4px;">GRADE</div>
+                <div style="font-size:3.4rem;font-weight:900;color:${gradeColor};line-height:0.85;font-family:Georgia,'Times New Roman',serif;">${paEsc(grade)}</div>
+            </div>
+            <div style="padding-bottom:6px;">
+                <div style="font-size:0.78rem;color:#9CA3AF;font-weight:700;letter-spacing:0.5px;margin-bottom:2px;">CURRENT STATUS</div>
+                <div style="font-size:1.15rem;font-weight:900;color:#111827;">${paEsc(gradeLabel)}</div>
+            </div>
+        </div>
+        <div style="height:62px;width:1px;background:#E5E7EB;"></div>
+        <div>
+            <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;margin-bottom:4px;">SCORE</div>
+            <div style="font-size:2.2rem;font-weight:900;line-height:0.95;color:#F59E0B;font-family:Georgia,serif;">
+                ${score}<span style="font-size:0.95rem;color:#9CA3AF;font-weight:700;font-family:inherit;"> / 100</span>
+            </div>
+        </div>
+        <div style="height:62px;width:1px;background:#E5E7EB;"></div>
+        <div style="flex:1;min-width:200px;">
+            <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;margin-bottom:4px;">SEARCH INDEX</div>
+            <div style="display:flex;align-items:center;gap:9px;">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${exposedAccent};box-shadow:0 0 10px ${exposedAccent}aa;animation:paLoadingPulse 1.6s infinite;"></span>
+                <span style="font-size:1.15rem;font-weight:900;color:${exposedAccent};letter-spacing:0.3px;">${paEsc(exposedM.label || '-')}</span>
+            </div>
+            <div style="color:#6B7280;font-size:0.78rem;font-weight:600;margin-top:5px;line-height:1.5;">${exposedM.msg || ''}</div>
+        </div>
+    </div>`;
+
+    // ============ 3. 인라인 스탯 (가로 분할선, 카드 없음) ============
+    inner += `<div style="display:grid;grid-template-columns:repeat(6,1fr);background:#FAFAFA;border:1px solid #E5E7EB;border-radius:4px;margin-bottom:28px;">
+        ${paStatLine('블로그 ID', paEsc(data.blogId), '#111827')}
+        ${paStatLine('작성일', paEsc(daysAgoLabel), '#111827')}
+        ${paStatLine('글자수', paNum(stats.textLength), '#0891B2')}
+        ${paStatLine('이미지', paNum(stats.imageCount) + (stats.missingImageCount > 0 ? `<span style="font-size:0.65rem;color:#EF4444;font-weight:700;margin-left:4px;">−${stats.missingImageCount}</span>` : ''), '#F59E0B')}
+        ${paStatLine('댓글', paNum(stats.commentCount), '#8B5CF6')}
+        <div style="padding:14px 18px;">
+            <div style="font-size:0.62rem;letter-spacing:2px;color:#9CA3AF;font-weight:800;margin-bottom:5px;text-transform:uppercase;">공감</div>
+            <div style="font-size:1.15rem;font-weight:900;color:#EC4899;line-height:1.1;">${paNum(stats.sympathyCount)}</div>
+        </div>
+    </div>`;
+
+    // ============ 4. 레이더 + 진행률 분석 (2-col) ============
+    const textScore = Math.min(100, ((stats.textLength || 0) / 1500) * 100);
+    const imgScore = Math.min(100, ((stats.imageCount || 0) / 10) * 100);
+    const kwCnt = (data.keywords || []).length;
+    const kwScore = Math.min(100, (kwCnt / 15) * 100);
+    let fitScore = 50;
+    if ((stats.textLength || 0) > 0) {
+        const ratio = ((stats.imageCount || 0) + (stats.videoCount || 0)) / Math.max(1, (stats.textLength || 0) / 500);
+        if (ratio >= 0.5 && ratio <= 4) fitScore = 100;
+        else if (ratio < 0.5) fitScore = Math.max(20, ratio * 200);
+        else fitScore = Math.max(20, 100 - (ratio - 4) * 15);
+    }
+    let recencyScore = 100;
+    if (daysAgo != null) {
+        if (daysAgo > 365) recencyScore = 20;
+        else if (daysAgo > 180) recencyScore = 50;
+        else if (daysAgo > 30) recencyScore = 80;
+    }
+    const radarMetrics = [
+        { label: '글자수', value: textScore },
+        { label: '이미지', value: imgScore },
+        { label: '주제어', value: kwScore },
+        { label: '미디어 비율', value: fitScore },
+        { label: '최신성', value: recencyScore },
+    ];
+    const statusFor = v => v >= 80 ? { s: 'EXCELLENT', c: '#10B981' } : v >= 60 ? { s: 'GOOD', c: '#0891B2' } : v >= 40 ? { s: 'CHECK', c: '#F59E0B' } : { s: 'BOOST', c: '#EF4444' };
+
+    const q = paMsgQuality(stats.textLength || 0, stats.imageCount || 0);
+    const sM = paMsgStructure(kwCnt);
+    const f = paMsgFit(stats.textLength || 0, stats.imageCount || 0, stats.videoCount || 0);
+    const r = paMsgRecency(data.publishDate);
+
+    inner += `<div style="display:grid;grid-template-columns:380px 1fr;gap:40px;align-items:flex-start;margin-bottom:32px;">
+        <div>
+            <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;margin-bottom:18px;">DIAGNOSIS · RADAR</div>
+            ${paRadarChart(radarMetrics)}
+        </div>
+        <div>
+            <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;margin-bottom:14px;">METRICS BREAKDOWN</div>
+            ${(() => {
+                const status1 = statusFor(textScore);
+                const status2 = statusFor(kwScore);
+                const status3 = statusFor(fitScore);
+                const status4 = statusFor(recencyScore);
+                return paProgressBar('글자수·이미지 균형', Math.round((textScore + imgScore) / 2), status1.s, status1.c)
+                    + paProgressBar('주제어 다양성', Math.round(kwScore), status2.s, status2.c)
+                    + paProgressBar('텍스트·미디어 비율', Math.round(fitScore), status3.s, status3.c)
+                    + paProgressBar('글 최신성', Math.round(recencyScore), status4.s, status4.c);
+            })()}
+            <div style="margin-top:18px;padding:16px 18px;background:#FFFBEB;border-left:3px solid #F59E0B;">
+                <div style="font-size:0.62rem;letter-spacing:2.5px;color:#92400E;font-weight:900;margin-bottom:10px;">RECOMMENDATIONS · 코칭</div>
+                <div style="color:#78350F;font-size:0.83rem;line-height:1.7;display:grid;gap:8px;">
+                    ${!q.ok ? `<div>▸ ${q.msg}</div>` : ''}
+                    ${!sM.ok ? `<div>▸ ${sM.msg}</div>` : ''}
+                    ${!f.ok ? `<div>▸ ${f.msg}</div>` : ''}
+                    ${!r.ok ? `<div>▸ ${r.msg}</div>` : ''}
+                    ${q.ok && sM.ok && f.ok && r.ok ? '<div style="color:#047857;">▸ 모든 항목 우수합니다. 현재 흐름을 유지하세요.</div>' : ''}
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    // 4. 이미지 누락 그리드 + 명확한 요약 메시지
+    if (data.images && data.images.length > 0) {
+        const missingCount = data.images.filter(im => !im.ok).length;
+        const summaryHtml = missingCount === 0
+            ? `<div style="background:#ECFDF5;border-left:4px solid #10B981;border-radius:10px;padding:14px 16px;margin-bottom:12px;">
+                <div style="color:#047857;font-weight:800;font-size:0.95rem;">✅ 누락된 이미지가 없습니다</div>
+                <div style="color:#065F46;font-size:0.82rem;margin-top:4px;">${data.images.length}장 모두 정상 표시됩니다.</div>
+            </div>`
+            : `<div style="background:#FEF2F2;border-left:4px solid #EF4444;border-radius:10px;padding:14px 16px;margin-bottom:12px;">
+                <div style="color:#991B1B;font-weight:800;font-size:0.95rem;">⚠️ 누락 의심 이미지 ${missingCount}장 발견</div>
+                <div style="color:#7F1D1D;font-size:0.82rem;margin-top:4px;">아래 그리드에서 빨간 "누락" 배지가 붙은 이미지입니다. 실제로 보이는 사진이면 무시해도 됩니다.</div>
+            </div>`;
+        const items = data.images.map((img, i) => {
+            const broken = !img.ok;
+            const badge = broken
+                ? `<span class="pa-img-badge" data-pa-badge="${i}" style="position:absolute;top:6px;right:6px;background:#EF4444;color:white;font-size:0.7rem;font-weight:800;padding:3px 9px;border-radius:99px;box-shadow:0 2px 6px rgba(0,0,0,0.25);">누락</span>`
+                : '';
+            return `<div style="position:relative;aspect-ratio:1/1;border-radius:8px;overflow:hidden;background:#F3F4F6;border:1px solid #E5E7EB;">
+                <img data-pa-img="${i}" src="${paEsc(img.src)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;display:block;">
+                ${badge}
+            </div>`;
+        }).join('');
+        inner += `<div style="margin-bottom:8px;color:#111827;font-size:0.98rem;font-weight:800;">🖼 본문 이미지 (${data.images.length}장)</div>
+        ${summaryHtml}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;margin-bottom:12px;">${items}</div>
+        <div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;padding:12px 14px;margin-bottom:22px;">
+            <div style="color:#92400E;font-weight:800;font-size:0.88rem;margin-bottom:4px;">🔍 누락 표시 해석법</div>
+            <div style="color:#78350F;font-size:0.82rem;line-height:1.65;">네이버 이미지 서버가 외부 접근을 막으면 멀쩡한 사진도 누락으로 잡힙니다. 본인 글에서 정상 표시되는 이미지면 무시하셔도 괜찮습니다. (네이버 지도 이미지는 자동 면제)</div>
+        </div>`;
+    }
+
+    // 5. 본문 미리보기 + 주요 단어
+    const bodyPreview = paEsc((data.bodyText || '').substring(0, 600)).replace(/\n/g, '<br>');
+    const kwChips = (data.keywords || []).map(k => `<span style="display:inline-block;background:#ECFEFF;color:#0891B2;padding:6px 12px;border-radius:99px;font-size:0.85rem;margin:3px;font-weight:600;border:1px solid #A5F3FC;">${paEsc(k.word)}<span style="color:#9CA3AF;font-weight:500;margin-left:4px;">(${k.count})</span></span>`).join('');
+    inner += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px;">
+        <div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+            <div style="color:#374151;font-size:0.88rem;font-weight:800;margin-bottom:10px;">📄 본문 미리보기</div>
+            <div style="background:#F9FAFB;border:1px solid #F3F4F6;border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;color:#374151;font-size:0.82rem;line-height:1.75;">${bodyPreview || '<span style="color:#9CA3AF;">본문 추출 실패</span>'}</div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E5E7EB;border-radius:14px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+            <div style="color:#374151;font-size:0.88rem;font-weight:800;margin-bottom:10px;">🔑 주요 단어</div>
+            <div style="max-height:200px;overflow-y:auto;">${kwChips || '<span style="color:#9CA3AF;font-size:0.85rem;">추출된 단어 없음</span>'}</div>
+        </div>
+    </div>`;
+
+    // 6. 본문 진단은 위 레이더+진행률에서 통합 처리됨 (제거)
+
+    // 7. 위험어 + 감점 내역 (매거진 2-col)
+    const fb = paMsgForbidden(data.forbidden || { hits: [], categories: [] });
+    const fbAccent = fb.ok ? '#10B981' : '#EF4444';
+    const fbStatus = fb.ok ? 'SAFE' : 'WARNING';
+    const hasBreakdown = aiFit.breakdown && aiFit.breakdown.length > 0;
+    const breakdownRows = hasBreakdown
+        ? aiFit.breakdown.map(b => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #E5E7EB;font-size:0.86rem;"><span style="color:#374151;">${paEsc(b.name)}</span><span style="color:#EF4444;font-weight:900;font-family:Georgia,serif;">${b.delta}</span></div>`).join('')
+        : '';
+    inner += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:36px;padding-top:28px;border-top:1px solid #E5E7EB;">
+        <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+                <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;">SAFETY · 위험어 점검</div>
+                <span style="font-size:0.62rem;font-weight:900;color:${fbAccent};letter-spacing:1.5px;padding:3px 9px;background:${fbAccent}15;border:1px solid ${fbAccent}40;border-radius:3px;">${fbStatus}</span>
+            </div>
+            <div style="color:#374151;font-size:0.88rem;line-height:1.7;">${fb.msg}</div>
+        </div>
+        ${hasBreakdown ? `<div>
+            <div style="font-size:0.62rem;letter-spacing:2.5px;color:#9CA3AF;font-weight:900;margin-bottom:12px;">SCORE BREAKDOWN · 감점 내역</div>
+            ${breakdownRows}
+            <div style="margin-top:10px;padding-top:10px;border-top:2px solid #0F172A;display:flex;justify-content:space-between;align-items:baseline;">
+                <span style="font-size:0.78rem;letter-spacing:1.5px;color:#9CA3AF;font-weight:900;">FINAL SCORE</span>
+                <span style="font-size:1.5rem;font-weight:900;color:#F59E0B;font-family:Georgia,serif;">${score}<span style="font-size:0.78rem;color:#9CA3AF;font-weight:700;"> / 100</span></span>
+            </div>
+        </div>` : ''}
+    </div>`;
+
+    return paDarkWrap(inner);
+}
+
+// 클라이언트 측 이미지 재검증: 서버가 "누락"이라고 했어도 브라우저에서 로드되면 정상 처리
+function paRevalidateImages(data) {
+    if (!data.images) return;
+    data.images.forEach((img, i) => {
+        if (img.ok) return; // 이미 정상
+        const imgEl = document.querySelector(`img[data-pa-img="${i}"]`);
+        const badgeEl = document.querySelector(`span[data-pa-badge="${i}"]`);
+        if (!imgEl || !badgeEl) return;
+        const probe = new Image();
+        probe.referrerPolicy = 'no-referrer';
+        probe.onload = () => {
+            if (probe.naturalWidth > 0) {
+                badgeEl.style.display = 'none';
+            }
+        };
+        probe.onerror = () => {};
+        probe.src = img.src;
+    });
+}
+
+function runPostingAnalysis() {
+    const urlInput = document.getElementById('postingUrl');
+    const resultEl = document.getElementById('postingResult');
+    const hintsEl = document.getElementById('paHints');
+    const raw = (urlInput.value || '').trim();
+
+    if (!raw) {
+        resultEl.innerHTML = paErrorBox('블로그 아이디 또는 글 주소를 입력해주세요.');
+        return;
+    }
+
+    if (hintsEl) hintsEl.style.display = 'none';
+
+    const type = paDetectInputType(raw);
+
+    if (type === 'blog') {
+        const blogId = paExtractBlogId(raw);
+        if (!blogId) {
+            resultEl.innerHTML = paErrorBox('블로그 아이디를 인식할 수 없습니다. 영문/숫자/언더바/하이픈으로만 구성된 아이디를 입력해주세요.');
+            return;
+        }
+        paShowBlogMode(blogId, resultEl);
+        return;
+    }
+
+    // 사용자가 직접 URL 입력 시: 블로그 컨텍스트 초기화 (백 버튼 안 보이게)
+    paBlogModeContext = null;
+    let url = raw;
+    if (!/^https?:\/\//.test(url)) url = 'https://' + url;
+    paShowSingleMode(url, resultEl);
+}
+
 
 function showToast(msg, type = 'success') {
     const t = document.getElementById('toast');
