@@ -752,7 +752,7 @@
       <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')">무료 이미지 생성기</button>
       <button class="nav-btn" data-section="image-prompts" onclick="showSection('image-prompts')">이미지 자동 생성기</button>
       <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')">블로그 글쓰기 프롬프트</button>
-      <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-68fdbd5d6a888191b5a31e95cef9f6e7-beulrogeu-daehaeng-jadong-geul-jagseonggi-v1-0-dapeojuneunnamja','_blank','noopener')">블로그 자동 글쓰기</button>
+      <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-6a20190fdbd08191be957219d2ebca6f-beulrogeu-daehaeng-geulsseugi-ceri-dapeonam-vl','_blank','noopener')">블로그 자동 글쓰기</button>
       <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-69bf61a7397c8191b4fb86da9e9a62eb-beulrogeu-daehaeng-obsyeon-ius-sotong-daesgeul-jagseong-dapeojuneunnamja','_blank','noopener')">블로그 이웃 댓글 자동 생성</button>
     </div>
     <div class="sidebar-section">
@@ -790,7 +790,7 @@
         <div class="card-title">🔍 키워드 입력</div>
         <div class="kw-input-wrap">
             <input type="text" id="keywordInput" placeholder="분석할 키워드를 입력하세요 (최대 10개)"
-                   onkeydown="if(event.key==='Enter') addKeyword()">
+                   onkeydown="if(event.key==='Enter' && !event.isComposing) addKeyword()">
             <button class="btn-add" onclick="addKeyword()">추가</button>
         </div>
         <div class="keyword-tags" id="keywordTags"></div>
@@ -949,7 +949,7 @@
                 <label style="display:block;font-size:0.82rem;color:var(--text-sub);margin-bottom:6px;font-weight:700;">검색할 키워드 (최대 10개)</label>
                 <div class="kw-input-wrap">
                     <input type="text" id="rankKeywordInput" placeholder="키워드를 입력하고 Enter 또는 추가"
-                           onkeydown="if(event.key==='Enter'){event.preventDefault();addRankKeyword();}">
+                           onkeydown="if(event.key==='Enter' && !event.isComposing){event.preventDefault();addRankKeyword();}">
                     <button class="btn-add" onclick="addRankKeyword()">추가</button>
                 </div>
                 <div class="keyword-tags" id="rankKeywordTags" style="margin-top:8px;"></div>
@@ -2650,14 +2650,44 @@ function baRenderBlogPage(data) {
     const isInf = !!inf.isInfluencer;
     const expSum = data.expSummary;
 
-    // 블로그 등급 — 노출률 기반
+    // 블로그 등급 — 노출률 + 일평균 방문자 + 최근 30일 글 빈도 종합 (네이버 인덱싱은 대부분 높음)
     let gradeLabel = '미진단', gradeColor = '#9CA3AF', gradeIcon = '👁';
     if (expSum) {
-        if (expSum.rate >= 90) { gradeLabel = '최상위 블로그'; gradeColor = '#F59E0B'; gradeIcon = '👑'; }
-        else if (expSum.rate >= 75) { gradeLabel = '건강한 블로그'; gradeColor = '#10B981'; gradeIcon = '💎'; }
-        else if (expSum.rate >= 50) { gradeLabel = '양호한 블로그'; gradeColor = '#0891B2'; gradeIcon = '🔵'; }
-        else if (expSum.rate >= 30) { gradeLabel = '보강 필요'; gradeColor = '#F97316'; gradeIcon = '🟠'; }
-        else { gradeLabel = '저품질 의심'; gradeColor = '#EF4444'; gradeIcon = '🚨'; }
+        const rate = expSum.rate || 0;
+        const avg = (s.avgDailyVisitor || 0);
+        const recent30 = (s.recent30Posts || 0);
+        const fan = (inf.fanCount || 0);
+        // 점수 합산 (0~100)
+        let score = 0;
+        // 노출률 (0~35) — 95% 이상이어야 만점
+        if (rate >= 95) score += 35;
+        else if (rate >= 85) score += 28;
+        else if (rate >= 70) score += 20;
+        else if (rate >= 50) score += 12;
+        else if (rate >= 30) score += 6;
+        // 일평균 방문자 (0~35)
+        if (avg >= 3000) score += 35;
+        else if (avg >= 1000) score += 28;
+        else if (avg >= 500) score += 20;
+        else if (avg >= 200) score += 14;
+        else if (avg >= 100) score += 9;
+        else if (avg >= 50) score += 5;
+        // 최근 30일 글 빈도 (0~20)
+        if (recent30 >= 20) score += 20;
+        else if (recent30 >= 10) score += 15;
+        else if (recent30 >= 5) score += 10;
+        else if (recent30 >= 3) score += 6;
+        else if (recent30 >= 1) score += 2;
+        // 인플루언서 보정 (0~10)
+        if (isInf && fan >= 10000) score += 10;
+        else if (isInf && fan >= 1000) score += 6;
+        else if (isInf) score += 3;
+        // 등급 매핑
+        if (score >= 85) { gradeLabel = '최상위 블로그'; gradeColor = '#F59E0B'; gradeIcon = '👑'; }
+        else if (score >= 65) { gradeLabel = '건강한 블로그'; gradeColor = '#10B981'; gradeIcon = '💎'; }
+        else if (score >= 40) { gradeLabel = '양호한 블로그'; gradeColor = '#0891B2'; gradeIcon = '🔵'; }
+        else if (score >= 20) { gradeLabel = '성장 중 블로그'; gradeColor = '#F97316'; gradeIcon = '🌱'; }
+        else { gradeLabel = '초기 블로그'; gradeColor = '#9CA3AF'; gradeIcon = '🐣'; }
     }
 
     let html = `<div style="background:linear-gradient(135deg,#FFFFFF 0%,#F8FAFC 100%);border:1px solid #E5E7EB;border-radius:18px;padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.04);position:relative;overflow:hidden;">
