@@ -138,15 +138,38 @@
             margin-top: 4px;
             text-transform: uppercase;
         }
-        .sidebar-section { margin-bottom: 18px; }
+        .sidebar-section {
+            margin-bottom: 14px;
+            border: 1.6px solid var(--acc-bd, #e5e8eb);
+            background: var(--acc-bg, #fff);
+            border-radius: 14px;
+            padding: 9px 8px 7px;
+        }
+        /* 섹션별 테두리·라벨 색상 구분 */
+        .ss-analysis { --acc:#2563eb; --acc-dk:#1a3a8a; --acc-bd:#bcd4f5; --acc-bg:#f5f9ff; --acc-bg2:#e7f0ff; }
+        .ss-image    { --acc:#db2777; --acc-dk:#9d174d; --acc-bd:#f6c2dd; --acc-bg:#fff5fa; --acc-bg2:#ffe4f1; }
+        .ss-writing  { --acc:#059669; --acc-dk:#065f46; --acc-bd:#b5e8d2; --acc-bg:#f3fcf8; --acc-bg2:#d8f5e9; }
+        .ss-agency   { --acc:#d97706; --acc-dk:#92400e; --acc-bd:#f5d9a8; --acc-bg:#fffbf2; --acc-bg2:#fdeccb; }
+        .ss-sales    { --acc:#6366f1; --acc-dk:#3730a3; --acc-bd:#cdd0f7; --acc-bg:#f7f7ff; --acc-bg2:#e7e7fd; }
+        .ss-info     { --acc:#64748b; --acc-dk:#334155; --acc-bd:#dde3ea; --acc-bg:#f8fafc; --acc-bg2:#eef2f6; }
         .sidebar-label {
             font-size: 0.7rem;
-            color: var(--text-light);
-            font-weight: 700;
-            padding: 6px 12px;
+            color: var(--acc, var(--text-light));
+            font-weight: 800;
+            padding: 4px 10px 6px;
             margin-bottom: 4px;
-            letter-spacing: 0.6px;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .sidebar-label::before {
+            content: '';
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--acc, #94a3b8);
+            flex-shrink: 0;
         }
         .nav-btn {
             display: flex;
@@ -166,12 +189,12 @@
             margin-bottom: 2px;
             transition: all 0.15s;
         }
-        .nav-btn:hover { background: #f5f6f8; color: var(--text); }
+        .nav-btn:hover { background: var(--acc-bg2, #f5f6f8); color: var(--acc-dk, var(--text)); }
         .nav-btn.active {
-            background: #eef2ff;
-            color: #1a3a8a;
+            background: var(--acc-bg2, #eef2ff);
+            color: var(--acc-dk, #1a3a8a);
             font-weight: 800;
-            box-shadow: inset 3px 0 0 #1a3a8a;
+            box-shadow: inset 3px 0 0 var(--acc, #1a3a8a);
         }
         .nav-btn .nav-icon { font-size: 1rem; flex-shrink: 0; }
         .main-content {
@@ -740,35 +763,35 @@
       @keyframes dalogFly{0%{transform:translateX(0);opacity:0;}8%{opacity:1;}70%{transform:translateX(110px);opacity:1;}82%{transform:translateX(135px);opacity:0;}100%{transform:translateX(0);opacity:0;}}
     </style>
 
-    <div class="sidebar-section">
+    <div class="sidebar-section ss-analysis">
       <div class="sidebar-label">분석 도구</div>
       <button class="nav-btn active" data-section="keyword" onclick="showSection('keyword')">키워드 경쟁도 분석</button>
       <button class="nav-btn" data-section="bulk-blog" onclick="showSection('bulk-blog')">블로그 분석</button>
       <button class="nav-btn" data-section="posting" onclick="showSection('posting')">포스팅 분석</button>
       <button class="nav-btn" data-section="rank-check" onclick="showSection('rank-check')">키워드 순위 확인</button>
     </div>
-    <div class="sidebar-section">
+    <div class="sidebar-section ss-image">
       <div class="sidebar-label">이미지 도구</div>
       <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')">무료 이미지 생성기</button>
       <button class="nav-btn" data-section="image-prompts" onclick="showSection('image-prompts')">이미지 자동 생성기</button>
     </div>
-    <div class="sidebar-section">
+    <div class="sidebar-section ss-writing">
       <div class="sidebar-label">글쓰기 도구</div>
       <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')">블로그 글쓰기 프롬프트</button>
       <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-6a20190fdbd08191be957219d2ebca6f-beulrogeu-daehaeng-geulsseugi-ceri-dapeonam-vl','_blank','noopener')">블로그 자동 글쓰기</button>
       <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-69bf61a7397c8191b4fb86da9e9a62eb-beulrogeu-daehaeng-obsyeon-ius-sotong-daesgeul-jagseong-dapeojuneunnamja','_blank','noopener')">블로그 이웃 댓글 자동 생성</button>
     </div>
-    <div class="sidebar-section">
+    <div class="sidebar-section ss-agency">
       <div class="sidebar-label">대행 도구</div>
       <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-6a20411b300c8191b5d13cf107070193-beulrogeu-daehaeng-seutori-bildeo-ceri-dapeonamvl','_blank','noopener')">블로그 대행 스토리 빌더</button>
     </div>
-    <div class="sidebar-section">
+    <div class="sidebar-section ss-sales">
       <div class="sidebar-label">영업 도구</div>
       <button class="nav-btn" data-section="proposal" onclick="showSection('proposal')">블로그 대행 제안서</button>
       <button class="nav-btn" data-section="contract" onclick="showSection('contract')">블로그 대행 계약서</button>
     </div>
 
-    <div class="sidebar-section">
+    <div class="sidebar-section ss-info">
       <div class="sidebar-label">정보</div>
       <button class="nav-btn" data-section="guide" onclick="showSection('guide')">사용 가이드</button>
       <button class="nav-btn" data-section="feedback" onclick="showSection('feedback')">피드백</button>
