@@ -198,6 +198,17 @@
             border-radius: 5px;
             flex-shrink: 0;
         }
+        .nav-hot {
+            margin-left: auto;
+            font-size: 0.58rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #fff;
+            background: #f97316;
+            padding: 1px 5px;
+            border-radius: 5px;
+            flex-shrink: 0;
+        }
         .main-content {
             flex: 1;
             min-width: 0;
@@ -766,19 +777,19 @@
 
     <div class="sidebar-section ss-analysis">
       <div class="sidebar-label">분석 도구</div>
-      <button class="nav-btn active" data-section="keyword" onclick="showSection('keyword')">키워드 경쟁도 분석</button>
+      <button class="nav-btn active" data-section="keyword" onclick="showSection('keyword')">키워드 경쟁도 분석<span class="nav-hot">인기</span></button>
       <button class="nav-btn" data-section="bulk-blog" onclick="showSection('bulk-blog')">블로그 분석</button>
       <button class="nav-btn" data-section="posting" onclick="showSection('posting')">포스팅 분석</button>
       <button class="nav-btn" data-section="rank-check" onclick="showSection('rank-check')">키워드 순위 확인</button>
     </div>
     <div class="sidebar-section ss-image">
       <div class="sidebar-label">이미지 도구</div>
-      <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')">무료 이미지 생성기</button>
+      <button class="nav-btn" data-section="image-gen" onclick="showSection('image-gen')">무료 이미지 생성기<span class="nav-hot">인기</span></button>
       <button class="nav-btn" data-section="image-prompts" onclick="showSection('image-prompts')">이미지 자동 생성기</button>
     </div>
     <div class="sidebar-section ss-writing">
       <div class="sidebar-label">글쓰기 도구</div>
-      <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')">블로그 글쓰기 프롬프트</button>
+      <button class="nav-btn" data-section="prompt-maker" onclick="showSection('prompt-maker')">블로그 글쓰기 프롬프트<span class="nav-hot">인기</span></button>
       <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-6a20190fdbd08191be957219d2ebca6f-beulrogeu-daehaeng-geulsseugi-ceri-dapeonam-vl','_blank','noopener')">블로그 자동 글쓰기</button>
       <button class="nav-btn" onclick="window.open('https://chatgpt.com/g/g-69bf61a7397c8191b4fb86da9e9a62eb-beulrogeu-daehaeng-obsyeon-ius-sotong-daesgeul-jagseong-dapeojuneunnamja','_blank','noopener')">블로그 이웃 댓글 자동 생성</button>
     </div>
@@ -789,7 +800,7 @@
     </div>
     <div class="sidebar-section ss-sales">
       <div class="sidebar-label">영업 도구</div>
-      <button class="nav-btn" data-section="proposal" onclick="showSection('proposal')">블로그 대행 제안서</button>
+      <button class="nav-btn" data-section="proposal" onclick="showSection('proposal')">블로그 대행 제안서<span class="nav-hot">인기</span></button>
       <button class="nav-btn" data-section="contract" onclick="showSection('contract')">블로그 대행 계약서</button>
     </div>
 
