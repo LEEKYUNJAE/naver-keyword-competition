@@ -2404,21 +2404,48 @@ ${styleDesc}
 매번 새로운 구도와 새로운 인물로 만들어주세요.`;
 }
 
+// 마커·소제목이 전혀 없을 때: 문단(빈 줄) 기준 → 없으면 문장 묶음으로 자동 분할
+function ipFallbackSections(text) {
+    let blocks = text.split(/\n\s*\n+/).map(b => b.trim()).filter(Boolean);
+    if (blocks.length < 2) {
+        const sentences = text.replace(/\s*\n+\s*/g, ' ')
+            .split(/(?<=[.!?。…])\s+/)
+            .map(s => s.trim()).filter(s => s.length > 0);
+        if (sentences.length >= 2) {
+            const target = Math.min(6, Math.max(2, Math.round(sentences.length / 3)));
+            const per = Math.ceil(sentences.length / target);
+            blocks = [];
+            for (let i = 0; i < sentences.length; i += per) {
+                blocks.push(sentences.slice(i, i + per).join(' '));
+            }
+        }
+    }
+    return blocks.map((b, i) => {
+        const firstLine = (b.split('\n')[0] || '').trim();
+        let title = firstLine.length <= 30 ? firstLine : firstLine.substring(0, 24).trim() + '…';
+        if (!title) title = `섹션 ${i + 1}`;
+        return { number: i + 1, marker: `${i + 1}.`, title, content: b };
+    });
+}
+
 function generateImagePrompts() {
     const text = document.getElementById('ipBlogText').value.trim();
     if (!text) { showToast('블로그 글을 붙여넣으세요.', 'error'); return; }
 
     const industry = document.getElementById('ipIndustry').value.trim();
     const style = document.getElementById('ipStyle').value;
-    const sections = parseSubheadings(text);
+    let sections = parseSubheadings(text);
+    let autoSplit = false;
+    // 소제목 마커가 하나도 안 잡히면 → 문단/문장 기준 자동 분할 (아무것도 안 붙어 있어도 인식)
+    if (sections.length === 0) { sections = ipFallbackSections(text); autoSplit = true; }
 
     const resultEl = document.getElementById('ipResult');
     if (sections.length === 0) {
-        resultEl.innerHTML = `<p style="padding:14px;background:#fde8e8;border-radius:8px;color:#c0392b;font-size:0.85rem;">소제목을 찾지 못했습니다. <strong>## 제목</strong>, <strong>**제목**</strong>, 또는 <strong>1️⃣ 제목</strong> 형태로 작성된 소제목이 있어야 합니다.</p>`;
+        resultEl.innerHTML = `<p style="padding:14px;background:#fde8e8;border-radius:8px;color:#c0392b;font-size:0.85rem;">글이 너무 짧아 구간을 나눌 수 없습니다. 조금 더 긴 글을 붙여넣어 주세요.</p>`;
         return;
     }
 
-    let html = `<div style="margin-bottom:14px;font-size:0.88rem;color:var(--text-sub);">📌 <strong>${sections.length}개</strong>의 소제목을 인식했습니다. 각 카드의 버튼을 누르면 ChatGPT/Gemini로 자동 전송됩니다.</div>`;
+    let html = `<div style="margin-bottom:14px;font-size:0.88rem;color:var(--text-sub);${autoSplit ? 'background:#fff7ed;padding:10px 12px;border-radius:8px;border:1px solid #fed7aa;' : ''}">📌 <strong>${sections.length}개</strong> ${autoSplit ? '구간으로 <strong>자동 분할</strong>했습니다. (소제목 표시가 없어 문단/문장 기준으로 나눴어요)' : '소제목을 인식했습니다.'} 각 카드의 버튼을 누르면 ChatGPT/Gemini로 자동 전송됩니다.</div>`;
 
     sections.forEach((sec, idx) => {
         const prompt = buildImagePromptFor(sec, industry, style);
@@ -3335,12 +3362,22 @@ function paRenderResult(data) {
         else if (daysAgo > 180) recencyScore = 50;
         else if (daysAgo > 30) recencyScore = 80;
     }
+    // 안전성: 해시태그 · 외부링크 · 금지어
+    const fbHits = (data.forbidden && data.forbidden.hits) ? data.forbidden.hits.length : 0;
+    const extLinkCnt = stats.externalLinkCount || 0;
+    const hashtagCnt = ((data.bodyText || '').match(/#[^\s#]+/g) || []).length;
+    let safetyScore = 100;
+    safetyScore -= fbHits * 25;                       // 금지어: 강한 감점
+    safetyScore -= Math.max(0, extLinkCnt - 2) * 12;  // 외부링크 2개 초과부터 감점
+    safetyScore -= Math.max(0, hashtagCnt - 10) * 4;  // 해시태그 10개 초과부터 감점
+    safetyScore = Math.max(0, Math.min(100, safetyScore));
     const radarMetrics = [
         { label: '글자수', value: textScore },
         { label: '이미지', value: imgScore },
         { label: '주제어', value: kwScore },
         { label: '미디어 비율', value: fitScore },
         { label: '최신성', value: recencyScore },
+        { label: '안전성', value: safetyScore },
     ];
     const statusFor = v => v >= 80 ? { s: 'EXCELLENT', c: '#10B981' } : v >= 60 ? { s: 'GOOD', c: '#0891B2' } : v >= 40 ? { s: 'CHECK', c: '#F59E0B' } : { s: 'BOOST', c: '#EF4444' };
 
@@ -3361,10 +3398,12 @@ function paRenderResult(data) {
                 const status2 = statusFor(kwScore);
                 const status3 = statusFor(fitScore);
                 const status4 = statusFor(recencyScore);
+                const status5 = statusFor(safetyScore);
                 return paProgressBar('글자수·이미지 균형', Math.round((textScore + imgScore) / 2), status1.s, status1.c)
                     + paProgressBar('주제어 다양성', Math.round(kwScore), status2.s, status2.c)
                     + paProgressBar('텍스트·미디어 비율', Math.round(fitScore), status3.s, status3.c)
-                    + paProgressBar('글 최신성', Math.round(recencyScore), status4.s, status4.c);
+                    + paProgressBar('글 최신성', Math.round(recencyScore), status4.s, status4.c)
+                    + paProgressBar('안전성 (해시태그·외부링크·금지어)', Math.round(safetyScore), status5.s, status5.c);
             })()}
             <div style="margin-top:18px;padding:16px 18px;background:#FFFBEB;border-left:3px solid #F59E0B;">
                 <div style="font-size:0.62rem;letter-spacing:2.5px;color:#92400E;font-weight:900;margin-bottom:10px;">RECOMMENDATIONS · 코칭</div>
