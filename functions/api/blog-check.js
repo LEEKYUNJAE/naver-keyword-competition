@@ -203,37 +203,46 @@ export async function onRequestPost({ request, env }) {
             const errors = [];
             for (const post of posts) {
                 const targetNorm = normalizePostUrl(post.link);
-                // 제목에서 쌍따옴표 제거 후 정확 구문 검색 쿼리 생성
+                // 제목에서 쌍따옴표 제거
                 const safeTitle = post.title.replace(/["']/g, '').trim();
-                const exactQuery = `"${safeTitle}"`;
+                // 특수문자(괄호·쉼표·대괄호 등)를 공백으로 치환한 "완화 쿼리" — 정확구문 실패 대비
+                const looseTitle = safeTitle.replace(/[()[\]{}<>,.?!~·|/\\:;「」『』…]+/g, ' ').replace(/\s+/g, ' ').trim();
+                // 검색 시도 순서: ① 정확구문 → ② 따옴표 없는 원제목 → ③ 특수문자 제거 제목
+                //   ①은 특수문자·띄어쓰기 차이에 취약 → 실검색엔 1등인데 놓치는 오탐 방지용 2·3단계
+                const queryPlan = [`"${safeTitle}"`, safeTitle];
+                if (looseTitle && looseTitle !== safeTitle) queryPlan.push(looseTitle);
                 try {
-                    const data = await searchBlog(exactQuery, clientId, clientSecret, 100, 1);
-                    const items = data.items || [];
                     let foundRank = -1;
-                    // URL 매칭 (정확 구문 검색이라 동일 블로그·동일 제목 글이 거의 무조건 상위)
-                    for (let i = 0; i < items.length; i++) {
-                        if (normalizePostUrl(items[i].link) === targetNorm) {
-                            foundRank = i + 1;
-                            break;
-                        }
-                    }
-                    // fallback: 같은 블로그 ID 매칭 (URL 형식 변형 대비)
-                    if (foundRank === -1) {
+                    let usedQuery = queryPlan[0];
+                    let lastData = { total: 0, items: [] };
+                    for (const q of queryPlan) {
+                        const data = await searchBlog(q, clientId, clientSecret, 100, 1);
+                        const items = data.items || [];
+                        lastData = data;
+                        usedQuery = q;
+                        // URL 정확 매칭 우선
                         for (let i = 0; i < items.length; i++) {
-                            if (extractBlogIdFromLink(items[i].link) === id) {
-                                foundRank = i + 1;
-                                break;
+                            if (normalizePostUrl(items[i].link) === targetNorm) { foundRank = i + 1; break; }
+                        }
+                        // fallback: 같은 블로그 ID 매칭 (URL 형식 변형 대비)
+                        if (foundRank === -1) {
+                            for (let i = 0; i < items.length; i++) {
+                                if (extractBlogIdFromLink(items[i].link) === id) { foundRank = i + 1; break; }
                             }
                         }
+                        if (foundRank > 0) break; // 찾았으면 다음 쿼리는 시도 안 함
+                        await new Promise(r => setTimeout(r, 100));
                     }
+                    const items = lastData.items || [];
                     results.push({
                         title: post.title,
                         link: post.link,
                         rank: foundRank,
-                        totalResults: data.total || 0,
+                        totalResults: lastData.total || 0,
+                        matchedQuery: foundRank > 0 ? usedQuery : undefined,
                         status: foundRank > 0 ? 'exposed' : 'missing',
                         debug: foundRank === -1 ? {
-                            query: exactQuery,
+                            triedQueries: queryPlan,
                             rssLink: post.link,
                             rssNorm: targetNorm,
                             apiTop3: items.slice(0, 3).map(it => ({

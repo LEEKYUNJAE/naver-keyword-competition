@@ -252,30 +252,41 @@ async function checkPostExposure(blogId, post, clientId, clientSecret) {
     try {
         const safeTitle = post.title.replace(/["']/g, '').trim();
         if (!safeTitle) return { exposed: false, reason: '제목 없음' };
-        const query = `"${safeTitle}"`;
-        const url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(query)}&display=30&sort=sim`;
-        const res = await fetch(url, {
-            headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
-            signal: AbortSignal.timeout(5000),
-        });
-        if (!res.ok) return { exposed: null, totalResults: 0 };
-        const data = await res.json();
-        const items = data.items || [];
-        for (let i = 0; i < items.length; i++) {
-            const link = items[i].link || '';
-            try {
-                const u = new URL(link);
-                const seg = u.pathname.split('/').filter(Boolean);
-                const itemLogNo = u.searchParams.get('logNo') || (seg[1] && /^\d+$/.test(seg[1]) ? seg[1] : '');
-                const itemBlogId = (seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn')
-                    ? (u.searchParams.get('blogId') || '').toLowerCase()
-                    : (seg[0] || '').toLowerCase();
-                if (itemLogNo === post.logNo && itemBlogId === blogId.toLowerCase()) {
-                    return { exposed: true, rank: i + 1, totalResults: data.total || 0 };
-                }
-            } catch (e) {}
+        // 특수문자(괄호·쉼표 등)를 공백으로 치환한 완화 쿼리 — 정확구문 실패 대비
+        const looseTitle = safeTitle.replace(/[()[\]{}<>,.?!~·|/\\:;「」『』…]+/g, ' ').replace(/\s+/g, ' ').trim();
+        // ① 정확구문 → ② 따옴표 없는 원제목 → ③ 특수문자 제거 제목 순차 시도(실검색엔 뜨는데 놓치는 오탐 방지)
+        const queryPlan = [`"${safeTitle}"`, safeTitle];
+        if (looseTitle && looseTitle !== safeTitle) queryPlan.push(looseTitle);
+        let lastTotal = 0;
+        let sawResponse = false;
+        for (const query of queryPlan) {
+            const url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(query)}&display=100&sort=sim`;
+            const res = await fetch(url, {
+                headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
+                signal: AbortSignal.timeout(5000),
+            });
+            if (!res.ok) continue;
+            sawResponse = true;
+            const data = await res.json();
+            const items = data.items || [];
+            lastTotal = data.total || 0;
+            for (let i = 0; i < items.length; i++) {
+                const link = items[i].link || '';
+                try {
+                    const u = new URL(link);
+                    const seg = u.pathname.split('/').filter(Boolean);
+                    const itemLogNo = u.searchParams.get('logNo') || (seg[1] && /^\d+$/.test(seg[1]) ? seg[1] : '');
+                    const itemBlogId = (seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn')
+                        ? (u.searchParams.get('blogId') || '').toLowerCase()
+                        : (seg[0] || '').toLowerCase();
+                    if (itemLogNo === post.logNo && itemBlogId === blogId.toLowerCase()) {
+                        return { exposed: true, rank: i + 1, totalResults: data.total || 0 };
+                    }
+                } catch (e) {}
+            }
         }
-        return { exposed: false, totalResults: data.total || 0 };
+        if (!sawResponse) return { exposed: null, totalResults: lastTotal };
+        return { exposed: false, totalResults: lastTotal };
     } catch (e) {
         return { exposed: null, totalResults: 0 };
     }

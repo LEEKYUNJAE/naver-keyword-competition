@@ -427,40 +427,49 @@ function isInternalNaverLink(href) {
 async function checkExposed(title, blogId, logNo, clientId, clientSecret) {
     const safe = title.replace(/["']/g, '').trim();
     if (!safe) return { exposed: false, reason: '제목 없음' };
-    const query = `"${safe}"`;
-    const url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(query)}&display=100&sort=sim`;
-    const res = await fetch(url, {
-        headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
-    });
-    if (!res.ok) return { exposed: null, reason: `검색API ${res.status}` };
-    const data = await res.json();
-    const items = data.items || [];
+    // 특수문자(괄호·쉼표 등)를 공백으로 치환한 완화 쿼리 — 정확구문 실패 대비
+    const loose = safe.replace(/[()[\]{}<>,.?!~·|/\\:;「」『』…]+/g, ' ').replace(/\s+/g, ' ').trim();
+    // ① 정확구문 → ② 따옴표 없는 원제목 → ③ 특수문자 제거 제목 순차 시도(실검색엔 뜨는데 놓치는 오탐 방지)
+    const queryPlan = [`"${safe}"`, safe];
+    if (loose && loose !== safe) queryPlan.push(loose);
 
-    const targetMatch = `${blogId}/${logNo}`;
-    for (let i = 0; i < items.length; i++) {
-        const link = items[i].link || '';
-        // logNo 추출
-        let itemLogNo = '';
-        try {
-            const u = new URL(link);
-            const seg = u.pathname.split('/').filter(Boolean);
-            itemLogNo = u.searchParams.get('logNo') || (seg[1] && /^\d+$/.test(seg[1]) ? seg[1] : '');
-        } catch (e) {}
-        const itemBlogId = (() => {
+    let lastTotal = 0;
+    let apiError = null;
+    for (const query of queryPlan) {
+        const url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(query)}&display=100&sort=sim`;
+        const res = await fetch(url, {
+            headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
+        });
+        if (!res.ok) { apiError = `검색API ${res.status}`; continue; }
+        const data = await res.json();
+        const items = data.items || [];
+        lastTotal = data.total || 0;
+        for (let i = 0; i < items.length; i++) {
+            const link = items[i].link || '';
+            // logNo 추출
+            let itemLogNo = '';
             try {
                 const u = new URL(link);
                 const seg = u.pathname.split('/').filter(Boolean);
-                if (seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn') {
-                    return (u.searchParams.get('blogId') || '').toLowerCase();
-                }
-                return (seg[0] || '').toLowerCase();
-            } catch (e) { return ''; }
-        })();
-        if (itemLogNo === logNo && itemBlogId === blogId) {
-            return { exposed: true, rank: i + 1 };
+                itemLogNo = u.searchParams.get('logNo') || (seg[1] && /^\d+$/.test(seg[1]) ? seg[1] : '');
+            } catch (e) {}
+            const itemBlogId = (() => {
+                try {
+                    const u = new URL(link);
+                    const seg = u.pathname.split('/').filter(Boolean);
+                    if (seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn') {
+                        return (u.searchParams.get('blogId') || '').toLowerCase();
+                    }
+                    return (seg[0] || '').toLowerCase();
+                } catch (e) { return ''; }
+            })();
+            if (itemLogNo === logNo && itemBlogId === blogId) {
+                return { exposed: true, rank: i + 1 };
+            }
         }
     }
-    return { exposed: false, totalResults: data.total || 0 };
+    if (apiError && lastTotal === 0) return { exposed: null, reason: apiError };
+    return { exposed: false, totalResults: lastTotal };
 }
 
 export async function onRequestOptions() {
