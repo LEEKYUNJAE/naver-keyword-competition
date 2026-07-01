@@ -427,11 +427,8 @@ function isInternalNaverLink(href) {
 async function checkExposed(title, blogId, logNo, clientId, clientSecret) {
     const safe = title.replace(/["']/g, '').trim();
     if (!safe) return { exposed: false, reason: '제목 없음' };
-    // 특수문자(괄호·쉼표 등)를 공백으로 치환한 완화 쿼리 — 정확구문 실패 대비
-    const loose = safe.replace(/[()[\]{}<>,.?!~·|/\\:;「」『』…]+/g, ' ').replace(/\s+/g, ' ').trim();
-    // ① 정확구문 → ② 따옴표 없는 원제목 → ③ 특수문자 제거 제목 순차 시도(실검색엔 뜨는데 놓치는 오탐 방지)
+    // ① 정확구문 → ② 따옴표 없는 원제목(특수문자 제목 오탐 방지). 2단계까지만.
     const queryPlan = [`"${safe}"`, safe];
-    if (loose && loose !== safe) queryPlan.push(loose);
 
     let lastTotal = 0;
     let apiError = null;

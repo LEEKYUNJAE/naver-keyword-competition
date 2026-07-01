@@ -205,12 +205,9 @@ export async function onRequestPost({ request, env }) {
                 const targetNorm = normalizePostUrl(post.link);
                 // 제목에서 쌍따옴표 제거
                 const safeTitle = post.title.replace(/["']/g, '').trim();
-                // 특수문자(괄호·쉼표·대괄호 등)를 공백으로 치환한 "완화 쿼리" — 정확구문 실패 대비
-                const looseTitle = safeTitle.replace(/[()[\]{}<>,.?!~·|/\\:;「」『』…]+/g, ' ').replace(/\s+/g, ' ').trim();
-                // 검색 시도 순서: ① 정확구문 → ② 따옴표 없는 원제목 → ③ 특수문자 제거 제목
-                //   ①은 특수문자·띄어쓰기 차이에 취약 → 실검색엔 1등인데 놓치는 오탐 방지용 2·3단계
+                // 검색 시도 순서: ① 정확구문 → ② 따옴표 없는 원제목(특수문자 제목 오탐 방지)
+                //   무료플랜 CPU/호출 한도 보호 위해 2단계까지만. 각 글은 ①에서 못 찾을 때만 ②로 넘어감.
                 const queryPlan = [`"${safeTitle}"`, safeTitle];
-                if (looseTitle && looseTitle !== safeTitle) queryPlan.push(looseTitle);
                 try {
                     let foundRank = -1;
                     let usedQuery = queryPlan[0];

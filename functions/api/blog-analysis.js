@@ -247,46 +247,36 @@ async function checkInfluencer(blogId) {
     } catch (e) { return { isInfluencer: false }; }
 }
 
-// 글 제목 정확 검색 노출 확인 (한 글 = 1 API 호출)
-async function checkPostExposure(blogId, post, clientId, clientSecret) {
+// 글 제목 검색 노출 확인 (useLoose=false: 정확구문 / true: 따옴표 없는 완화 검색)
+async function checkPostExposure(blogId, post, clientId, clientSecret, useLoose) {
     try {
         const safeTitle = post.title.replace(/["']/g, '').trim();
         if (!safeTitle) return { exposed: false, reason: '제목 없음' };
-        // 특수문자(괄호·쉼표 등)를 공백으로 치환한 완화 쿼리 — 정확구문 실패 대비
-        const looseTitle = safeTitle.replace(/[()[\]{}<>,.?!~·|/\\:;「」『』…]+/g, ' ').replace(/\s+/g, ' ').trim();
-        // ① 정확구문 → ② 따옴표 없는 원제목 → ③ 특수문자 제거 제목 순차 시도(실검색엔 뜨는데 놓치는 오탐 방지)
-        const queryPlan = [`"${safeTitle}"`, safeTitle];
-        if (looseTitle && looseTitle !== safeTitle) queryPlan.push(looseTitle);
-        let lastTotal = 0;
-        let sawResponse = false;
-        for (const query of queryPlan) {
-            const url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(query)}&display=100&sort=sim`;
-            const res = await fetch(url, {
-                headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
-                signal: AbortSignal.timeout(5000),
-            });
-            if (!res.ok) continue;
-            sawResponse = true;
-            const data = await res.json();
-            const items = data.items || [];
-            lastTotal = data.total || 0;
-            for (let i = 0; i < items.length; i++) {
-                const link = items[i].link || '';
-                try {
-                    const u = new URL(link);
-                    const seg = u.pathname.split('/').filter(Boolean);
-                    const itemLogNo = u.searchParams.get('logNo') || (seg[1] && /^\d+$/.test(seg[1]) ? seg[1] : '');
-                    const itemBlogId = (seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn')
-                        ? (u.searchParams.get('blogId') || '').toLowerCase()
-                        : (seg[0] || '').toLowerCase();
-                    if (itemLogNo === post.logNo && itemBlogId === blogId.toLowerCase()) {
-                        return { exposed: true, rank: i + 1, totalResults: data.total || 0 };
-                    }
-                } catch (e) {}
-            }
+        // useLoose면 따옴표 없이 검색 → 괄호·쉼표 등 특수문자 제목의 정확구문 오탐 방지
+        const query = useLoose ? safeTitle : `"${safeTitle}"`;
+        const url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(query)}&display=30&sort=sim`;
+        const res = await fetch(url, {
+            headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
+            signal: AbortSignal.timeout(5000),
+        });
+        if (!res.ok) return { exposed: null, totalResults: 0 };
+        const data = await res.json();
+        const items = data.items || [];
+        for (let i = 0; i < items.length; i++) {
+            const link = items[i].link || '';
+            try {
+                const u = new URL(link);
+                const seg = u.pathname.split('/').filter(Boolean);
+                const itemLogNo = u.searchParams.get('logNo') || (seg[1] && /^\d+$/.test(seg[1]) ? seg[1] : '');
+                const itemBlogId = (seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn')
+                    ? (u.searchParams.get('blogId') || '').toLowerCase()
+                    : (seg[0] || '').toLowerCase();
+                if (itemLogNo === post.logNo && itemBlogId === blogId.toLowerCase()) {
+                    return { exposed: true, rank: i + 1, totalResults: data.total || 0 };
+                }
+            } catch (e) {}
         }
-        if (!sawResponse) return { exposed: null, totalResults: lastTotal };
-        return { exposed: false, totalResults: lastTotal };
+        return { exposed: false, totalResults: data.total || 0 };
     } catch (e) {
         return { exposed: null, totalResults: 0 };
     }
@@ -397,7 +387,8 @@ export async function onRequestPost({ request, env }) {
             return jsonResponse({ error: blogData._error }, 404);
         }
 
-        // 노출 진단 (3개씩 청크, 청크 사이 350ms 지연, 재시도 1회 → rate limit 회피)
+        // 노출 진단 — 1차: 정확구문(3개씩 청크). 무료플랜 서브리퀘스트/CPU 한도 보호 위해
+        // 완화(따옴표 없는) 재검색은 2차에서 '누락' 글에만 제한적으로 수행.
         let exposures = [];
         if (clientId && clientSecret && recentPosts.length > 0) {
             const targets = recentPosts.slice(0, 20);
@@ -405,18 +396,29 @@ export async function onRequestPost({ request, env }) {
             for (let i = 0; i < targets.length; i += CHUNK_SIZE) {
                 const chunk = targets.slice(i, i + CHUNK_SIZE);
                 const results = await Promise.all(
-                    chunk.map(p => checkPostExposure(blogId, p, clientId, clientSecret))
+                    chunk.map(p => checkPostExposure(blogId, p, clientId, clientSecret, false))
                 );
-                // 실패(null)는 한 번 더 시도
+                // API 실패(null)는 정확구문으로 한 번 더 시도
                 for (let j = 0; j < results.length; j++) {
                     if (results[j] && results[j].exposed === null) {
                         await new Promise(r => setTimeout(r, 200));
-                        results[j] = await checkPostExposure(blogId, chunk[j], clientId, clientSecret);
+                        results[j] = await checkPostExposure(blogId, chunk[j], clientId, clientSecret, false);
                     }
                 }
                 exposures.push(...results);
                 if (i + CHUNK_SIZE < targets.length) {
                     await new Promise(r => setTimeout(r, 350));
+                }
+            }
+            // 2차: 1차에서 '누락'으로 나온 글만 완화 검색으로 재확인(특수문자 제목 오탐 방지).
+            //      호출 폭증 방지 위해 최대 12개까지만.
+            let fbBudget = 12;
+            for (let i = 0; i < targets.length && fbBudget > 0; i++) {
+                if (exposures[i] && exposures[i].exposed === false) {
+                    fbBudget--;
+                    const retry = await checkPostExposure(blogId, targets[i], clientId, clientSecret, true);
+                    if (retry && retry.exposed === true) exposures[i] = retry;
+                    await new Promise(r => setTimeout(r, 150));
                 }
             }
         }
