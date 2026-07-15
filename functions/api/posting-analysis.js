@@ -297,21 +297,152 @@ function analyzeContent(meta, body, kw) {
     return analysis;
 }
 
-// AI-Fit 등급 산정 (100점 만점)
-function calculateAIFit(meta, body, kw, contentAnalysis, forbiddenResult, missingImages) {
+// 광고성 / 어뷰징 / 권위 인용 패턴
+const AD_WORDS = ['최저가', '최저 가격', '특가', '한정 수량', '마감 임박', '품질보증', '품질 보증', '100% 보장', '확실', '단언', '필수', '무조건', 'NO.1', 'No.1'];
+const AUTHORITY_PATTERN = /(?:공식 ?홈페이지|공식 ?사이트|보건복지부|식약처|국가기관|논문|학회|연구|통계청|기획재정부|국세청)/g;
+const CONTACT_PATTERN = /(?:01[016789][-\s]?\d{3,4}[-\s]?\d{4})|(?:카카오톡 ?(?:아이디|ID)|카톡 ?(?:아이디|ID))/g;
+const HASHTAG_PATTERN = /(?:^|\s|\n)#[가-힣a-zA-Z0-9_]{1,30}/g;
+const EMOJI_PATTERN = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F2FF}]/gu;
+
+// 콘텐츠 품질 지표 종합 분석
+function analyzeQualityIndicators(title, body, bodyHtml) {
+    const text = body.text || '';
+    const ind = {};
+
+    // 제목 길이
+    ind.titleLength = (title || '').length;
+
+    // 소제목 개수 (h1-h6 + 네이버 SE2 소제목 div)
+    const headingCount = ((bodyHtml || '').match(/<h[1-6][^>]*>/gi) || []).length;
+    const seHeadingCount = ((bodyHtml || '').match(/class=["'][^"']*se-section-text se-section-text--title|se-fs-fs26|se-fs-fs28/gi) || []).length;
+    ind.subheadingCount = headingCount + seHeadingCount;
+
+    // 문단 개수
+    const pCount = ((bodyHtml || '').match(/<p[^>]*>/gi) || []).length;
+    const divParaCount = ((bodyHtml || '').match(/<div[^>]*class=[^>]*se-text-paragraph/gi) || []).length;
+    const textParaCount = text.split(/\n\s*\n/).filter(p => p.trim()).length;
+    ind.paragraphCount = Math.max(pCount, divParaCount, textParaCount);
+
+    // 문단 분리 (텍스트 기준)
+    const paragraphs = text.split(/\n+/).map(p => p.trim()).filter(p => p.length > 0);
+    ind.firstParaLen = paragraphs[0] ? paragraphs[0].length : 0;
+    ind.lastParaLen = paragraphs[paragraphs.length-1] ? paragraphs[paragraphs.length-1].length : 0;
+    ind.paragraphsForCheck = paragraphs;
+
+    // 제목 키워드 본문 정확 반복
+    if (title && title.length >= 5) {
+        const escTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escTitle, 'g');
+        ind.titleRepeatCount = (text.match(regex) || []).length;
+    } else {
+        ind.titleRepeatCount = 0;
+    }
+
+    // 본문 해시태그 (글 끝 모음 영역의 태그는 제외 — 마지막 200자에서는 무시)
+    const mainText = text.length > 200 ? text.substring(0, text.length - 200) : text;
+    ind.hashtagsInBody = (mainText.match(HASHTAG_PATTERN) || []).length;
+
+    // 반복 문장 검출
+    const sentences = text.split(/[.!?。]\s+/).map(s => s.trim()).filter(s => s.length > 15);
+    const sentMap = {};
+    let dupCount = 0;
+    for (const s of sentences) {
+        sentMap[s] = (sentMap[s] || 0) + 1;
+        if (sentMap[s] === 2) dupCount++;
+    }
+    ind.duplicateSentences = dupCount;
+
+    // 광고성 문구
+    ind.adWordsHits = AD_WORDS.reduce((acc, w) => acc + (text.includes(w) ? 1 : 0), 0);
+
+    // 연락처 노출
+    const contactMatches = text.match(CONTACT_PATTERN);
+    ind.hasContact = !!(contactMatches && contactMatches.length > 0);
+
+    // 이모지 카운트
+    ind.emojiCount = (text.match(EMOJI_PATTERN) || []).length;
+
+    // 이모지 시작 문단 패턴
+    let emojiStartCount = 0;
+    for (const p of paragraphs) {
+        const firstChar = p[0] || '';
+        if (firstChar && EMOJI_PATTERN.test(firstChar)) emojiStartCount++;
+        EMOJI_PATTERN.lastIndex = 0;
+    }
+    ind.allParasStartWithEmoji = paragraphs.length >= 3 && emojiStartCount >= paragraphs.length * 0.8;
+
+    // 숫자/통계 인용
+    const numericPattern = /\d+(?:\.\d+)?\s*(?:%|원|점|분|시간|km|kg|개|회|위|명|년|월|일|호|등)|평점\s*\d|약\s*\d+/g;
+    ind.numericMentions = (text.match(numericPattern) || []).length;
+
+    // 외부 신뢰 인용
+    ind.authorityMentions = (text.match(AUTHORITY_PATTERN) || []).length;
+
+    // 마무리 정리 문단 (결론/요약 키워드 포함 여부)
+    const conclusionPattern = /(?:정리|마무리|결론|요약|총평|마지막으로|이상으로|이렇게|지금까지)/;
+    const lastPara = paragraphs[paragraphs.length-1] || '';
+    ind.hasConclusion = conclusionPattern.test(lastPara) || paragraphs.slice(-2).some(p => conclusionPattern.test(p));
+
+    // [네이버 D.I.A.+ ①] 제목-본문 일치도 (클릭베이트 체크)
+    if (title) {
+        const stopWords = new Set(['그리고','하지만','그래서','입니다','있는','같은','대한','이번','오늘','정말','진짜','완전','너무']);
+        const titleWords = (title.match(/[가-힣a-zA-Z0-9]{2,}/g) || []).filter(w => !stopWords.has(w));
+        const matched = titleWords.filter(w => text.includes(w)).length;
+        ind.titleWordMatchRatio = titleWords.length > 0 ? matched / titleWords.length : 1;
+        ind.titleWordsTotal = titleWords.length;
+        ind.titleWordsMatched = matched;
+    } else {
+        ind.titleWordMatchRatio = 1; ind.titleWordsTotal = 0; ind.titleWordsMatched = 0;
+    }
+
+    // [네이버 D.I.A.+ ②] 첫 문단 훅 (도입부에 결론/숫자/소개 단서)
+    const firstPara = paragraphs[0] || '';
+    const hookPattern = /(?:오늘은|이번 ?글|이 ?글에서|결론부터|먼저|소개합니다|알려드립니다|정리했|준비했|살펴보|다뤄|핵심은)/;
+    ind.hasOpeningHook = firstPara.length >= 50 && (hookPattern.test(firstPara) || /\d/.test(firstPara));
+
+    // [네이버 ③] 네이티브(네이버 직접 업로드) 이미지 비율
+    const nativePattern = /(?:pstatic\.net|naver\.net|blogfiles|postfiles)/i;
+    const totalImg = (body.images || []).length;
+    const nativeImg = (body.images || []).filter(s => nativePattern.test(s)).length;
+    ind.nativeImageRatio = totalImg > 0 ? nativeImg / totalImg : 1;
+    ind.totalImageCount = totalImg;
+    ind.nativeImageCount = nativeImg;
+
+    // [네이버 ④] 멀티미디어 균형 점수 (글자수 대비 이미지 배치)
+    // 이상적: 200~400자당 이미지 1장
+    if (totalImg > 0 && text.length > 0) {
+        const charsPerImg = text.length / totalImg;
+        ind.mediaBalance = (charsPerImg >= 150 && charsPerImg <= 500) ? 'good' :
+                           (charsPerImg < 80 || charsPerImg > 800) ? 'bad' : 'fair';
+        ind.charsPerImage = Math.round(charsPerImg);
+    } else {
+        ind.mediaBalance = 'na'; ind.charsPerImage = 0;
+    }
+
+    return ind;
+}
+
+// 글 지수 등급 산정 (100점 만점, 22가지 지표 종합)
+function calculateAIFit(meta, body, kw, contentAnalysis, forbiddenResult, missingImages, qualityInd, exposedInfo, coreKeywordRanks) {
     let score = 100;
     const breakdown = [];
 
-    // 1. 글자수 (-30 ~ 0)
+    // 1. 글자수 (-35 ~ 0) - 1,500자 sweet spot, 미달/초과 모두 감점
     const textLen = body.text.length;
-    if (textLen < 400) { score -= 30; breakdown.push({ name: '글자수 부족', delta: -30 }); }
-    else if (textLen < 800) { score -= 15; breakdown.push({ name: '글자수 보통 (800자 미만)', delta: -15 }); }
-    else if (textLen < 1500) { score -= 5; breakdown.push({ name: '글자수 양호', delta: -5 }); }
+    if (textLen < 400) { score -= 35; breakdown.push({ name: '글자수 매우 부족 (400자 미만)', delta: -35 }); }
+    else if (textLen < 800) { score -= 22; breakdown.push({ name: '글자수 부족 (800자 미만)', delta: -22 }); }
+    else if (textLen < 1200) { score -= 12; breakdown.push({ name: '글자수 미흡 (1,200자 미만)', delta: -12 }); }
+    else if (textLen <= 1800) { /* sweet spot 1200~1800: 감점 없음 */ }
+    else if (textLen <= 2500) { score -= 5; breakdown.push({ name: '글자수 다소 김 (1,800~2,500자)', delta: -5 }); }
+    else if (textLen <= 3500) { score -= 12; breakdown.push({ name: '글자수 과다 (2,500~3,500자)', delta: -12 }); }
+    else { score -= 20; breakdown.push({ name: '글자수 매우 과다 (3,500자 초과)', delta: -20 }); }
 
-    // 2. 이미지 (-20 ~ 0)
+    // 2. 이미지 (-25 ~ 0) - 7개 이상 만점 (네이버 권장 수준)
     const imgCnt = body.images.length;
-    if (imgCnt === 0) { score -= 20; breakdown.push({ name: '이미지 없음', delta: -20 }); }
-    else if (imgCnt < 3) { score -= 10; breakdown.push({ name: '이미지 부족 (3개 미만)', delta: -10 }); }
+    if (imgCnt === 0) { score -= 25; breakdown.push({ name: '이미지 없음', delta: -25 }); }
+    else if (imgCnt < 2) { score -= 15; breakdown.push({ name: '이미지 부족 (1개)', delta: -15 }); }
+    else if (imgCnt < 4) { score -= 8; breakdown.push({ name: '이미지 미흡 (2~3개)', delta: -8 }); }
+    else if (imgCnt < 7) { score -= 3; breakdown.push({ name: '이미지 보통 (4~6개)', delta: -3 }); }
 
     // 3. 누락 이미지 (-15 ~ 0)
     if (missingImages > 0) {
@@ -320,45 +451,243 @@ function calculateAIFit(meta, body, kw, contentAnalysis, forbiddenResult, missin
         breakdown.push({ name: `누락 이미지 ${missingImages}개`, delta: -penalty });
     }
 
-    // 4. 키워드 다양성 (-15 ~ 0)
+    // 4. 주제어 다양성 (-15 ~ 0)
     const kwUniq = kw.length;
-    if (kwUniq < 4) { score -= 15; breakdown.push({ name: '키워드 다양성 낮음', delta: -15 }); }
-    else if (kwUniq < 8) { score -= 7; breakdown.push({ name: '키워드 다양성 보통', delta: -7 }); }
+    if (kwUniq < 4) { score -= 15; breakdown.push({ name: '주제어 다양성 낮음', delta: -15 }); }
+    else if (kwUniq < 8) { score -= 7; breakdown.push({ name: '주제어 다양성 보통', delta: -7 }); }
 
-    // 5. 금칙어 (-30 ~ 0)
+    // 5. 위험어/금칙어 (-30 ~ 0)
     if (forbiddenResult.hits.length > 0) {
         const penalty = Math.min(30, forbiddenResult.hits.length * 8);
         score -= penalty;
-        breakdown.push({ name: `금칙어 ${forbiddenResult.hits.length}건`, delta: -penalty });
+        breakdown.push({ name: `위험어 ${forbiddenResult.hits.length}건`, delta: -penalty });
     }
 
-    // 6. 외부링크 과다 (-10 ~ 0)
+    // 6. 외부링크 (-20 ~ 0) - 개당 -2
     const externalCnt = body.links.filter(l => !isInternalNaverLink(l.href)).length;
-    if (externalCnt > 5) { score -= 10; breakdown.push({ name: '외부링크 과다', delta: -10 }); }
+    if (externalCnt > 0) {
+        const penalty = Math.min(20, externalCnt * 2);
+        score -= penalty;
+        breakdown.push({ name: `외부링크 ${externalCnt}개`, delta: -penalty });
+    }
+
+    // 7. 제목 키워드 본문 정확 반복 (4회 이상 -10)
+    if (qualityInd.titleRepeatCount >= 4) {
+        score -= 10;
+        breakdown.push({ name: `제목 그대로 ${qualityInd.titleRepeatCount}회 반복 (어뷰징 의심)`, delta: -10 });
+    }
+
+    // 8. 본문 해시태그 (-15 ~ 0)
+    if (qualityInd.hashtagsInBody > 0) {
+        const penalty = Math.min(15, qualityInd.hashtagsInBody * 3);
+        score -= penalty;
+        breakdown.push({ name: `본문 해시태그 ${qualityInd.hashtagsInBody}개`, delta: -penalty });
+    }
+
+    // 9. 반복 문장 (-15 ~ 0)
+    if (qualityInd.duplicateSentences > 0) {
+        const penalty = Math.min(15, qualityInd.duplicateSentences * 5);
+        score -= penalty;
+        breakdown.push({ name: `반복 문장 ${qualityInd.duplicateSentences}건`, delta: -penalty });
+    }
+
+    // 10. 첫 문단 길이
+    if (qualityInd.firstParaLen > 0 && qualityInd.firstParaLen < 50) {
+        score -= 5;
+        breakdown.push({ name: '첫 문단 너무 짧음 (훅 부실)', delta: -5 });
+    } else if (qualityInd.firstParaLen > 300) {
+        score -= 5;
+        breakdown.push({ name: '첫 문단 너무 김 (장황)', delta: -5 });
+    }
+
+    // 11. 마무리 정리 없음
+    if (textLen > 1000 && !qualityInd.hasConclusion) {
+        score -= 5;
+        breakdown.push({ name: '마무리 정리 문단 없음', delta: -5 });
+    }
+
+    // 12. 광고성 문구 (-15 ~ 0)
+    if (qualityInd.adWordsHits > 0) {
+        const penalty = Math.min(15, qualityInd.adWordsHits * 3);
+        score -= penalty;
+        breakdown.push({ name: `광고성 문구 ${qualityInd.adWordsHits}건`, delta: -penalty });
+    }
+
+    // 13. 연락처 노출
+    if (qualityInd.hasContact) {
+        score -= 10;
+        breakdown.push({ name: '본문 연락처 노출', delta: -10 });
+    }
+
+    // 14. 이모지 과다 (30+)
+    if (qualityInd.emojiCount > 30) {
+        score -= 5;
+        breakdown.push({ name: `이모지 과다 (${qualityInd.emojiCount}개)`, delta: -5 });
+    }
+
+    // 15. 이모지 시작 문단 패턴
+    if (qualityInd.allParasStartWithEmoji) {
+        score -= 5;
+        breakdown.push({ name: '모든 문단이 이모지 시작 (스팸 패턴)', delta: -5 });
+    }
+
+    // 16. 소제목 개수
+    if (textLen > 1500 && qualityInd.subheadingCount < 3) {
+        score -= 10;
+        breakdown.push({ name: `소제목 부족 (${qualityInd.subheadingCount}개)`, delta: -10 });
+    } else if (textLen > 1000 && qualityInd.subheadingCount < 2) {
+        score -= 5;
+        breakdown.push({ name: '소제목 부족', delta: -5 });
+    }
+
+    // 17. 문단 분리
+    if (textLen > 500 && qualityInd.paragraphCount < 5) {
+        score -= 5;
+        breakdown.push({ name: '문단 분리 부족', delta: -5 });
+    }
+
+    // 18. 제목 길이
+    if (qualityInd.titleLength > 0 && (qualityInd.titleLength < 15 || qualityInd.titleLength > 40)) {
+        score -= 5;
+        breakdown.push({ name: '제목 길이 부적절 (15~40자 권장)', delta: -5 });
+    }
+
+    // 19. 검색 노출 반영
+    if (exposedInfo) {
+        if (exposedInfo.exposed === false) {
+            score -= 25;
+            breakdown.push({ name: '검색 인덱스 누락', delta: -25 });
+        } else if (exposedInfo.exposed === true) {
+            const rank = exposedInfo.rank || 1;
+            if (rank > 20) { score -= 10; breakdown.push({ name: `검색 결과 ${rank}번째 (하위)`, delta: -10 }); }
+            else if (rank > 10) { score -= 5; breakdown.push({ name: `검색 결과 ${rank}번째`, delta: -5 }); }
+        }
+    }
+
+    // 20. 글자수/이미지 균형 (이미지 도배 감점)
+    if (imgCnt >= 5 && textLen / imgCnt < 100) {
+        score -= 8;
+        breakdown.push({ name: '이미지 대비 글자수 부족 (이미지 도배 의심)', delta: -8 });
+    }
+
+    // === 가산점 ===
+
+    // 21. 동영상 보너스
+    if (body.videos > 0) {
+        score += 5;
+        breakdown.push({ name: '동영상 포함', delta: +5 });
+    }
+
+    // 22. 구체 수치 인용 보너스
+    if (qualityInd.numericMentions >= 5) {
+        score += 5;
+        breakdown.push({ name: `구체 수치 ${qualityInd.numericMentions}회 인용`, delta: +5 });
+    }
+
+    // 23. 신뢰 출처 인용 보너스
+    if (qualityInd.authorityMentions >= 1) {
+        score += 3;
+        breakdown.push({ name: '공인 출처 인용', delta: +3 });
+    }
+
+    // === 네이버 D.I.A.+ 기준 추가 항목 ===
+
+    // 25. 제목-본문 일치도 (클릭베이트 감점)
+    if (qualityInd.titleWordsTotal >= 2) {
+        if (qualityInd.titleWordMatchRatio < 0.3) {
+            score -= 15;
+            breakdown.push({ name: `제목-본문 불일치 (제목 단어 ${qualityInd.titleWordsMatched}/${qualityInd.titleWordsTotal} 등장)`, delta: -15 });
+        } else if (qualityInd.titleWordMatchRatio < 0.6) {
+            score -= 7;
+            breakdown.push({ name: `제목-본문 일치 약함 (${qualityInd.titleWordsMatched}/${qualityInd.titleWordsTotal})`, delta: -7 });
+        }
+    }
+
+    // 26. 첫 문단 훅 (D.I.A.+ 핵심: 도입부 결론·소개)
+    if (qualityInd.hasOpeningHook) {
+        score += 5;
+        breakdown.push({ name: '도입부 훅 양호 (검색 의도 즉시 응답)', delta: +5 });
+    } else if (textLen > 800 && qualityInd.firstParaLen >= 30) {
+        score -= 5;
+        breakdown.push({ name: '도입부 훅 부족 (결론·핵심·숫자 없음)', delta: -5 });
+    }
+
+    // 27. 소제목 가산 (3개 이상 + 1500자 이상 본문)
+    if (textLen >= 1200 && qualityInd.subheadingCount >= 3) {
+        score += 3;
+        breakdown.push({ name: `소제목 구조 양호 (${qualityInd.subheadingCount}개)`, delta: +3 });
+    }
+
+    // 28. 네이티브 이미지 비율 (직접 업로드 = 네이버 선호)
+    if (qualityInd.totalImageCount >= 3) {
+        if (qualityInd.nativeImageRatio >= 0.8) {
+            score += 5;
+            breakdown.push({ name: `직접 업로드 이미지 ${Math.round(qualityInd.nativeImageRatio*100)}% (네이티브)`, delta: +5 });
+        } else if (qualityInd.nativeImageRatio < 0.3) {
+            score -= 8;
+            breakdown.push({ name: `외부 이미지 다수 (네이티브 ${Math.round(qualityInd.nativeImageRatio*100)}%)`, delta: -8 });
+        }
+    }
+
+    // 29. 멀티미디어 균형 (글자수/이미지 배치)
+    if (qualityInd.mediaBalance === 'good') {
+        score += 3;
+        breakdown.push({ name: `글·이미지 균형 양호 (${qualityInd.charsPerImage}자/장)`, delta: +3 });
+    } else if (qualityInd.mediaBalance === 'bad') {
+        score -= 5;
+        breakdown.push({ name: `글·이미지 균형 불량 (${qualityInd.charsPerImage}자/장)`, delta: -5 });
+    }
+
+    // 24. 핵심 키워드 SEO 순위 (실제 검색 노출 측정)
+    if (Array.isArray(coreKeywordRanks) && coreKeywordRanks.length > 0) {
+        let kwBonus = 0;
+        const summary = [];
+        for (const kr of coreKeywordRanks) {
+            if (!kr.rank) {
+                kwBonus -= 3;
+                summary.push(`${kr.keyword} 누락`);
+            } else if (kr.rank <= 3) {
+                kwBonus += 5;
+                summary.push(`${kr.keyword} ${kr.rank}위`);
+            } else if (kr.rank <= 10) {
+                kwBonus += 2;
+                summary.push(`${kr.keyword} ${kr.rank}위`);
+            } else if (kr.rank >= 50) {
+                kwBonus -= 2;
+                summary.push(`${kr.keyword} ${kr.rank}위`);
+            }
+        }
+        if (kwBonus !== 0) {
+            score += kwBonus;
+            const label = `핵심 키워드 노출 (${summary.join(' / ')})`;
+            breakdown.push({ name: label, delta: kwBonus });
+        }
+    }
 
     score = Math.max(0, Math.min(100, score));
 
     // 등급 매핑
     let grade;
-    if (score >= 90) grade = 'S';
-    else if (score >= 80) grade = 'A';
-    else if (score >= 65) grade = 'B';
-    else if (score >= 50) grade = 'C';
-    else if (score >= 35) grade = 'D';
+    if (score >= 92) grade = 'S';
+    else if (score >= 82) grade = 'A';
+    else if (score >= 68) grade = 'B';
+    else if (score >= 52) grade = 'C';
+    else if (score >= 36) grade = 'D';
     else if (score >= 20) grade = 'E';
     else grade = 'F';
 
     const gradeDesc = {
-        'S': '황금 콘텐츠 — 모든 항목 우수',
-        'A': '매우 우수한 콘텐츠',
-        'B': '양호한 콘텐츠',
-        'C': '준최적 — 일부 보강 필요',
-        'D': '평균 이하 — 다수 개선 필요',
-        'E': '품질 부족 — 대대적 개선 권장',
-        'F': '심각 — 재작성 권장',
+        'S': '황금 글 — 모든 항목 완벽',
+        'A': '탄탄한 글 — 매우 우수',
+        'B': '쓸만한 글 — 양호',
+        'C': '보강 필요 — 일부 개선',
+        'D': '손질 시급 — 다수 개선',
+        'E': '재구성 권장 — 품질 부족',
+        'F': '처음부터 — 재작성 권장',
     }[grade];
 
-    return { score, grade, gradeDesc, breakdown };
+    // breakdown은 내부 채점 알고리즘 노출 위험으로 API 응답에서 제거
+    return { score, grade, gradeDesc };
 }
 
 // 네이버 지도 URL 패턴 (외부 GET 차단되므로 누락 체크 면제)
@@ -421,6 +750,90 @@ function isInternalNaverLink(href) {
         const host = u.hostname.toLowerCase();
         return host === 'naver.com' || host.endsWith('.naver.com');
     } catch (e) { return false; }
+}
+
+// 제목 기반 핵심 키워드 자동 추출 (제목 + 본문 빈도 검증)
+function extractCoreKeywords(title, bodyText, topN = 3) {
+    if (!title || !bodyText) return [];
+    const STOPWORDS = new Set(['추천','후기','가는법','가격','정보','정리','BEST','best','TOP','top','솔직한','진짜','진심','확인','방법','이용','경험','체험','소개','안내','오늘','어제','내일','이번','요즘','정말','매우','너무','가장','제대로','즐기기','즐겁다','입니다','했다','한다','됩니다','있다','없다']);
+    const candidates = new Map();
+    const cleanTitle = title.replace(/[\[\](){}「」『』<>!?.,~`'":;|@#$%^&*+=]/g, ' ').replace(/\s+/g, ' ').trim();
+    const titleWords = cleanTitle.split(/\s+/).filter(w => w.length >= 2 && !STOPWORDS.has(w));
+
+    // 단일 단어 (3자 이상)
+    for (const w of titleWords) if (w.length >= 3) candidates.set(w, 0);
+
+    // 인접 2단어 조합
+    for (let i = 0; i < titleWords.length - 1; i++) {
+        const pair = `${titleWords[i]} ${titleWords[i+1]}`;
+        if (pair.length >= 5 && pair.length <= 20) candidates.set(pair, 0);
+    }
+
+    // 인접 3단어 조합
+    for (let i = 0; i < titleWords.length - 2; i++) {
+        const trio = `${titleWords[i]} ${titleWords[i+1]} ${titleWords[i+2]}`;
+        if (trio.length <= 25) candidates.set(trio, 0);
+    }
+
+    // 본문 빈도로 점수 부여
+    for (const [kw, _] of candidates) {
+        const escKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escKw, 'g');
+        const count = (bodyText.match(regex) || []).length;
+        candidates.set(kw, kw.length * count);
+    }
+
+    // 점수 순 정렬 + 중복 제거
+    const sorted = Array.from(candidates.entries()).filter(([_, s]) => s >= 2).sort((a, b) => b[1] - a[1]);
+    const result = [];
+    for (const [kw, _] of sorted) {
+        if (result.length >= topN) break;
+        const redundant = result.some(r => r.includes(kw) || kw.includes(r));
+        if (!redundant) result.push(kw);
+    }
+    return result;
+}
+
+// 키워드별 검색 순위 측정
+async function checkKeywordRank(keyword, blogId, logNo, clientId, clientSecret) {
+    const url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(keyword)}&display=100&sort=sim`;
+    try {
+        const res = await fetch(url, {
+            headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
+            signal: AbortSignal.timeout(8000),
+        });
+        if (!res.ok) return { keyword, rank: null, total: 0 };
+        const data = await res.json();
+        const items = data.items || [];
+        for (let i = 0; i < items.length; i++) {
+            const link = items[i].link || '';
+            let itemLogNo = '', itemBlogId = '';
+            try {
+                const u = new URL(link);
+                const seg = u.pathname.split('/').filter(Boolean);
+                if (seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn') {
+                    itemBlogId = (u.searchParams.get('blogId') || '').toLowerCase();
+                    itemLogNo = u.searchParams.get('logNo') || '';
+                } else {
+                    itemBlogId = (seg[0] || '').toLowerCase();
+                    itemLogNo = (seg[1] && /^\d+$/.test(seg[1]) ? seg[1] : '');
+                }
+            } catch (e) {}
+            if (itemLogNo === logNo && itemBlogId === blogId) {
+                return { keyword, rank: i + 1, total: data.total || 0 };
+            }
+        }
+        return { keyword, rank: null, total: data.total || 0 };
+    } catch (e) {
+        return { keyword, rank: null, total: 0, error: e.message };
+    }
+}
+
+// 핵심 키워드 3개 추출 + 각각 순위 병렬 측정
+async function checkCoreKeywordRanks(title, bodyText, blogId, logNo, clientId, clientSecret) {
+    const keywords = extractCoreKeywords(title, bodyText, 3);
+    if (keywords.length === 0) return [];
+    return Promise.all(keywords.map(kw => checkKeywordRank(kw, blogId, logNo, clientId, clientSecret)));
 }
 
 // 노출 진단 (정확 구문 검색)
@@ -510,14 +923,20 @@ export async function onRequestPost({ request, env }) {
         const missingImages = imageChecks.filter(c => !c.ok).length;
         meta.sympathyCount = likeCount;
 
-        // 6. 노출 진단
-        const exposed = await checkExposed(meta.title, blogId, logNo, clientId, clientSecret);
+        // 6. 노출 진단 + 핵심 키워드 SEO 순위 (병렬)
+        const [exposed, coreKeywordRanks] = await Promise.all([
+            checkExposed(meta.title, blogId, logNo, clientId, clientSecret),
+            checkCoreKeywordRanks(meta.title, body.text, blogId, logNo, clientId, clientSecret),
+        ]);
 
         // 7. 콘텐츠 분석
         const contentAnalysis = analyzeContent(meta, body, keywords);
 
-        // 8. AI-Fit 등급
-        const aiFit = calculateAIFit(meta, body, keywords, contentAnalysis, forbidden, missingImages);
+        // 7-1. 품질 지표 종합 (22가지)
+        const qualityInd = analyzeQualityIndicators(meta.title, body, meta.bodyHtml);
+
+        // 8. 글 지수 등급 (검색 노출 + 키워드 순위 반영)
+        const aiFit = calculateAIFit(meta, body, keywords, contentAnalysis, forbidden, missingImages, qualityInd, exposed, coreKeywordRanks);
 
         return jsonResponse({
             url,
@@ -537,6 +956,7 @@ export async function onRequestPost({ request, env }) {
                 sympathyCount: meta.sympathyCount || 0,
             },
             exposed,
+            coreKeywordRanks,
             bodyText: body.text.substring(0, 2000),
             images: imageChecks,
             videos: body.videos,
