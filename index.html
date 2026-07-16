@@ -2720,44 +2720,28 @@ function baRenderBlogPage(data) {
     const isInf = !!inf.isInfluencer;
     const expSum = data.expSummary;
 
-    // 블로그 등급 — 노출률 + 일평균 방문자 + 최근 30일 글 빈도 종합 (네이버 인덱싱은 대부분 높음)
-    let gradeLabel = '미진단', gradeColor = '#9CA3AF', gradeIcon = '👁';
-    if (expSum) {
-        const rate = expSum.rate || 0;
-        const avg = (s.avgDailyVisitor || 0);
-        const recent30 = (s.recent30Posts || 0);
-        const fan = (inf.fanCount || 0);
-        // 점수 합산 (0~100)
-        let score = 0;
-        // 노출률 (0~35) — 95% 이상이어야 만점
-        if (rate >= 95) score += 35;
-        else if (rate >= 85) score += 28;
-        else if (rate >= 70) score += 20;
-        else if (rate >= 50) score += 12;
-        else if (rate >= 30) score += 6;
-        // 일평균 방문자 (0~35)
-        if (avg >= 3000) score += 35;
-        else if (avg >= 1000) score += 28;
-        else if (avg >= 500) score += 20;
-        else if (avg >= 200) score += 14;
-        else if (avg >= 100) score += 9;
-        else if (avg >= 50) score += 5;
-        // 최근 30일 글 빈도 (0~20)
-        if (recent30 >= 20) score += 20;
-        else if (recent30 >= 10) score += 15;
-        else if (recent30 >= 5) score += 10;
-        else if (recent30 >= 3) score += 6;
-        else if (recent30 >= 1) score += 2;
-        // 인플루언서 보정 (0~10)
-        if (isInf && fan >= 10000) score += 10;
-        else if (isInf && fan >= 1000) score += 6;
-        else if (isInf) score += 3;
-        // 등급 매핑
-        if (score >= 85) { gradeLabel = '최상위 블로그'; gradeColor = '#F59E0B'; gradeIcon = '👑'; }
-        else if (score >= 65) { gradeLabel = '건강한 블로그'; gradeColor = '#10B981'; gradeIcon = '💎'; }
-        else if (score >= 40) { gradeLabel = '양호한 블로그'; gradeColor = '#0891B2'; gradeIcon = '🔵'; }
-        else if (score >= 20) { gradeLabel = '성장 중 블로그'; gradeColor = '#F97316'; gradeIcon = '🌱'; }
-        else { gradeLabel = '초기 블로그'; gradeColor = '#9CA3AF'; gradeIcon = '🐣'; }
+    // 블로그 등급 — 서버 종합 랭킹(방문자45%+이웃25%+활동성15%+노출15%) 기반, 이름에 "상위 N%" 표기
+    // (다스코프·다로그 체험판과 동일 기준. 서버가 앵커 보간으로 연속값을 주므로 블로그마다 세밀하게 갈림)
+    const BA_TIERS = [
+        { max: 1,   name: '최상위급',  icon: '👑', color: '#F59E0B' },
+        { max: 5,   name: '상위급',    icon: '🏆', color: '#F59E0B' },
+        { max: 15,  name: '우수',      icon: '💎', color: '#10B981' },
+        { max: 30,  name: '양호',      icon: '🔵', color: '#0891B2' },
+        { max: 50,  name: '평균',      icon: '📊', color: '#6B7280' },
+        { max: 75,  name: '평균 이하', icon: '🌱', color: '#F97316' },
+        { max: 100, name: '성장 필요', icon: '🐣', color: '#9CA3AF' },
+    ];
+    const rk = data.ranking || null;
+    let gradeLabel = '미진단', gradeColor = '#9CA3AF', gradeIcon = '👁', gradeNext = '';
+    if (rk && typeof rk.topPercent === 'number') {
+        const tp = rk.topPercent;
+        const idx = BA_TIERS.findIndex(t => tp <= t.max);
+        const cur = BA_TIERS[idx === -1 ? BA_TIERS.length - 1 : idx];
+        gradeIcon = cur.icon;
+        gradeColor = cur.color;
+        gradeLabel = `${cur.name} · 상위 ${tp}%`;
+        const up = BA_TIERS[(idx === -1 ? BA_TIERS.length - 1 : idx) - 1];
+        gradeNext = up ? `다음 등급 ${up.icon} ${up.name} — 상위 ${up.max}% 이내` : '최고 등급입니다';
     }
 
     let html = `<div style="background:linear-gradient(135deg,#FFFFFF 0%,#F8FAFC 100%);border:1px solid #E5E7EB;border-radius:18px;padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.04);position:relative;overflow:hidden;">
@@ -2789,6 +2773,7 @@ function baRenderBlogPage(data) {
                 <span style="color:${gradeColor};font-size:1.4rem;font-weight:900;line-height:1;">${gradeLabel}</span>
             </div>
             ${expSum ? `<div style="color:#6B7280;font-size:0.82rem;margin-top:4px;font-weight:700;">최근 글 노출률 ${expSum.rate}%</div>` : ''}
+            ${gradeNext ? `<div style="color:#9CA3AF;font-size:0.75rem;margin-top:3px;font-weight:700;">${gradeNext}</div>` : ''}
         </div>
     </div>`;
 

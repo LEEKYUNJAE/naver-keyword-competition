@@ -350,6 +350,79 @@ export async function onRequestOptions() {
     return new Response('', { status: 200, headers: corsHeaders });
 }
 
+// ===== 블로그 상위 백분위 추정 =====
+// 네이버 블로그 분포 통계 기반 추정 (활성 블로그 약 200만 기준)
+// ⭐ 앵커 사이를 보간해 "연속값"으로 산출한다. 계단식이면 일방문 1,000~1,499가 전부 18%로
+//    뭉개져 블로그마다 같은 등급이 나옴 → 보간하면 1,136명=16.1%, 1,400명=12.9%처럼 세밀하게 갈림.
+//    (반환값은 "상위 %" 이므로 낮을수록 상위)
+function interpPct(value, anchors, useLog) {
+    // anchors: [[기준값, 상위%], ...] — 기준값 내림차순
+    const v = Math.max(0, Number(value) || 0);
+    const top = anchors[0], bottom = anchors[anchors.length - 1];
+    if (v >= top[0]) return top[1];
+    if (v <= bottom[0]) return bottom[1];
+    for (let i = 0; i < anchors.length - 1; i++) {
+        const hiV = anchors[i][0], hiP = anchors[i][1];
+        const loV = anchors[i + 1][0], loP = anchors[i + 1][1];
+        if (v <= hiV && v >= loV) {
+            // 방문자·이웃처럼 자릿수 차이가 큰 값은 로그 보간이 자연스러움
+            const f = useLog
+                ? (Math.log(v + 1) - Math.log(loV + 1)) / (Math.log(hiV + 1) - Math.log(loV + 1))
+                : (v - loV) / (hiV - loV);
+            return loP + (hiP - loP) * f;
+        }
+    }
+    return bottom[1];
+}
+
+const VISITOR_ANCHORS    = [[100000, 0.05], [30000, 0.5], [10000, 2], [5000, 4], [3000, 7], [1500, 12], [1000, 18], [500, 28], [200, 40], [100, 55], [50, 68], [10, 82], [0, 97]];
+const SUBSCRIBER_ANCHORS = [[100000, 0.1], [50000, 0.8], [30000, 2], [20000, 4], [10000, 8], [5000, 15], [3000, 22], [1500, 35], [500, 50], [100, 70], [30, 85], [0, 97]];
+const ACTIVITY_ANCHORS   = [[30, 2], [20, 8], [15, 15], [10, 25], [6, 40], [3, 60], [1, 80], [0, 97]];
+const EXPOSURE_ANCHORS   = [[100, 3], [95, 5], [90, 15], [80, 30], [60, 50], [40, 70], [0, 92]];
+
+function estimateVisitorPercentile(avgDailyVisitor) { return interpPct(avgDailyVisitor, VISITOR_ANCHORS, true); }
+function estimateSubscriberPercentile(subscriber) { return interpPct(subscriber, SUBSCRIBER_ANCHORS, true); }
+function estimateActivityPercentile(recent30Posts) { return interpPct(recent30Posts, ACTIVITY_ANCHORS, true); }
+function estimateExposurePercentile(rate) { return interpPct(rate, EXPOSURE_ANCHORS, false); }
+
+function estimateBlogRanking(stats, expSummary, influencer) {
+    const visitorPct = estimateVisitorPercentile(stats.avgDailyVisitor || 0);
+    const subPct = estimateSubscriberPercentile(stats.subscriber || 0);
+    const actPct = estimateActivityPercentile(stats.recent30Posts || 0);
+    const expPct = expSummary ? estimateExposurePercentile(expSummary.rate || 0) : 50;
+
+    // 가중치: 방문자 45%, 이웃 25%, 활성도 15%, 인덱스 15%
+    let weightedPct = visitorPct * 0.45 + subPct * 0.25 + actPct * 0.15 + expPct * 0.15;
+
+    // 인플루언서 보너스: 백분위 -2% (상위로)
+    if (influencer && influencer.isInfluencer) {
+        weightedPct = Math.max(0.1, weightedPct - 2);
+    }
+
+    weightedPct = Math.max(0.1, Math.min(99, weightedPct));
+
+    // 상위 N% 라벨
+    let tier;
+    if (weightedPct <= 1) tier = '🏆 최상위급';
+    else if (weightedPct <= 5) tier = '⭐ 상위급';
+    else if (weightedPct <= 15) tier = '💎 우수';
+    else if (weightedPct <= 30) tier = '✅ 양호';
+    else if (weightedPct <= 50) tier = '📊 평균';
+    else if (weightedPct <= 75) tier = '📉 평균 이하';
+    else tier = '🚧 활성도 부족';
+
+    return {
+        topPercent: Math.round(weightedPct * 10) / 10, // 소수점 1자리
+        tier,
+        details: {
+            visitorPercentile: Math.round(visitorPct * 10) / 10,
+            subscriberPercentile: Math.round(subPct * 10) / 10,
+            activityPercentile: Math.round(actPct * 10) / 10,
+            exposurePercentile: Math.round(expPct * 10) / 10,
+        },
+    };
+}
+
 export async function onRequestPost({ request, env }) {
     const clientId = env.NAVER_SEARCH_CLIENT_ID;
     const clientSecret = env.NAVER_SEARCH_CLIENT_SECRET;
@@ -471,6 +544,13 @@ export async function onRequestPost({ request, env }) {
         // 최근 글 작성일
         const recentDate = recentPosts.length > 0 ? recentPosts[0].addDate : '';
 
+        const statsForRank = {
+            avgDailyVisitor,
+            subscriber: blogData.subscriberCount || 0,
+            recent30Posts: recent30,
+        };
+        const ranking = estimateBlogRanking(statsForRank, expSummary, influencer);
+
         return jsonResponse({
             blogId,
             blog: {
@@ -490,6 +570,7 @@ export async function onRequestPost({ request, env }) {
                 recent30Posts: recent30,
                 recentPostDate: recentDate,
             },
+            ranking,
             dailyVisitors,
             categories: categoryStats,
             categoryList: categories,
