@@ -276,8 +276,13 @@ export async function onRequestPost({ request, env }) {
         const searchVolumeMap = {};
         const relatedKeywordsMap = {};
 
-        // STEP 1: 검색광고 API
-        for (const kw of keywords) {
+        // 연관키워드 중 문서수를 조회할 개수 (50 → 20으로 축소해 속도 개선)
+        const REL_LIMIT = 20;
+        // 프론트 getCompIdxMultiplier와 동일 기준 (낮음 0.7 / 보통 1.0 / 높음 1.3)
+        const relCompMul = (c) => (c === '낮음' ? 0.7 : c === '높음' ? 1.3 : 1.0);
+
+        // STEP 1: 검색광고 API (키워드별 병렬)
+        await Promise.all(keywords.map(async (kw) => {
             try {
                 const cleanKw = kw.replace(/\s/g, '');
                 const uri = `/keywordstool?hintKeywords=${encodeURIComponent(cleanKw)}&showDetail=1`;
@@ -303,6 +308,11 @@ export async function onRequestPost({ request, env }) {
                         searchVolumeMap[kw] = { pc: 0, mobile: 0, compIdx: '-', avgPcClk: 0, avgMobileClk: 0, avgPcCtr: 0, avgMobileCtr: 0 };
                     }
 
+                    // 연관 후보(관련도순 50개) 중 "좋은 등급이 나올 가능성이 높은" 상위 REL_LIMIT개만 남긴다.
+                    // 등급 = 문서수/검색량 × 경쟁배수 인데, 문서수는 아직 조회 전이라 알 수 없음.
+                    // → 등급식의 분모(검색량)와 배수(경쟁정도)만으로 후보 점수(total/배수)를 매겨 선별.
+                    // ⚠️ 선별에서 빠진 키워드는 문서수가 없어 등급 계산 불가 → 응답에서도 제외
+                    //    (blogCount=0으로 내보내면 ratio 0 → 전부 가짜 'S 황금키워드'로 표시됨).
                     relatedKeywordsMap[kw] = data.keywordList
                         .filter(item => item.relKeyword.replace(/\s/g, '').toLowerCase() !== kwNorm)
                         .slice(0, 50)
@@ -312,7 +322,9 @@ export async function onRequestPost({ request, env }) {
                             mobile: parseVolume(item.monthlyMobileQcCnt),
                             total: parseVolume(item.monthlyPcQcCnt) + parseVolume(item.monthlyMobileQcCnt),
                             compIdx: item.compIdx || '-',
-                        }));
+                        }))
+                        .sort((a, b) => (b.total / relCompMul(b.compIdx)) - (a.total / relCompMul(a.compIdx)))
+                        .slice(0, REL_LIMIT);
                 } else {
                     searchVolumeMap[kw] = { pc: 0, mobile: 0 };
                     relatedKeywordsMap[kw] = [];
@@ -322,28 +334,28 @@ export async function onRequestPost({ request, env }) {
                 searchVolumeMap[kw] = { pc: 0, mobile: 0 };
                 relatedKeywordsMap[kw] = [];
             }
-        }
+        }));
 
-        // STEP 2: 누적 블로그 문서수 + 월간 발행수 (병렬)
-        for (const kw of keywords) {
+        // STEP 2: 누적 블로그 문서수 + 월간 발행수 (키워드별 병렬)
+        // Promise.all은 입력 순서대로 결과를 돌려주므로 화면 표시 순서가 보존된다.
+        const step2Results = await Promise.all(keywords.map(async (kw) => {
+            const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
             try {
                 const [blogCount, monthlyBlogCount] = await Promise.all([
                     callSearchAPI(kw, searchClientId, searchClientSecret),
                     fetchBlogCountByPeriod(kw, '1m'),
                 ]);
-                const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
-                results.push({
+                return {
                     keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount, monthlyBlogCount,
                     compIdx: vol.compIdx, avgPcClk: vol.avgPcClk, avgMobileClk: vol.avgMobileClk,
                     avgPcCtr: vol.avgPcCtr, avgMobileCtr: vol.avgMobileCtr,
-                });
-                await new Promise(r => setTimeout(r, 100));
+                };
             } catch (e) {
-                const vol = searchVolumeMap[kw] || { pc: 0, mobile: 0, compIdx: '-' };
-                results.push({ keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, monthlyBlogCount: 0, compIdx: vol.compIdx });
                 errors.push(`${kw} 블로그: ${e.message}`);
+                return { keyword: kw, pc: vol.pc, mobile: vol.mobile, blogCount: 0, monthlyBlogCount: 0, compIdx: vol.compIdx };
             }
-        }
+        }));
+        results.push(...step2Results);
 
         // STEP 3: 연관 키워드 블로그 문서수
         // 네이버 Search API 한도: ~10 req/s. batch 2 + 250ms 간격 = 8 req/s (안전)
@@ -377,21 +389,26 @@ export async function onRequestPost({ request, env }) {
             await new Promise(r => setTimeout(r, 250));
         }
 
-        // STEP 4: 스마트블록
+        // STEP 4: 스마트블록 — 조회 비활성화 (2026-07-22)
+        // fetchSmartBlock의 data-keyword 정규식이 네이버 HTML 구조 변경으로 더 이상 매치되지 않아
+        // 결과가 항상 빈 배열이었음(로컬에서도 0 → IP 차단 아님). 그런데도 키워드마다
+        // search.naver.com 1.5MB 페이지를 "순차로" 받아오느라 시간만 크게 소모했음.
+        // → 얻는 것이 0이므로 조회 자체를 제거. 응답 형태(빈 배열)는 유지해 프론트 영향 없음.
         const smartBlockMap = {};
-        for (const kw of keywords) {
-            try { smartBlockMap[kw] = await fetchSmartBlock(kw); }
-            catch (e) { smartBlockMap[kw] = []; }
-        }
+        for (const kw of keywords) smartBlockMap[kw] = [];
 
-        // STEP 5: DataLab 트렌드
+        // STEP 5: DataLab 트렌드 (키워드별 병렬, 월별·일별도 동시)
         const trendMap = {};
-        for (const kw of keywords) {
+        await Promise.all(keywords.map(async (kw) => {
             let monthlyData = [], dailyData = [];
-            try { monthlyData = await callDataLabAPI(kw, searchClientId, searchClientSecret); }
-            catch (e) { errors.push(`트렌드(월별) ${kw}: ${e.message}`); }
-            try { dailyData = await callDataLabDailyAPI(kw, searchClientId, searchClientSecret); }
-            catch (e) { errors.push(`트렌드(일별) ${kw}: ${e.message}`); }
+            const [mRes, dRes] = await Promise.allSettled([
+                callDataLabAPI(kw, searchClientId, searchClientSecret),
+                callDataLabDailyAPI(kw, searchClientId, searchClientSecret),
+            ]);
+            if (mRes.status === 'fulfilled') monthlyData = mRes.value || [];
+            else errors.push(`트렌드(월별) ${kw}: ${mRes.reason && mRes.reason.message}`);
+            if (dRes.status === 'fulfilled') dailyData = dRes.value || [];
+            else errors.push(`트렌드(일별) ${kw}: ${dRes.reason && dRes.reason.message}`);
 
             const analysis = monthlyData.length > 0 ? analyzeTrend(monthlyData) : {};
             const dayOfWeek = dailyData.length > 0 ? analyzeDayOfWeek(dailyData) : [];
@@ -404,7 +421,7 @@ export async function onRequestPost({ request, env }) {
             }));
 
             trendMap[kw] = { monthly: monthlyPercent, dayOfWeek, analysis };
-        }
+        }));
 
         return jsonResponse({
             results,
