@@ -2972,7 +2972,7 @@ function paMsgForbidden(forbidden) {
 function paMsgExposed(exposed) {
     if (!exposed) return { ok: false, msg: '노출 점검을 수행하지 못했습니다.' };
     if (exposed.exposed === true) {
-        return { ok: true, emoji: '😊', label: '정상 노출중', accent: 'GOOD', msg: `네이버 통합검색 블로그 탭에서 <strong>${exposed.rank}위</strong>로 노출됩니다. 검색에서 정상적으로 발견되는 상태예요.` };
+        return { ok: true, emoji: '😊', label: '정상 노출중', accent: 'GOOD', msg: `네이버 통합검색에서 내 글이 정상적으로 노출·검색됩니다. 검색 인덱스에 잘 등록된 상태예요. <span style="color:#94a3b8;">(특정 키워드의 순위는 "키워드 순위 확인" 메뉴에서 확인하세요.)</span>` };
     }
     if (exposed.exposed === false) {
         return { ok: false, emoji: '😐', label: '검색 누락', accent: 'CHECK', msg: '제목으로 정확 검색해도 잡히지 않습니다. 저품질 누락이나 인덱싱 지연 가능성이 있어요. 24시간 후 다시 확인하거나, 본문을 보강해서 재발행해보세요.' };
