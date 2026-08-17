@@ -781,6 +781,7 @@
       <button class="nav-btn" data-section="bulk-blog" onclick="showSection('bulk-blog')">블로그 분석</button>
       <button class="nav-btn" data-section="posting" onclick="showSection('posting')">포스팅 분석</button>
       <button class="nav-btn" data-section="rank-check" onclick="showSection('rank-check')">키워드 순위 확인</button>
+      <button class="nav-btn" data-section="keyfluencer" onclick="showSection('keyfluencer')">인플루언서 키워드<span class="nav-new">NEW</span></button>
     </div>
     <div class="sidebar-section ss-image">
       <div class="sidebar-label">이미지 도구</div>
@@ -1168,6 +1169,15 @@
             </button>
 
             <div id="ipResult" style="margin-top:18px;"></div>
+        </div>
+    </div>
+
+    <!-- Section: 인플루언서 키워드 (풀스크린 임베드) -->
+    <div class="page-section image-gen-fullscreen" id="section-keyfluencer">
+        <iframe id="keyfluencerFrame" src="about:blank" class="image-gen-frame" loading="lazy" title="인플루언서 키워드" allow="clipboard-write; clipboard-read; fullscreen"></iframe>
+        <div id="keyfluencerFallback" style="display:none;padding:24px;text-align:center;color:var(--text-sub);font-size:0.9rem;">
+            <p>임베드가 차단되어 표시할 수 없습니다.</p>
+            <p style="margin-top:8px;"><a href="https://keyfluencer.pages.dev" target="_blank" rel="noopener" style="color:#1a3a8a;font-weight:700;">새 창에서 인플루언서 키워드 열기 →</a></p>
         </div>
     </div>
 
@@ -2094,6 +2104,7 @@ const SECTION_META = {
     'keyword':       { title: '키워드 경쟁도 분석', desc: '키워드를 입력하면 경쟁도를 자동 분석하고 S~F 등급을 매겨드립니다' },
     'posting':       { title: '포스팅 분석',         desc: '블로그 글 URL을 입력해 등급, 노출 여부, 품질을 분석합니다' },
     'rank-check':    { title: '키워드 순위 확인',    desc: '블로그 ID와 키워드를 입력하면 검색 시 노출 순위를 확인합니다' },
+    'keyfluencer':   { title: '인플루언서 키워드',    desc: '네이버 인플루언서 저경쟁 키워드 발굴 + 조회수 + AI 글쓰기 (매일 자동 갱신)' },
     'missing-check': { title: '글 누락 진단',         desc: '최근 10개 글의 인덱스 누락 여부를 진단합니다' },
     'bulk-blog':     { title: '블로그 분석',          desc: '여러 블로그를 한 번에 분석합니다 (최대 20개)' },
     'image-gen':     { title: '무료 이미지 생성기',     desc: '블로그용 썸네일·이미지를 생성합니다' },
@@ -2107,6 +2118,11 @@ const SECTION_META = {
 
 // 풀스크린 임베드 섹션 정의 (id → URL + iframe id + fallback id)
 const FULLSCREEN_SECTIONS = {
+    'keyfluencer': {
+        url: 'https://keyfluencer.pages.dev',
+        frameId: 'keyfluencerFrame',
+        fallbackId: 'keyfluencerFallback',
+    },
     'image-gen': {
         url: 'https://daperm.com/tools/blog-image/',
         frameId: 'imageGenFrame',
