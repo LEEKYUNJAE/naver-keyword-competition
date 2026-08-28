@@ -248,27 +248,42 @@ async function checkInfluencer(blogId) {
 }
 
 // 글 제목 검색 노출 확인 (useLoose=false: 정확구문 / true: 따옴표 없는 완화 검색)
-// 실제 네이버 통합검색(블로그탭) 노출 확인 — 제목을 '일반검색'해서 내 글이 결과에 있으면 노출.
-// (Open API 정확구문 검색은 특수문자·띄어쓰기 차이로 오탐이 잦음 → 실검색 기준인 통합검색 스크래핑으로 판정)
+// 실제 네이버 검색 노출 확인 — 한 방식만으론 오탐이 나므로 여러 방식으로 찾아 '한 곳이라도 나오면 노출'.
+//  ① 따옴표"제목" 블로그탭(흔한 제목: 경쟁글 많아 일반검색선 밀리는 글)
+//  ② 일반 블로그탭(특수문자 제목: 따옴표 정확구문이 결과0 나는 글)
+//  ③ 일반 통합검색(블로그탭엔 없어도 통합엔 나오는 글)
+//  셋 다 없을 때만 누락. 내 글은 blogId/logNo(고유번호)로 정확히 매칭.
 async function checkPostExposure(blogId, post, clientId, clientSecret) {
-    try {
-        const safeTitle = post.title.replace(/["']/g, '').trim();
-        const ln = String(post.logNo || '');
-        if (!safeTitle || !ln) return { exposed: false, reason: '제목 없음' };
-        const url = `https://search.naver.com/search.naver?ssc=tab.blog.all&query=${encodeURIComponent(safeTitle)}`;
-        const res = await fetch(url, {
-            headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ko-KR,ko;q=0.9' },
-            signal: AbortSignal.timeout(8000),
-        });
-        if (!res.ok) return { exposed: null };
-        const html = await res.text();
-        const bid = blogId.toLowerCase();
-        // 결과 HTML에 내 글 링크(blogId/logNo)가 있으면 노출. logNo는 블로그별 고유값이라 정확.
-        const found = html.includes(`${bid}/${ln}`) || html.includes(`logNo=${ln}`);
-        return found ? { exposed: true } : { exposed: false };
-    } catch (e) {
-        return { exposed: null };
+    const safeTitle = post.title.replace(/["']/g, '').trim();
+    const ln = String(post.logNo || '');
+    if (!safeTitle || !ln) return { exposed: false, reason: '제목 없음' };
+    const bid = blogId.toLowerCase();
+    const hit = (html) => html.includes(`${bid}/${ln}`) || html.includes(`logNo=${ln}`);
+    const grab = async (url) => {
+        try {
+            const res = await fetch(url, {
+                headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ko-KR,ko;q=0.9' },
+                signal: AbortSignal.timeout(8000),
+            });
+            return res.ok ? await res.text() : null;
+        } catch (e) { return null; }
+    };
+    const q = encodeURIComponent(safeTitle);
+    const qEx = encodeURIComponent(`"${safeTitle}"`);
+    const tries = [
+        `https://search.naver.com/search.naver?ssc=tab.blog.all&query=${qEx}`,  // ① 따옴표 블로그탭
+        `https://search.naver.com/search.naver?ssc=tab.blog.all&query=${q}`,     // ② 일반 블로그탭
+        `https://search.naver.com/search.naver?query=${q}`,                       // ③ 일반 통합검색
+    ];
+    let anyResponse = false;
+    for (const url of tries) {
+        const html = await grab(url);
+        if (html === null) continue;
+        anyResponse = true;
+        if (hit(html)) return { exposed: true };
     }
+    // 응답 왔는데 셋 다 없음 = 누락 / 셋 다 응답실패 = 미상(null)
+    return anyResponse ? { exposed: false } : { exposed: null };
 }
 
 // 키워드 빈도 (제목 기준)
