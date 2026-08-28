@@ -248,37 +248,26 @@ async function checkInfluencer(blogId) {
 }
 
 // 글 제목 검색 노출 확인 (useLoose=false: 정확구문 / true: 따옴표 없는 완화 검색)
-async function checkPostExposure(blogId, post, clientId, clientSecret, useLoose) {
+// 실제 네이버 통합검색(블로그탭) 노출 확인 — 제목을 '일반검색'해서 내 글이 결과에 있으면 노출.
+// (Open API 정확구문 검색은 특수문자·띄어쓰기 차이로 오탐이 잦음 → 실검색 기준인 통합검색 스크래핑으로 판정)
+async function checkPostExposure(blogId, post, clientId, clientSecret) {
     try {
         const safeTitle = post.title.replace(/["']/g, '').trim();
-        if (!safeTitle) return { exposed: false, reason: '제목 없음' };
-        // useLoose면 따옴표 없이 검색 → 괄호·쉼표 등 특수문자 제목의 정확구문 오탐 방지
-        const query = useLoose ? safeTitle : `"${safeTitle}"`;
-        const url = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(query)}&display=30&sort=sim`;
+        const ln = String(post.logNo || '');
+        if (!safeTitle || !ln) return { exposed: false, reason: '제목 없음' };
+        const url = `https://search.naver.com/search.naver?ssc=tab.blog.all&query=${encodeURIComponent(safeTitle)}`;
         const res = await fetch(url, {
-            headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
-            signal: AbortSignal.timeout(5000),
+            headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ko-KR,ko;q=0.9' },
+            signal: AbortSignal.timeout(8000),
         });
-        if (!res.ok) return { exposed: null, totalResults: 0 };
-        const data = await res.json();
-        const items = data.items || [];
-        for (let i = 0; i < items.length; i++) {
-            const link = items[i].link || '';
-            try {
-                const u = new URL(link);
-                const seg = u.pathname.split('/').filter(Boolean);
-                const itemLogNo = u.searchParams.get('logNo') || (seg[1] && /^\d+$/.test(seg[1]) ? seg[1] : '');
-                const itemBlogId = (seg[0] === 'PostView.naver' || seg[0] === 'PostView.nhn')
-                    ? (u.searchParams.get('blogId') || '').toLowerCase()
-                    : (seg[0] || '').toLowerCase();
-                if (itemLogNo === post.logNo && itemBlogId === blogId.toLowerCase()) {
-                    return { exposed: true, rank: i + 1, totalResults: data.total || 0 };
-                }
-            } catch (e) {}
-        }
-        return { exposed: false, totalResults: data.total || 0 };
+        if (!res.ok) return { exposed: null };
+        const html = await res.text();
+        const bid = blogId.toLowerCase();
+        // 결과 HTML에 내 글 링크(blogId/logNo)가 있으면 노출. logNo는 블로그별 고유값이라 정확.
+        const found = html.includes(`${bid}/${ln}`) || html.includes(`logNo=${ln}`);
+        return found ? { exposed: true } : { exposed: false };
     } catch (e) {
-        return { exposed: null, totalResults: 0 };
+        return { exposed: null };
     }
 }
 
@@ -481,17 +470,6 @@ export async function onRequestPost({ request, env }) {
                 exposures.push(...results);
                 if (i + CHUNK_SIZE < targets.length) {
                     await new Promise(r => setTimeout(r, 350));
-                }
-            }
-            // 2차: 1차에서 '누락'으로 나온 글만 완화 검색으로 재확인(특수문자 제목 오탐 방지).
-            //      호출 폭증 방지 위해 최대 12개까지만.
-            let fbBudget = 12;
-            for (let i = 0; i < targets.length && fbBudget > 0; i++) {
-                if (exposures[i] && exposures[i].exposed === false) {
-                    fbBudget--;
-                    const retry = await checkPostExposure(blogId, targets[i], clientId, clientSecret, true);
-                    if (retry && retry.exposed === true) exposures[i] = retry;
-                    await new Promise(r => setTimeout(r, 150));
                 }
             }
         }
