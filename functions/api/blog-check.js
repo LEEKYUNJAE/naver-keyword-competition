@@ -120,6 +120,43 @@ function normalizePostUrl(link) {
     } catch (e) { return String(link).toLowerCase(); }
 }
 
+// 실제 네이버 검색으로 노출 확인 (블로그 분석과 동일한 3방식) — 한 곳이라도 내 글이 나오면 노출.
+//  ① 따옴표"제목" 블로그탭 → ② 일반 블로그탭 → ③ 일반 통합검색. 셋 다 없을 때만 누락(false), 셋 다 응답실패면 null(미상).
+async function checkExposedByScrape(blogId, logNo, title) {
+    const safeTitle = (title || '').replace(/["']/g, '').trim();
+    const ln = String(logNo || '');
+    if (!safeTitle || !ln) return null;
+    const bid = String(blogId || '').toLowerCase();
+    const hit = (html) => html.includes(`${bid}/${ln}`) || html.includes(`logNo=${ln}`);
+    const grab = async (url) => {
+        try {
+            const res = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html', 'Accept-Language': 'ko-KR,ko;q=0.9',
+                },
+                signal: AbortSignal.timeout(8000),
+            });
+            return res.ok ? await res.text() : null;
+        } catch (e) { return null; }
+    };
+    const q = encodeURIComponent(safeTitle);
+    const qEx = encodeURIComponent(`"${safeTitle}"`);
+    const tries = [
+        `https://search.naver.com/search.naver?ssc=tab.blog.all&query=${qEx}`,
+        `https://search.naver.com/search.naver?ssc=tab.blog.all&query=${q}`,
+        `https://search.naver.com/search.naver?query=${q}`,
+    ];
+    let any = false;
+    for (const url of tries) {
+        const html = await grab(url);
+        if (html === null) continue;
+        any = true;
+        if (hit(html)) return true;
+    }
+    return any ? false : null;
+}
+
 export async function onRequestOptions() {
     return new Response('', { status: 200, headers: corsHeaders });
 }
@@ -202,72 +239,23 @@ export async function onRequestPost({ request, env }) {
             const results = [];
             const errors = [];
             for (const post of posts) {
-                const targetNorm = normalizePostUrl(post.link);
-                // 제목에서 쌍따옴표 제거
-                const safeTitle = post.title.replace(/["']/g, '').trim();
-                // 검색 시도 순서: ① 정확구문 → ② 따옴표 없는 원제목(특수문자 제목 오탐 방지)
-                //   무료플랜 CPU/호출 한도 보호 위해 2단계까지만. 각 글은 ①에서 못 찾을 때만 ②로 넘어감.
-                const queryPlan = [`"${safeTitle}"`, safeTitle];
-                try {
-                    let foundRank = -1;
-                    let usedQuery = queryPlan[0];
-                    let lastData = { total: 0, items: [] };
-                    for (const q of queryPlan) {
-                        const data = await searchBlog(q, clientId, clientSecret, 100, 1);
-                        const items = data.items || [];
-                        lastData = data;
-                        usedQuery = q;
-                        // URL 정확 매칭 우선
-                        for (let i = 0; i < items.length; i++) {
-                            if (normalizePostUrl(items[i].link) === targetNorm) { foundRank = i + 1; break; }
-                        }
-                        // fallback: 같은 블로그 ID 매칭 (URL 형식 변형 대비)
-                        if (foundRank === -1) {
-                            for (let i = 0; i < items.length; i++) {
-                                if (extractBlogIdFromLink(items[i].link) === id) { foundRank = i + 1; break; }
-                            }
-                        }
-                        if (foundRank > 0) break; // 찾았으면 다음 쿼리는 시도 안 함
-                        await new Promise(r => setTimeout(r, 100));
-                    }
-                    const items = lastData.items || [];
-                    results.push({
-                        title: post.title,
-                        link: post.link,
-                        rank: foundRank,
-                        totalResults: lastData.total || 0,
-                        matchedQuery: foundRank > 0 ? usedQuery : undefined,
-                        status: foundRank > 0 ? 'exposed' : 'missing',
-                        debug: foundRank === -1 ? {
-                            triedQueries: queryPlan,
-                            rssLink: post.link,
-                            rssNorm: targetNorm,
-                            apiTop3: items.slice(0, 3).map(it => ({
-                                link: it.link,
-                                norm: normalizePostUrl(it.link),
-                                title: (it.title || '').replace(/<[^>]+>/g, ''),
-                                blogId: extractBlogIdFromLink(it.link),
-                            })),
-                        } : undefined,
-                    });
-                    await new Promise(r => setTimeout(r, 100));
-                } catch (e) {
-                    errors.push(`${post.title}: ${e.message}`);
-                    results.push({
-                        title: post.title,
-                        link: post.link,
-                        rank: -1,
-                        totalResults: 0,
-                        status: 'error',
-                        error: e.message,
-                    });
-                }
+                const targetNorm = normalizePostUrl(post.link);   // "blogId/logNo"
+                const logNo = (targetNorm.split('/')[1]) || '';
+                let exposed;
+                try { exposed = await checkExposedByScrape(id, logNo, post.title); }
+                catch (e) { exposed = null; errors.push(`${post.title}: ${e.message}`); }
+                results.push({
+                    title: post.title,
+                    link: post.link,
+                    status: exposed === true ? 'exposed' : (exposed === false ? 'missing' : 'error'),
+                });
+                await new Promise(r => setTimeout(r, 120));
             }
 
             // 3. 종합 진단
             const exposedCount = results.filter(r => r.status === 'exposed').length;
             const missingCount = results.filter(r => r.status === 'missing').length;
-            const totalCount = results.length;
+            const totalCount = exposedCount + missingCount;   // 미상(error)은 노출률 계산에서 제외
 
             // 정확 구문 검색(쌍따옴표) 결과 기준이므로 인덱스된 글은 거의 100% 노출되어야 정상
             let verdict, verdictDesc;
