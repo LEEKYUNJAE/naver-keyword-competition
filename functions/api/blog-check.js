@@ -240,7 +240,7 @@ export async function onRequestPost({ request, env }) {
             const errors = [];
             for (const post of posts) {
                 // RSS <link>는 CDATA·쿼리스트링이 붙어 있어 정규식으로 logNo만 견고하게 추출
-                const lnm = String(post.link).match(/blog.naver.com/[^/?s]+/(d+)/i) || String(post.link).match(/logNo=(d+)/i);
+                const lnm = String(post.link).match(/blog\.naver\.com\/[^/?\s]+\/(\d+)/i) || String(post.link).match(/logNo=(\d+)/i);
                 const logNo = lnm ? lnm[1] : '';
                 let exposed;
                 try { exposed = await checkExposedByScrape(id, logNo, post.title); }
