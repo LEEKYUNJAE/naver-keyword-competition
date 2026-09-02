@@ -542,7 +542,9 @@ export async function onRequestPost({ request, env }) {
             subscriber: blogData.subscriberCount || 0,
             recent30Posts: recent30,
         };
-        const ranking = estimateBlogRanking(statsForRank, expSummary, influencer);
+        // 블로그 프로필 데이터 수집 실패(방문·이웃·글 모두 0)면 잘못된 '활성도 부족' 대신 미진단(null) 처리
+        const _statsEmpty = !statsForRank.avgDailyVisitor && !statsForRank.subscriber && !statsForRank.recent30Posts;
+        const ranking = _statsEmpty ? null : estimateBlogRanking(statsForRank, expSummary, influencer);
 
         return jsonResponse({
             blogId,
