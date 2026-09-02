@@ -2742,6 +2742,10 @@ function baRenderBlogPage(data) {
         gradeLabel = `${cur.name} · 상위 ${tp}%`;
         const up = BA_TIERS[(idx === -1 ? BA_TIERS.length - 1 : idx) - 1];
         gradeNext = up ? `다음 등급 ${up.icon} ${up.name} — 상위 ${up.max}% 이내` : '최고 등급입니다';
+    } else {
+        // 방문자·이웃을 비공개로 설정했거나 네이버가 데이터를 안 주는 블로그 → 틀린 등급 대신 명확 안내
+        gradeLabel = '측정 불가'; gradeIcon = '🔒'; gradeColor = '#6B7280';
+        gradeNext = '방문자·이웃 수가 비공개라 등급을 낼 수 없어요. 블로그 관리 > 위젯에서 방문자·이웃을 공개로 바꾸면 등급이 나옵니다.';
     }
 
     let html = `<div style="background:linear-gradient(135deg,#FFFFFF 0%,#F8FAFC 100%);border:1px solid #E5E7EB;border-radius:18px;padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.04);position:relative;overflow:hidden;">
