@@ -896,7 +896,7 @@
                 </div>
                 <div>
                     <div style="background:#f8f9fa;border-radius:10px;padding:16px;font-size:0.85rem;line-height:1.8;">
-                        <strong>경쟁도 수치 해석</strong> <span style="font-size:0.75rem;color:var(--text-light);">(누적문서 + 월발행 합성)</span><br>
+                        <strong>경쟁도 수치 해석</strong> <span style="font-size:0.75rem;color:var(--text-light);">(누적문서 ÷ 유효검색 기준)</span><br>
                         <span style="color:#c471f5;">● ~5:</span> 검색은 있지만 글이 적음. 빠르게 선점 가능<br>
                         <span style="color:#03C75A;">● 5~22:</span> 적당한 경쟁. 좋은 글이면 상위노출 가능<br>
                         <span style="color:#f39c12;">● 22~38:</span> 보통 경쟁. SEO 최적화 + 콘텐츠 전략 필요<br>
@@ -1401,8 +1401,8 @@ function calc(item) {
     const cumRatio = blogCount / eff;
     // 월간 발행수 기반 비율 (실시간 경쟁 반영)
     const monthRatio = (monthlyBlogCount || 0) / eff;
-    // 합성 점수: 누적 × (1 + 월발행 가중치 0.5)
-    const baseRatio = cumRatio * (1 + monthRatio * 0.5);
+    // 경쟁도 기준: 누적문서 ÷ 유효검색 (추천·연관 키워드와 동일식으로 통일). 월발행(포화도)은 아래 보조지표로만 표시
+    const baseRatio = cumRatio;
     const compositeScore = getCompositeScore(baseRatio, item.compIdx || '-');
     // 포화도(%) — 월발행/유효검색 비율 표시용
     const saturation = Math.round(monthRatio * 1000) / 10;
